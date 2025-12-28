@@ -195,3 +195,33 @@ comm-xr/
 └─ workflows/
 ├─ api-ci.yml # lint/test/build
 └─ api-deploy.yml # ECR/ECS（後で）
+
+# api サーバー
+
+## パッケージマネージャー
+
+uv
+
+## docker
+
+立ち上げ
+
+```
+docker compose up -d
+```
+
+終了
+
+```
+docker compose down
+```
+
+## linter formatter
+
+```
+uv black .
+uv ruff check .
+```
+
+自動修正
+--fix を入れる
