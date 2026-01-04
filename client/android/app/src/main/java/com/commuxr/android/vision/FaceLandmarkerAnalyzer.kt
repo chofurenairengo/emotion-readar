@@ -59,18 +59,19 @@ class FaceLandmarkerAnalyzer(
     }
 
     private fun handleResult(result: FaceLandmarkerResult) {
-        val blendshapes = result.faceBlendshapes()
+        val blendshapes = result.faceBlendshapes().orElse(null)
         val landmarks = result.faceLandmarks().firstOrNull()
 
-        if (blendshapes.isEmpty() && landmarks == null) return
+        if ((blendshapes == null || blendshapes.isEmpty()) && landmarks == null) return
 
         val payload = JSONObject()
         payload.put("type", "face")
         payload.put("timestampMs", SystemClock.uptimeMillis())
 
         val blendshapeArray = JSONArray()
-        if (blendshapes.isNotEmpty()) {
-            val categories = blendshapes[0].categories()
+        if (!blendshapes.isNullOrEmpty()) {
+            val categories: List<com.google.mediapipe.tasks.components.containers.Category> =
+                blendshapes.firstOrNull().orEmpty()
             categories.forEach { category ->
                 val item = JSONObject()
                 item.put("name", category.categoryName)
