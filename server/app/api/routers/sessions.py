@@ -6,6 +6,7 @@ from app.services.session_service import SessionService
 
 router = APIRouter(tags=["sessions"])
 
+
 # セッション作成
 @router.post(
     "/sessions",
@@ -17,6 +18,7 @@ def start_session(
 ) -> SessionResponse:
     session = session_service.create_session()
     return SessionResponse.from_model(session)
+
 
 # セッション終了
 @router.post(
@@ -32,6 +34,7 @@ def finish_session(
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     return SessionResponse.from_model(session)
+
 
 # セッションを表示
 @router.get(

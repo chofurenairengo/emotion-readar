@@ -9,6 +9,7 @@ from app.models.session import Session
 SESSION_STATUS_ACTIVE = "active"
 SESSION_STATUS_ENDED = "ended"
 
+
 class SessionService:
     def __init__(self, repository: SessionRepository) -> None:
         self._repository = repository
