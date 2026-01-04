@@ -2,7 +2,7 @@
 services:
   api:
     build:
-      context: ./api
+      context: ./server
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
@@ -18,7 +18,8 @@ services:
     depends_on:
       - dynamodb-local
     volumes:
-      - ./api/app:/app:rw
+      - ./server/app:/app/app:rw
+    working_dir: /app
     command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   dynamodb-local:
