@@ -74,8 +74,8 @@ class FaceLandmarkerAnalyzer(
                 blendshapes.firstOrNull().orEmpty()
             categories.forEach { category ->
                 val item = JSONObject()
-                item.put("name", category.categoryName)
-                item.put("score", category.score)
+                item.put("name", category.categoryName())
+                item.put("score", category.score())
                 blendshapeArray.put(item)
             }
         }
