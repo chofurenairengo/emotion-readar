@@ -1,0 +1,39 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # uvのセットアップ
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      # 依存関係のインストール（uv.lockを元に爆速で構築）
+      - name: Install dependencies
+        working-directory: server
+        run: uv sync
+
+      # 1. RuffでLintチェック
+      - name: Run Ruff
+        working-directory: server
+        run: uv run ruff check .
+
+      # 2. Blackで整形チェック（--checkを付けると、整形が必要な場合にエラーになる）
+      - name: Run Black
+        working-directory: server
+        run: uv run black . --check
+
+      # 3. Mypyで型チェック
+      - name: Run Mypy
+        working-directory: server
+      # 3. Mypyで型チェック
+      - name: Run Mypy
+        run: uv run mypy .
