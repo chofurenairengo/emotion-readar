@@ -3,12 +3,13 @@ from server.core.config import settings
 from server.services.agents.schemas import AgentInput, CoachingResponse
 from server.services.agents.prompts import get_chat_prompt
 
+
 class CommAgent:
     def __init__(self):
         self.llm = ChatGoogleGenerativeAI(
             model="gemini-1.5-flash",
             google_api_key=settings.GEMINI_API_KEY,
-            temperature=0.5, # 評価型プロンプトなので少し創造性を抑える
+            temperature=0.5,  # 評価型プロンプトなので少し創造性を抑える
         )
         self.structured_llm = self.llm.with_structured_output(CoachingResponse)
         self.prompt = get_chat_prompt()
@@ -20,10 +21,10 @@ class CommAgent:
         ここがズレるとAIの精度が下がる。
         """
         nv = input_data.non_verbal
-        
+
         # 1. 非言語情報の言語化 (簡易ロジック)
         smile_str = "笑顔" if nv.smile_score > 0.7 else "真顔"
-        
+
         # 2. タグ形式への整形
         # プロンプト例: [場所: カフェ][関係: デート][非言語: ...][履歴: ...]
         formatted_text = (
@@ -37,13 +38,11 @@ class CommAgent:
     async def run(self, input_data: AgentInput) -> CoachingResponse:
         # プロンプトが期待する形式にデータを整形
         formatted_input = self._format_input_string(input_data)
-        
+
         # Chain実行
         # input_text に整形済みの文字列を渡すのがポイント
-        response = await self.chain.ainvoke({
-            "input_text": formatted_input,
-            "chat_history": input_data.history
-        })
-        
+        response = await self.chain.ainvoke(
+            {"input_text": formatted_input, "chat_history": input_data.history}
+        )
+
         return response
-    

@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate, FewShotChatMessagePromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
 
 # 1. システムプロンプト (AIの人格と絶対ルールの定義)
 SYSTEM_PROMPT_TEXT = """
@@ -50,7 +50,7 @@ examples = [
   ],
   "risk_score": 2
 }
-"""
+""",
     },
     {
         "input": """
@@ -68,7 +68,7 @@ examples = [
   ],
   "risk_score": 4
 }
-"""
+""",
     },
     {
         "input": """
@@ -86,8 +86,8 @@ examples = [
   ],
   "risk_score": 1
 }
-"""
-    }
+""",
+    },
 ]
 
 # Few-Shotテンプレートの作成
@@ -103,11 +103,14 @@ few_shot_prompt = FewShotChatMessagePromptTemplate(
     examples=examples,
 )
 
+
 # 3. 最終的なプロンプトの組み立て
 def get_chat_prompt():
-    return ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT_TEXT),
-        few_shot_prompt,                  # ここに例示が挿入される
-        ("placeholder", "{chat_history}"), # LangChainのメモリ用
-        ("human", "{input_text}"),         # 実際のユーザー入力
-    ])
+    return ChatPromptTemplate.from_messages(
+        [
+            ("system", SYSTEM_PROMPT_TEXT),
+            few_shot_prompt,  # ここに例示が挿入される
+            ("placeholder", "{chat_history}"),  # LangChainのメモリ用
+            ("human", "{input_text}"),  # 実際のユーザー入力
+        ]
+    )
