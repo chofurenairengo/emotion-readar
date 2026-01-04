@@ -204,10 +204,14 @@ uv
 
 ## docker
 
+開発環境起動
+```
+uv run uvicorn main:app --reload
+```
+
 立ち上げ
 
 ```
-docker compose build
 docker compose up -d
 ```
 
