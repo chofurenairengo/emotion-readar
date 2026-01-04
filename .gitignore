@@ -33,6 +33,10 @@
 
 # ===== Secrets =====
 .env
+.env.prod
+.venv/
+env/
+venv/
 Secrets.cs
 __pycache__
 
