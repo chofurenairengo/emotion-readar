@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "fastapi[standard]>=0.128.0",
+    "uvicorn>=0.40.0",
 ]
 
 [tool.black]
@@ -20,5 +21,6 @@ ignore = ["E501"]
 [dependency-groups]
 dev = [
     "black>=25.12.0",
+    "pytest>=9.0.2",
     "ruff>=0.14.10",
 ]
