@@ -33,15 +33,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.commuxr.android.network.WebSocketSender
 import com.commuxr.android.ui.theme.AndroidTheme
+import com.commuxr.android.unity.UnityMessageSender
 import com.commuxr.android.vision.FaceLandmarkerAnalyzer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class MainActivity : ComponentActivity() {
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-    private val webSocketSender = WebSocketSender(DEFAULT_WS_URL)
+    private val unityMessageSender = UnityMessageSender(UNITY_GAME_OBJECT, UNITY_METHOD)
     private var faceLandmarkerAnalyzer: FaceLandmarkerAnalyzer? = null
     private var previewView: PreviewView? = null
     private var statusMessage by mutableStateOf("Awaiting camera permission")
@@ -67,8 +67,6 @@ class MainActivity : ComponentActivity() {
         if (hasCameraPermission) {
             statusMessage = "Starting camera"
         }
-        webSocketSender.connect()
-
         setContent {
             AndroidTheme {
                 CameraScreen(
@@ -90,7 +88,6 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
         faceLandmarkerAnalyzer?.close()
         cameraExecutor.shutdown()
-        webSocketSender.close()
     }
 
     private fun startCamera(view: PreviewView) {
@@ -102,7 +99,7 @@ class MainActivity : ComponentActivity() {
             }
             val analyzer = FaceLandmarkerAnalyzer(
                 context = this,
-                webSocketSender = webSocketSender,
+                unityMessageSender = unityMessageSender,
                 onError = { message -> statusMessage = message },
             )
             faceLandmarkerAnalyzer = analyzer
@@ -119,7 +116,8 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        private const val DEFAULT_WS_URL = "ws://10.0.2.2:8765"
+        private const val UNITY_GAME_OBJECT = "FaceReceiver"
+        private const val UNITY_METHOD = "OnFaceData"
     }
 }
 

@@ -5,7 +5,7 @@ import android.graphics.Bitmap
 import android.os.SystemClock
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
-import com.commuxr.android.network.WebSocketSender
+import com.commuxr.android.unity.UnityMessageSender
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.core.Delegate
@@ -13,15 +13,17 @@ import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
-import org.json.JSONArray
 import org.json.JSONObject
 import java.io.Closeable
 
 class FaceLandmarkerAnalyzer(
     private val context: Context,
-    private val webSocketSender: WebSocketSender,
+    private val unityMessageSender: UnityMessageSender,
     private val onError: (String) -> Unit,
+    private val minSendIntervalMs: Long = 33L,
 ) : ImageAnalysis.Analyzer, Closeable {
+
+    private var lastSentAtMs: Long = 0L
 
     private val faceLandmarker: FaceLandmarker = FaceLandmarker.createFromOptions(
         context,
@@ -60,38 +62,23 @@ class FaceLandmarkerAnalyzer(
 
     private fun handleResult(result: FaceLandmarkerResult) {
         val blendshapes = result.faceBlendshapes().orElse(null)
-        val landmarks = result.faceLandmarks().firstOrNull()
+        if (blendshapes.isNullOrEmpty()) return
 
-        if ((blendshapes == null || blendshapes.isEmpty()) && landmarks == null) return
+        val now = SystemClock.uptimeMillis()
+        if (now - lastSentAtMs < minSendIntervalMs) return
+        lastSentAtMs = now
+
+        val categories = blendshapes.firstOrNull().orEmpty()
+        val mouthSmileLeft = categories
+            .firstOrNull { it.categoryName() == "mouthSmileLeft" }
+            ?.score() ?: 0f
 
         val payload = JSONObject()
         payload.put("type", "face")
-        payload.put("timestampMs", SystemClock.uptimeMillis())
+        payload.put("timestampMs", now)
+        payload.put("mouthSmileLeft", mouthSmileLeft)
 
-        val blendshapeArray = JSONArray()
-        if (!blendshapes.isNullOrEmpty()) {
-            val categories: List<com.google.mediapipe.tasks.components.containers.Category> =
-                blendshapes.firstOrNull().orEmpty()
-            categories.forEach { category ->
-                val item = JSONObject()
-                item.put("name", category.categoryName())
-                item.put("score", category.score())
-                blendshapeArray.put(item)
-            }
-        }
-        payload.put("blendshapes", blendshapeArray)
-
-        val landmarkArray = JSONArray()
-        landmarks?.forEach { landmark ->
-            val coords = JSONArray()
-            coords.put(landmark.x())
-            coords.put(landmark.y())
-            coords.put(landmark.z())
-            landmarkArray.put(coords)
-        }
-        payload.put("landmarks", landmarkArray)
-
-        webSocketSender.send(payload.toString())
+        unityMessageSender.send(payload.toString())
     }
 
     private fun ImageProxy.toBitmap(): Bitmap {

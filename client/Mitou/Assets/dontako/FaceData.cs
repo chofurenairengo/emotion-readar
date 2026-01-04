@@ -25,6 +25,21 @@ blendshapesは名前とそのスコアの配列
 landmarksは[x, y, z] の配列
 */
 
+/*
+大まかな流れ
+
+WebSocketで文字（JSON）を受け取る
+
+Newtonsoft.Json で FaceMessage に変換
+
+landmarks を Vector3[] に変換（Unityで使いやすくする）
+
+blendshapes を辞書に変換（名前で引けるようにする）
+
+FaceFrame にまとめて保存
+*/
+
+
 [Serializable]
 public class FaceMessage
 {
@@ -37,6 +52,9 @@ public class FaceMessage
     //最初のはラベルでjsonのどの名前と対応してるよ、みたいな。
     //変数のかたはfloatのリストのリスト。floatのリストってのが少数が並んでる箱、さらにその箱がもっとあるよ。的な。
     //Vector3型は使えない。jsonに対応してないから。
+
+
+    //JsonUtilityはList<List<float>>を扱えないので、Newtonsoft.Jsonを使う。
 }
 
 [Serializable]
@@ -52,10 +70,12 @@ public class FaceFrame
     public Dictionary<string, float> BlendshapeMap;
     //これは辞書型。キーがstring、値がfloatのペアを複数持てる。
     /*
+
     例
     "mouthSmileLeft" → 0.123
     "eyeBlinkLeft"   → 0.045
     なら、BlendshapeMap["mouthSmileLeft"]とすると0.123が取れる。
+
     */
 
     public Vector3[] Landmarks;
