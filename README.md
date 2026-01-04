@@ -207,13 +207,14 @@ uv
 立ち上げ
 
 ```
+docker compose build
 docker compose up -d
 ```
 
 終了
 
 ```
-docker compose down
+docker compose stop
 ```
 
 ## linter formatter
