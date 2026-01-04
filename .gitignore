@@ -34,6 +34,13 @@
 # ===== Secrets =====
 .env
 Secrets.cs
+
+# ===== Python caches =====
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+*.pyc
 __pycache__
 
 # ===== Python caches =====
