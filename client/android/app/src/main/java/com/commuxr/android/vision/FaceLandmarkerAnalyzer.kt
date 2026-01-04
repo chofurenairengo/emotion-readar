@@ -59,21 +59,24 @@ class FaceLandmarkerAnalyzer(
     }
 
     private fun handleResult(result: FaceLandmarkerResult) {
-        val blendshapeResult = result.faceBlendshapes().firstOrNull()
+        val blendshapes = result.faceBlendshapes()
         val landmarks = result.faceLandmarks().firstOrNull()
 
-        if (blendshapeResult == null && landmarks == null) return
+        if (blendshapes.isEmpty() && landmarks == null) return
 
         val payload = JSONObject()
         payload.put("type", "face")
         payload.put("timestampMs", SystemClock.uptimeMillis())
 
         val blendshapeArray = JSONArray()
-        blendshapeResult?.forEach { category ->
-            val item = JSONObject()
-            item.put("name", category.categoryName())
-            item.put("score", category.score())
-            blendshapeArray.put(item)
+        if (blendshapes.isNotEmpty()) {
+            val categories = blendshapes[0].categories()
+            categories.forEach { category ->
+                val item = JSONObject()
+                item.put("name", category.categoryName)
+                item.put("score", category.score)
+                blendshapeArray.put(item)
+            }
         }
         payload.put("blendshapes", blendshapeArray)
 
