@@ -1,0 +1,10 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime
+
+
+@dataclass(frozen=True)
+class Session:
+    session_id: str
+    created_at: datetime

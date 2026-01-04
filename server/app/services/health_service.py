@@ -1,4 +1,4 @@
-from app.dto.health import HealthResponse
+from app.dto.response import HealthResponse
 
 
 def get_health() -> HealthResponse:

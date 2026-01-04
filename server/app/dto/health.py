@@ -1,5 +1,3 @@
-from pydantic import BaseModel
+from app.dto.response import HealthResponse
 
-
-class HealthResponse(BaseModel):
-    status: str
+__all__ = ["HealthResponse"]
