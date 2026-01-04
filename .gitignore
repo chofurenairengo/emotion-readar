@@ -34,3 +34,7 @@
 # ===== Secrets =====
 .env
 Secrets.cs
+
+# ===== Python =====
+__pycache__/
+*.pyc
