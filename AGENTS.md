@@ -38,106 +38,137 @@
 - Local Docker uses `.env` values (AWS and DynamoDB settings). Do not commit secrets.
 - Python version is pinned via `server/.python-version` (3.14).
 
+## サーバーサイドのファイル構成
+
+comm-xr-server/
+├── app/
+│   ├── main.py                  # ★アプリ起動点 (FastAPIインスタンス作成, Middleware適用, DI設定)
+│   │
+│   ├── core/                    # 【Layer 1: Foundation (ルール)】 
+│   │   # ※ 依存：なし (標準ライブラリのみ)
+│   │   ├── config.py            # 環境変数・定数 (Pydantic Settings)
+│   │   ├── exceptions.py        # カスタム例外定義 (CommXRExceptionなど)
+│   │   ├── prompts/             # プロンプト管理
+│   │   │   └── love_coach.py    # システムプロンプトのテンプレート
+│   │   └── interfaces/          # 抽象インターフェース (契約書)
+│   │       ├── ai_client.py     # "AIクライアントの振る舞い"定義
+│   │       └── db_repo.py       # "DBリポジトリの振る舞い"定義
+│   │
+│   ├── models/                  # 【Layer 1: Domain Entities (真実)】
+│   │   # ※ 依存：なし
+│   │   └── session.py           # DB保存用・内部ロジック用のデータ定義 (ID, CreatedAt含む)
+│   │
+│   ├── dto/                     # 【Layer 1: DTO (窓口)】 (旧Schemas)
+│   │   # ※ 依存：なし
+│   │   ├── request.py           # Androidからの入力型 (Text, Emotions)
+│   │   └── response.py          # Androidへの出力型 (Reply, Strategy)
+│   │
+│   ├── services/                # 【Layer 2: Use Cases (脳みそ)】
+│   │   # ※ 依存：Core, Models, DTO, Utils (Infra/APIは禁止)
+│   │   ├── chat_orchestrator.py # 会話フローの制御、Model⇔DTO変換
+│   │   ├── connection_manager.py # WebSocket接続管理
+│   │   └── agents/              # AIエージェント (思考ロジック)
+│   │       └── love_coach.py    # Coreのインターフェースを使って思考する
+│   │
+│   ├── infra/          # 【Layer 2: Frameworks & Drivers (手足)】
+│   │   # ※ 依存：Core, Models
+│   │   ├── external/
+│   │   │   └── gemini_client.py # Geminiライブラリの実装
+│   │   └── repositories/
+│   │       └── dynamo_repo.py   # Boto3 (DynamoDB) の実装
+│   │
+│   ├── middleware/              # 【Layer 3: Middleware (門番)】
+│   │   ├── logging.py           # パフォーマンス計測・ログ
+│   │   └── cors.py              # CORS設定 (必要ならここに分離)
+│   │
+│   ├── api/                     # 【Layer 3: Interface Adapters (受付)】
+│   │   # ※ 依存：Services, DTO
+│   │   ├── dependencies.py      # ServiceにInfraを注入するDI設定
+│   │   └── routers/
+│   │       ├── chat.py          # WebSocket / POST エンドポイント
+│   │       └── health.py        # ヘルスチェック
+│   │
+│   └── utils/                   # 【Helpers (便利屋)】
+│       # ※ 依存：なし (純粋な関数)
+│       ├── audio.py             # 音声データの変換処理
+│       └── time.py              # 時間計算・JST変換
+│
+├── scripts/                     # 【Tools (工事用)】
+│   # ※ サーバー起動には不要。開発者が手動で使う。
+│   ├── setup_dynamodb.py        # ローカル/開発用テーブル作成
+│   └── test_websocket.py        # 接続テスト用クライアント
+│
+├── tests/                       # テストコード
+│   ├── unit/
+│   └── integration/
+│
+├── .env                         # 環境変数 (APIキー等)
+├── Dockerfile                   # 本番デプロイ用
+├── docker-compose.yml           # ローカル開発用 (DynamoDB Local等)
+├── pyproject.toml               # ★uv: プロジェクト設定・依存関係
+├── uv.lock                      # ★uv: 依存関係のロックファイル
+└── .python-version              # ★uv: Pythonバージョン指定 (3.11推奨)
+
+クリーンアーキテクチャーを基盤にした３層ファイルアーキテクチャーで構成されている
+
+
+
+・優先度低い
+
+人格が統一される
+
+→どんな自分になりたいかを最初に聞いて、プロンプトに組み込む。(遅延対策で文字数制限する)
+
 ## 仕様書
 アーキテクチャは以下のようにする
-
 ┌────────────────────────── 現実世界 ──────────────────────────┐
-
 │  相手 / 自分                                                   │
-
 └───────────────┬───────────────────────────────┬──────────────┘
-
                 │ カメラ                          │ マイク(複数ch) + センサー
-
                 ▼                                ▼
-
 ┌──────────────────────── Android端末（エッジ） ────────────────────────┐
-
 │  A) Androidネイティブ（Kotlin/C++）                                  │
-
 │   ├─ 画像認識：MediaPipe Face/Pose Landmarker                         │
-
 │   │    - 表情(Blendshape), 視線/頭部姿勢, 顔向き, 距離など            │
-
 │   ├─ 音声認識（前処理）：VAD/音量/ピッチ/スペクトル                   │
-
 │   ├─ (任意) 話者方向：DOA(マイクアレイ) + 画角内人物IDの照合          │
-
 │   └─ (任意) 端末内STT：軽量STT（可能なら）                            │
-
 │                                                                      │
-
 │  B) Unity（C#）                                                      │
-
 │   ├─ HUD/VFX：空気の可視化（粒子/色/揺らぎ）                          │
-
 │   ├─ UI：返答候補2-3 / 会話戦略タグ / 注意点                          │
-
 │   └─ 通信：WebSocket（リアルタイム） + HTTP（管理）                   │
-
 │                                                                      │
-
 │  データ方針：画像/生音声は基本「端末内で破棄」→送るのは特徴量のみ      │
-
 └─────────────────────────┬────────────────────────────────────────────┘
-
                           │   送信（テキスト + 非言語特徴量）
-
                           ▼
-
 ┌──────────────────────────── AWS（クラウド） ───────────────────────────┐
-
 │  入口：ALB                                                            │
-
 │   ▼                                                                    │
-
 │  ECS Fargate：FastAPI（セッション/統合/LLM制御）                        │
-
 │   ├─ セッション管理（会話状態、直近N秒の文脈）                          │
-
 │   ├─ 音声認識（STT）                                                     │
-
 │   │    Option1: Amazon Transcribe（ストリーミングSTT）                  │
-
 │   │    Option2: Faster-Whisper（ECS別サービス）※重いので後回し推奨      │
-
 │   ├─ LLM：Gemini / OpenAI 等のAPI呼び出し                               │
-
 │   │    - 入力：STTテキスト + 特徴量(表情/視線/声トーン/話者ID)          │
-
 │   │    - 出力：候補返答2-3 + 戦略(共感/質問/深掘り/撤退) + 禁則          │
-
 │   ├─ 返答の整形（短文化、トーン調整、禁止語フィルタ）                   │
-
 │   └─ ログ/メトリクス（遅延p95、成功率）                                 │
-
 │                                                                      │
-
 │  永続化：                                                             │
-
 │   ├─ Cognito：認証                                                     │
-
 │   ├─ DynamoDB：セッション/特徴量時系列/評価指標                          │
-
 │   ├─ S3：任意で音声断片/デモ素材（同意がある場合のみ）                  │
-
 │   ├─ CloudWatch：監視・ログ                                             │
-
 │   └─ Secrets Manager：APIキー等                                         │
-
 └─────────────────────────┬────────────────────────────────────────────┘
-
                           │ 応答（リアルタイムpush）
-
                           ▼
-
 ┌──────────────────────── Android端末（Unity HUD） ──────────────────────┐
-
 │  返答候補 / 戦略タグ / 注意点 → HUD表示（視界を邪魔しないMFUI）          │
-
 └──────────────────────────────────────────────────────────────────────┘
-
-
 
 以下の仕様書をもとにする
 
@@ -289,154 +320,3 @@ graph TD     A[Google AI Glass] -- "視覚(外/内カメ)・音声(4chマイク)
 
 個人情報が濃い画像（相手の顔）を送るのは最小化（基本送らない、送るなら特徴量だけ）
 
-
-
-## サーバーサイドのファイル構成
-
-comm-xr-server/
-
-├── app/
-
-│   ├── main.py                  # ★アプリ起動点 (FastAPIインスタンス作成, Middleware適用, DI設定)
-
-│   │
-
-│   ├── core/                    # 【Layer 1: Foundation (ルール)】 
-
-│   │   # ※ 依存：なし (標準ライブラリのみ)
-
-│   │   ├── config.py            # 環境変数・定数 (Pydantic Settings)
-
-│   │   ├── exceptions.py        # カスタム例外定義 (CommXRExceptionなど)
-
-│   │   ├── prompts/             # プロンプト管理
-
-│   │   │   └── love_coach.py    # システムプロンプトのテンプレート
-
-│   │   └── interfaces/          # 抽象インターフェース (契約書)
-
-│   │       ├── ai_client.py     # "AIクライアントの振る舞い"定義
-
-│   │       └── db_repo.py       # "DBリポジトリの振る舞い"定義
-
-│   │
-
-│   ├── models/                  # 【Layer 1: Domain Entities (真実)】
-
-│   │   # ※ 依存：なし
-
-│   │   └── session.py           # DB保存用・内部ロジック用のデータ定義 (ID, CreatedAt含む)
-
-│   │
-
-│   ├── dto/                     # 【Layer 1: DTO (窓口)】 (旧Schemas)
-
-│   │   # ※ 依存：なし
-
-│   │   ├── request.py           # Androidからの入力型 (Text, Emotions)
-
-│   │   └── response.py          # Androidへの出力型 (Reply, Strategy)
-
-│   │
-
-│   ├── services/                # 【Layer 2: Use Cases (脳みそ)】
-
-│   │   # ※ 依存：Core, Models, DTO, Utils (Infra/APIは禁止)
-
-│   │   ├── chat_orchestrator.py # 会話フローの制御、Model⇔DTO変換
-
-│   │   ├── connection_manager.py # WebSocket接続管理
-
-│   │   └── agents/              # AIエージェント (思考ロジック)
-
-│   │       └── love_coach.py    # Coreのインターフェースを使って思考する
-
-│   │
-
-│   ├── infra/          # 【Layer 2: Frameworks & Drivers (手足)】
-
-│   │   # ※ 依存：Core, Models
-
-│   │   ├── external/
-
-│   │   │   └── gemini_client.py # Geminiライブラリの実装
-
-│   │   └── repositories/
-
-│   │       └── dynamo_repo.py   # Boto3 (DynamoDB) の実装
-
-│   │
-
-│   ├── middleware/              # 【Layer 3: Middleware (門番)】
-
-│   │   ├── logging.py           # パフォーマンス計測・ログ
-
-│   │   └── cors.py              # CORS設定 (必要ならここに分離)
-
-│   │
-
-│   ├── api/                     # 【Layer 3: Interface Adapters (受付)】
-
-│   │   # ※ 依存：Services, DTO
-
-│   │   ├── dependencies.py      # ServiceにInfraを注入するDI設定
-
-│   │   └── routers/
-
-│   │       ├── chat.py          # WebSocket / POST エンドポイント
-
-│   │       └── health.py        # ヘルスチェック
-
-│   │
-
-│   └── utils/                   # 【Helpers (便利屋)】
-
-│       # ※ 依存：なし (純粋な関数)
-
-│       ├── audio.py             # 音声データの変換処理
-
-│       └── time.py              # 時間計算・JST変換
-
-│
-
-├── scripts/                     # 【Tools (工事用)】
-
-│   # ※ サーバー起動には不要。開発者が手動で使う。
-
-│   ├── setup_dynamodb.py        # ローカル/開発用テーブル作成
-
-│   └── test_websocket.py        # 接続テスト用クライアント
-
-│
-
-├── tests/                       # テストコード
-
-│   ├── unit/
-
-│   └── integration/
-
-│
-
-├── .env                         # 環境変数 (APIキー等)
-
-├── Dockerfile                   # 本番デプロイ用
-
-├── docker-compose.yml           # ローカル開発用 (DynamoDB Local等)
-
-├── pyproject.toml               # ★uv: プロジェクト設定・依存関係
-
-├── uv.lock                      # ★uv: 依存関係のロックファイル
-
-└── .python-version              # ★uv: Pythonバージョン指定 (3.11推奨)
-
-
-
-クリーンアーキテクチャーを基盤にした３層ファイルアーキテクチャーで構成されている
-
-
-
-・優先度低い
-
-人格が統一される
-
-→どんな自分になりたいかを最初に聞いて、プロンプトに組み込む。(遅延対策で文字数制限する)
