@@ -5,10 +5,10 @@ plugins {
 
 android {
     namespace = "com.commuxr.unityplugin"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
-        minSdk = 22
+        minSdk = 24
         consumerProguardFiles("consumer-rules.pro")
     }
 
@@ -23,4 +23,11 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    // 直接文字列で指定するように修正
+    implementation("com.google.mediapipe:tasks-vision:0.10.14")
+    implementation("com.google.code.gson:gson:2.10.1")
 }
