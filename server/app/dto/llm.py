@@ -9,9 +9,6 @@ class ResponseSuggestion(BaseModel):
     text: str
     """応答文."""
 
-    tone: str
-    """トーン ("formal", "casual", "empathetic")."""
-
     intent: str
     """意図（例: "話題を深める", "共感を示す", "質問する"）."""
 
