@@ -23,3 +23,6 @@ class LLMResponseParseError(LLMError):
     """レスポンスパースエラー."""
 
     pass
+class CommXRException(Exception):
+    """Base exception for Comm-XR."""
+
