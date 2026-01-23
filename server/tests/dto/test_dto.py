@@ -123,18 +123,16 @@ class TestLLMDTO:
         """ResponseSuggestionのテスト."""
         suggestion = ResponseSuggestion(
             text="申し訳ありません。もう少し詳しくご説明いたします。",
-            tone="formal",
             intent="説明を補足する",
         )
-        assert suggestion.tone == "formal"
         assert suggestion.intent == "説明を補足する"
 
     def test_llm_response_result(self) -> None:
         """LLMResponseResultのテスト."""
         result = LLMResponseResult(
             responses=[
-                ResponseSuggestion(text="応答1", tone="formal", intent="テスト"),
-                ResponseSuggestion(text="応答2", tone="casual", intent="テスト"),
+                ResponseSuggestion(text="応答1", intent="テスト1"),
+                ResponseSuggestion(text="応答2", intent="テスト2"),
             ],
             situation_analysis="テスト分析",
         )
@@ -181,8 +179,8 @@ class TestProcessingDTO:
                 description="相手は困惑しています",
             ),
             suggestions=[
-                ResponseSuggestion(text="応答1", tone="formal", intent="テスト"),
-                ResponseSuggestion(text="応答2", tone="casual", intent="テスト"),
+                ResponseSuggestion(text="応答1", intent="テスト1"),
+                ResponseSuggestion(text="応答2", intent="テスト2"),
             ],
             situation_analysis="状況分析テスト",
             processing_time_ms=850,
@@ -209,7 +207,7 @@ class TestProcessingDTO:
                 duration_ms=1000,
             ),
             suggestions=[
-                ResponseSuggestion(text="応答", tone="formal", intent="テスト"),
+                ResponseSuggestion(text="応答", intent="テスト"),
             ],
             situation_analysis="分析",
             processing_time_ms=500,
