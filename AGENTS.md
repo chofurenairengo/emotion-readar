@@ -10,7 +10,7 @@
   - `client/android/` is the native Android app (Gradle, Kotlin sources in `app/src/main`).
 - `server/` is the FastAPI backend (entry `main.py`, config in `pyproject.toml`/`uv.lock`, Dockerfile).
 - `docs/` holds architecture diagrams and notes.
-- `docker-compose.yml` starts a local API + DynamoDB stack; update paths if the backend folder moves.
+- `docker-compose.yml` starts a local API + Cloud Functions stack; update paths if the backend folder moves.
 
 ## Build, Test, and Development Commands
 - Backend setup: `cd server` then `uv sync` (use `uv sync --group dev` for lint/test tools).
@@ -35,7 +35,7 @@
 - PRs should include a brief summary, how to run or verify changes, and screenshots for UI/UX changes (Unity/Android). Link related issues when available.
 
 ## Configuration & Secrets
-- Local Docker uses `.env` values (AWS and DynamoDB settings). Do not commit secrets.
+- Local Docker uses `.env` values (Cloud Run, Cloud Functions settings). Do not commit secrets.
 - Python version is pinned via `server/.python-version` (3.14).
 
 ## 仕様書
@@ -75,12 +75,12 @@
 │  └───────────▲──────────────────────────────────────┘                │
 └──────────────┼───────────────────────────────────────────────────────┘
                │
-               │WS / gRPC Stream (JSON + Audio Binary)
+               │WS (JSON + Audio Binary)
                ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                    【3. クラウド (GCP)】                                  │
 │                                                                          │
-│  ┌─ [ Comm-XR Server (FastAPI / Clean Architecture) ] ────────────────┐  │
+│  ┌─ [ ERA Server (FastAPI / Clean Architecture) ] ────────────────┐  │
 │  │                                                                    │  │
 │  │  << 1. 蓄積・制御 (Orchestrator) >>                                │  │
 │  │   ・STT (文字起こし): Whisper等でテキスト化 (※内部理解用)          │  │
@@ -122,7 +122,7 @@
 │  ┌─ [ 外部連携API & DB ] ──────────────────────────────────────────┐   │
 │  │  ・Gemini 2.5 Flash Lite (Fine-tuned)                          │   │
 │  │  ・Tavily (Search)                                         │   │
-│  │  ・DynamoDB (会話ログ・成長記録の保存)                         │   │
+│  │  ・Cloud Functions → Firestore (会話ログ・成長記録の保存)             │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────────────────┘
 
@@ -184,8 +184,8 @@ Google AI Glass（2026年発売想定）を核とした、エッジ・クラウ�
 
 ## 1. アーキテクチャ概要
 
-本システムは、**「エッジ・クラウド ハイブリッド構成」を採用します。
-レイテンシ（遅延）が致命的となる「非言語情報の抽出（画像解析・音声前処理）」をAndroidエッジ端末側で完結させ、計算リソースを要する「文脈理解・推論生成（LLM）」をクラウド側（AWS）へオフロードすることで、リアルタイム性と高度な推論**の両立を実現します。
+本システムは、「**エッジ・クラウド ハイブリッド構成**」を採用します。
+レイテンシ（遅延）が致命的となる「非言語情報の抽出（画像解析・音声前処理）」をAndroidエッジ端末側で完結させ、計算リソースを要する「文脈理解・推論生成（LLM）」をクラウド側（Cloud Run）へオフロードすることで、**リアルタイム性と高度な推論の両立**を実現します。
 
 また、サーバーサイドには**クリーンアーキテクチャ**を適用し、将来的なモデルの差し替えや機能拡張に耐えうる堅牢な設計とします。
 
@@ -199,7 +199,7 @@ Android端末を演算コアとし、Glassをディスプレイおよび入力�
 
 ### A) センシング・解析層 (Android Native / Kotlin & C++)
 
-プライバシー保護と通信量削減のため、生データ（画像・音声波形）は原則端末内で処理し、**「特徴量」のみ**をクラウドへ送信します。
+プライバシー保護と通信量削減のため、生データ（画像）は原則端末内で処理し、**「特徴量」のみ**をクラウドへ送信します。
 
 - **画像認識 (MediaPipe):**
     - Blendshapeを用いて、相手の表情、視線、頭部の向きを数値化。
@@ -220,11 +220,11 @@ Android端末を演算コアとし、Glassをディスプレイおよび入力�
 
 ---
 
-## 3. サーバーサイド（AWS Cloud）
+## 3. サーバーサイド（Cloud Run）
 
 **役割：頭脳（Brain）と 記憶（Memory）**
 
-FastAPI on AWS ECS (Fargate) を基盤とし、Googleの**Gemini 2.5 Flash Liteのファインチューニング済みモデル**を推論エンジンとして採用します。
+FastAPI on Cloud Run を基盤とし、Googleの**Gemini 2.5 Flash Liteのファインチューニング済みモデル**を推論エンジンとして採用します。
 
 ### ソフトウェアアーキテクチャ：クリーンアーキテクチャ
 
@@ -241,7 +241,7 @@ FastAPI on AWS ECS (Fargate) を基盤とし、Googleの**Gemini 2.5 Flash Lite�
 4. **Interface Adapters (API & Infra):**
     - `api/routers/chat.py`: WebSocketエンドポイントを提供し、クライアントとの接続を確立。
     - `infra/external/gemini_client.py`: 実際にGemini APIを叩く実装詳細。
-    - `infra/repositories/dynamo_repo.py`: 会話ログやセッション情報の永続化を担当。
+    - `infra/repositories/firestore_repo.py`: 会話ログやセッション情報の永続化を担当。
 
 ---
 
@@ -251,9 +251,9 @@ FastAPI on AWS ECS (Fargate) を基盤とし、Googleの**Gemini 2.5 Flash Lite�
 2. **エッジ解析 (Android):**
     - 画像 → MediaPipeで「表情スコア」「視線データ」へ変換。
     - 音声 → VADで切り出し、特徴量と共に送信。
-3. **転送:** WebSocket経由でテキスト＋非言語特徴量をAWSへ送信。
+3. **転送:** WebSocket経由でテキスト＋非言語特徴量をCloud Runへ送信。
 4. **推論 (Cloud):**
-    - **STT:** 音声データをテキスト化（Amazon Transcribe または Faster-Whisper）。
+    - **STT:** 音声データをテキスト化（Google Cloud Speech-to-Text）。
     - **LLM (Gemini):** 「テキスト」＋「非言語情報を言語化した情報（相手が怒っている、笑っている等）」＋「文脈」を入力。
     - **出力:** 次の返答候補（2個）、会話戦略、アドバイスを生成。
 5. **フィードバック:** 生成結果を即座にAndroidへPush。
@@ -265,7 +265,7 @@ FastAPI on AWS ECS (Fargate) を基盤とし、Googleの**Gemini 2.5 Flash Lite�
 | **Edge UI** | **Unity (C#)** | 3D空間表現(VFX)とクロスプラットフォーム対応のため。 |
 | **Backend API** | **FastAPI (Python)** | 非同期処理に強く、AIライブラリ（Python製）との親和性が高いため。 |
 | **AI Model** | **Gemini 2.5 Flash** | マルチモーダル入力への対応と、リアルタイム対話に耐える応答速度。 |
-| **Database** | **DynamoDB** | セッション管理など、高速なRead/Writeとスケーラビリティのため。 |
+| **Database** | **Cloud Firestore** | セッション管理など、高速なRead/Writeとスケーラビリティのため。 |
 | **Architecture** | **Clean Architecture** | テスト容易性と、将来的なモジュール（STTエンジン等）の置換を容易にするため。 |
 
 5. 技術スタック
@@ -274,19 +274,21 @@ FastAPI on AWS ECS (Fargate) を基盤とし、Googleの**Gemini 2.5 Flash Lite�
 
 ユーザーの視界に直接干渉し、直感的なHUD（ヘッドアップディスプレイ）を提供する領域です。
 
-項目技術・ツール備考開発エンジンUnity (2022.3 LTS+), C#VFX Graphを用いた高度な空間演出とマルチプラットフォーム対応。XR SDKAndroid XR SDK (Jetpack XR)2026年発売予定のGoogle AI Glassへの最適化。ARフレームワークAR Foundation / OpenXRグラスとスマホ、将来的な多機種展開を支える標準規格。空間UI設計Unity UI (UGUI) + Shader Graph透過型レンズでの視認性を追求した「最小機能UI（MFUI）」の実装。2. バックエンド（通信・制御層）
+項目技術・ツール備考開発エンジンUnity (2022.3 LTS+), C#VFX Graphを用いた高度な空間演出とマルチプラットフォーム対応。XR SDKAndroid XR SDK (Jetpack XR)2026年発売予定のGoogle AI Glassへの最適化。ARフレームワークAR Foundation / OpenXRグラスとスマホ、将来的な多機種展開を支える標準規格。空間UI設計Unity UI (UGUI) + Shader Graph透過型レンズでの視認性を追求した「最小機能UI（MFUI）」の実装。
+
+5.2 バックエンド（通信・制御層）
 
 デバイス間の高速なデータ同期と、解析・推論処理のオフロードを担当します。
 
-項目技術・ツール備考言語 / フレームワークPython (FastAPI)高並列処理と低遅延なAPIレスポンスの実現。通信プロトコルgRPC (Bidirectional Streaming)音声・映像バイナリデータの双方向・リアルタイム転送。音声解析エンジンFaster-Whisper会話のリアルタイムテキスト化（STT）。音源定位ロジックDOA (Direction of Arrival)マイクアレイを用いた話者の位置特定アルゴリズム。3. AI・API（解析・インテリジェンス層）
+項目技術・ツール備考言語 / フレームワークPython (FastAPI)高並列処理と低遅延なAPIレスポンスの実現。通信プロトコルgRPC (Bidirectional Streaming)音声・映像バイナリデータの双方向・リアルタイム転送。音声解析エンジンFaster-Whisper会話のリアルタイムテキスト化（STT）。音源定位ロジックDOA (Direction of Arrival)マイクアレイを用いた話者の位置特定アルゴリズム。
+
+5.3 AI・API（解析・インテリジェンス層）
 
 言語・非言語情報を統合し、コミュニケーションの「解」を生成します。
 
 項目技術・ツール備考物体検知・追跡YOLOv11複数人のリアルタイム検知およびIDトラッキング。骨格・表情抽出MediaPipe Landmarker表情（Blendshape）および視線の微細な動きの数値化。対話生成モデルGemini 1.5 Flash or 2.0 Flash (API)コンテキスト理解と高速な返答生成。モデル最適化LoRA (Low-Rank Adaptation)恋愛・親睦ドメインに特化したファインチューニング。感情分析独自学習済みCNN / PADモデル非言語スコアを心理学的な感情ステータスへ変換。アイトラッキングは内カメラないとできない→ジャイロで代替(顔の向きを判定)
 
-
-
-5.2 インフラ（基盤・保存層）
+5.4 インフラ（基盤・保存層）
 
 データの永続化と、スケーラブルな推論・分析環境を提供します。
 
@@ -416,7 +418,7 @@ comm-xr-server/
 
 │   │   └── repositories/
 
-│   │       └── dynamo_repo.py   # Boto3 (DynamoDB) の実装
+│   │       └── firestore_repo.py   # Firebase Admin SDK (Firestore) の実装
 
 │   │
 
@@ -456,7 +458,7 @@ comm-xr-server/
 
 │   # ※ サーバー起動には不要。開発者が手動で使う。
 
-│   ├── setup_dynamodb.py        # ローカル/開発用テーブル作成
+│   ├── setup_cloud_functions.py        # ローカル/開発用セットアップ
 
 │   └── test_websocket.py        # 接続テスト用クライアント
 
@@ -474,13 +476,13 @@ comm-xr-server/
 
 ├── Dockerfile                   # 本番デプロイ用
 
-├── docker-compose.yml           # ローカル開発用 (DynamoDB Local等)
+├── docker-compose.yml           # ローカル開発用 (Firestore Emulator等)
 
 ├── pyproject.toml               # ★uv: プロジェクト設定・依存関係
 
 ├── uv.lock                      # ★uv: 依存関係のロックファイル
 
-└── .python-version              # ★uv: Pythonバージョン指定 (3.11推奨)
+└── .python-version              # ★uv: Pythonバージョン指定 (3.14推奨)
 
 
 
