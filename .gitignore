@@ -53,5 +53,14 @@ __pycache__
 # Google Drive Temporary Files
 .tmp.driveupload*
 
-# .claude
-.claude/
+# .claude フォルダ全体を一旦無視
+.claude/*
+
+# ただし、設定やスキルなどは共有対象にする（先頭に ! をつける）
+!.claude/agents/
+!.claude/rules/
+!.claude/commands/
+!.claude/skills/
+
+# ただし、MCPの設定ファイルだけは絶対に無視（秘密情報対策）
+.claude/mcp-configs.json
