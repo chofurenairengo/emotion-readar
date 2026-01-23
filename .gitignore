@@ -49,3 +49,6 @@ __pycache__
 .pytest_cache/
 .mypy_cache/
 *.pyc
+
+# Google Drive Temporary Files
+.tmp.driveupload*
