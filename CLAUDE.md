@@ -34,7 +34,7 @@ emotion-readar/
 │   ├── pyproject.toml         # Python プロジェクト設定
 │   └── uv.lock                # 依存関係ロックファイル
 ├── docs/                      # ドキュメント・設計図
-├── docker-compose.yml         # ローカル開発環境（API + DynamoDB）
+├── docker-compose.yml         # ローカル開発環境（API + Firestore）
 └── .github/                   # CI/CD・テンプレート
 ```
 
@@ -59,7 +59,7 @@ uv sync --group dev
 cd server
 uv run uvicorn main:app --reload
 
-# または Docker で起動（API + DynamoDB Local）
+# または Docker で起動（API + Firestore Emulator）
 docker compose up -d
 ```
 
@@ -131,7 +131,7 @@ Unity Editor で `client/Mitou` を開いて開発。
 
 1. **Edge Layer（Android端末）**: カメラ・マイク入力、MediaPipeによる非言語特徴量抽出
 2. **Experience Layer（Unity）**: XR HUD表示、VFX演出、最小限UI
-3. **Cloud Intelligence Layer（AWS/FastAPI）**: 音声認識(STT)、LLM推論、状態管理
+3. **Cloud Intelligence Layer（Google Cloud/FastAPI）**: 音声認識(STT)、LLM推論、状態管理
 
 ### サーバーサイドアーキテクチャ（Clean Architecture）
 
@@ -157,12 +157,12 @@ app/
 
 | 層 | 技術 |
 |---|---|
-| サーバー | Python 3.14, FastAPI, uvicorn, DynamoDB |
+| サーバー | Python 3.14, FastAPI, uvicorn, Firestore |
 | パッケージ管理 | uv |
 | Android | Kotlin, Jetpack Compose, MediaPipe |
 | Unity | C#, AR Foundation |
 | LLM | Gemini API |
-| インフラ | AWS (ECS Fargate, DynamoDB, Cognito) |
+| インフラ | Google Cloud (Cloud Run, Firestore, Firebase Authentication) |
 
 ## コーディング規約
 
@@ -241,17 +241,15 @@ GitHub Actions で以下を自動実行（`main` ブランチへの push/PR時�
 ## 環境変数・シークレット
 
 - `.env` ファイルでローカル設定（Git 管理外）
-- 本番は AWS Secrets Manager 使用
+- 本番は Google Cloud Secret Manager 使用
 - **絶対にコミットしないもの**: APIキー、認証情報、`.env` ファイル
 
 ### Docker 環境変数
 
 ```
-AWS_REGION=ap-northeast-1
-AWS_ACCESS_KEY_ID=local
-AWS_SECRET_ACCESS_KEY=local
-DYNAMODB_ENDPOINT=http://dynamodb-local:8000
-DYNAMODB_TABLE_PREFIX=dev_
+GCP_PROJECT_ID=your-project-id
+FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+FIRESTORE_PROJECT_ID=dev-project
 ```
 
 ## ローカルサービス
@@ -261,8 +259,8 @@ Docker Compose で以下が起動：
 | サービス | ポート | 説明 |
 |---|---|---|
 | api | 8000 | FastAPI サーバー |
-| dynamodb-local | 8001 | DynamoDB Local |
-| dynamodb-admin | 8002 | DynamoDB 管理UI |
+| firestore-emulator | 8080 | Firestore Emulator |
+| firestore-ui | 4000 | Firebase Emulator UI |
 
 ## プライバシー方針
 
