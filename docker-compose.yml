@@ -10,37 +10,32 @@ services:
       - ./.env
 
     environment:
-      - AWS_REGION=${AWS_REGION:-ap-northeast-1}
-      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-local}
-      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-local}
-      - DYNAMODB_ENDPOINT=http://dynamodb-local:8000
-      - DYNAMODB_TABLE_PREFIX=${DYNAMODB_TABLE_PREFIX:-dev_}
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-dev-project}
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+      - FIRESTORE_PROJECT_ID=${FIRESTORE_PROJECT_ID:-dev-project}
     depends_on:
-      - dynamodb-local
+      - firestore-emulator
     volumes:
       - ./server/app:/app/app:rw
     working_dir: /app
     command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
-  dynamodb-local:
-    image: amazon/dynamodb-local:latest
-    container_name: commuxr-dynamodb-local
-    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data"
+  firestore-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    container_name: commuxr-firestore-emulator
+    command: gcloud emulators firestore start --host-port=0.0.0.0:8080
     ports:
-      - "8001:8000"
-    volumes:
-      - dynamodb_data:/home/dynamodblocal/data
-  dynamodb-admin:
-    image: aaronshaf/dynamodb-admin:latest
-    container_name: commuxr-dynamodb-admin
+      - "8080:8080"
+
+  firestore-ui:
+    image: node:20-alpine
+    container_name: commuxr-firestore-ui
     ports:
-      - "8002:8001"
+      - "4000:4000"
     environment:
-      DYNAMO_ENDPOINT: http://dynamodb-local:8000
-      AWS_REGION: ${AWS_REGION:-ap-northeast-1}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-local}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-local}
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      GCLOUD_PROJECT: ${GCP_PROJECT_ID:-dev-project}
     depends_on:
-      - dynamodb-local
-volumes:
-  dynamodb_data:
+      - firestore-emulator
+    command: >
+      sh -c "npm install -g firebase-tools && firebase emulators:start --only ui --project dev-project"
