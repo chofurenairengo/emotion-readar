@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from datetime import datetime
 
 
-@dataclass(frozen=True)
+@dataclass
 class Session:
-    session_id: str
-    created_at: datetime
+    id: str
+    status: str
+    started_at: datetime
+    ended_at: datetime | None = None
