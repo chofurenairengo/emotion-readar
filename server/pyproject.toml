@@ -8,6 +8,7 @@ dependencies = [
     "fastapi[standard]>=0.128.0",
     "uvicorn>=0.40.0",
     "mypy>=1.19.1",
+    "google-cloud-speech>=2.0.0",
 ]
 
 [tool.black]
@@ -23,5 +24,6 @@ ignore = ["E501"]
 dev = [
     "black>=25.12.0",
     "pytest>=9.0.2",
+    "pytest-asyncio>=0.24.0",
     "ruff>=0.14.10",
 ]
