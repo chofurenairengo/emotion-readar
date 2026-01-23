@@ -48,9 +48,12 @@ class ConnectionManager:
         connections: list[WebSocket],
         payload: dict[str, Any],
     ) -> None:
+        failed: list[WebSocket] = []
         for websocket in connections:
             try:
                 await websocket.send_json(payload)
             except Exception:
                 logger.exception("Failed to send WebSocket payload")
-                await self.disconnect(websocket)
+                failed.append(websocket)
+        for websocket in failed:
+            await self.disconnect(websocket)
