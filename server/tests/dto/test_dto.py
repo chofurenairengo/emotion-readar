@@ -135,11 +135,10 @@ class TestLLMDTO:
             responses=[
                 ResponseSuggestion(text="応答1", tone="formal", intent="テスト"),
                 ResponseSuggestion(text="応答2", tone="casual", intent="テスト"),
-                ResponseSuggestion(text="応答3", tone="empathetic", intent="テスト"),
             ],
             situation_analysis="テスト分析",
         )
-        assert len(result.responses) == 3
+        assert len(result.responses) == 2
         assert result.situation_analysis == "テスト分析"
 
 
@@ -184,14 +183,13 @@ class TestProcessingDTO:
             suggestions=[
                 ResponseSuggestion(text="応答1", tone="formal", intent="テスト"),
                 ResponseSuggestion(text="応答2", tone="casual", intent="テスト"),
-                ResponseSuggestion(text="応答3", tone="empathetic", intent="テスト"),
             ],
             situation_analysis="状況分析テスト",
             processing_time_ms=850,
         )
         assert response.type == "ANALYSIS_RESPONSE"
         assert response.transcription is None
-        assert len(response.suggestions) == 3
+        assert len(response.suggestions) == 2
         assert response.processing_time_ms == 850
 
     def test_analysis_response_with_transcription(self) -> None:

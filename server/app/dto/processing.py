@@ -47,7 +47,7 @@ class AnalysisResponse(BaseModel):
     """STT結果（音声があった場合）."""
 
     suggestions: list[ResponseSuggestion]
-    """応答候補3パターン."""
+    """応答候補2パターン."""
 
     situation_analysis: str
     """状況分析."""

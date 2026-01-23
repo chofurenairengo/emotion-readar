@@ -20,7 +20,7 @@ class LLMResponseResult(BaseModel):
     """LLM推論結果."""
 
     responses: list[ResponseSuggestion]
-    """応答候補（3パターン）."""
+    """応答候補（2パターン）."""
 
     situation_analysis: str
     """状況分析（例: "相手は説明を求めています"）."""
