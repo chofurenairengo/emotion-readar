@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_vertexai import ChatVertexAI
 
 from app.core.exceptions import LLMError, LLMRateLimitError, LLMResponseParseError
 from app.dto.conversation import Utterance
@@ -62,18 +62,21 @@ class LLMService:
 
     def __init__(
         self,
-        credentials_path: str | None = None,
-        model: str = "tunedModels/era-tuned-model",
+        project: str | None = None,
+        location: str = "asia-northeast1",
+        model: str = "gemini-2.5-flash",
     ) -> None:
         """初期化.
 
         Args:
-            credentials_path: サービスアカウントJSONキーのパス
-            model: 使用するモデル名（ファインチューニング済みモデル）
+            project: GCPプロジェクトID
+            location: Vertex AIのリージョン
+            model: 使用するモデル名
         """
-        self._model = ChatGoogleGenerativeAI(
+        self._model = ChatVertexAI(
             model=model,
-            credentials=credentials_path,
+            project=project,
+            location=location,
             temperature=0.7,
         )
 
