@@ -1,3 +1,5 @@
+from typing import Any
+
 from app.infra.repositories.in_memory_session_repo import InMemorySessionRepository
 from app.services.connection_manager import ConnectionManager
 from app.services.conversation_service import ConversationService
@@ -10,6 +12,7 @@ from app.services.stt_service import STTService
 _session_repository = InMemorySessionRepository()
 _session_service = SessionService(_session_repository)
 _connection_manager = ConnectionManager()
+_response_generator: Any = None
 
 _stt_service: STTService | None = None
 _conversation_service: ConversationService | None = None

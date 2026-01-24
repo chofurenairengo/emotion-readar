@@ -12,19 +12,23 @@ EXAMPLES: list[dict[str, str]] = []
 
 
 def get_agent_prompt() -> ChatPromptTemplate:
-    example_prompt = ChatPromptTemplate.from_messages([
-        ("human", "{input}"),
-        ("ai", "{output}"),
-    ])
+    example_prompt = ChatPromptTemplate.from_messages(
+        [
+            ("human", "{input}"),
+            ("ai", "{output}"),
+        ]
+    )
 
     few_shot = FewShotChatMessagePromptTemplate(
         example_prompt=example_prompt,
         examples=EXAMPLES,
     )
 
-    return ChatPromptTemplate.from_messages([
-        ("system", SYSTEM_PROMPT),
-        few_shot,
-        ("placeholder", "{chat_history}"),
-        ("human", "{input_text}"),
-    ])
+    return ChatPromptTemplate.from_messages(
+        [
+            ("system", SYSTEM_PROMPT),
+            few_shot,
+            ("placeholder", "{chat_history}"),
+            ("human", "{input_text}"),
+        ]
+    )

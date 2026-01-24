@@ -17,16 +17,3 @@ class EmotionInterpretation(BaseModel):
 
     suggestion: str | None = None
     """行動提案（例: "説明を補足すると良いかもしれません"）."""
-
-
-class EmotionChange(BaseModel):
-    """感情の変化検出結果."""
-
-    from_emotion: str
-    """変化前の感情."""
-
-    to_emotion: str
-    """変化後の感情."""
-
-    description: str
-    """変化の説明（例: "相手の表情が曇りました"）."""
