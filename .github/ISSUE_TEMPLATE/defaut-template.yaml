@@ -20,6 +20,12 @@ body:
       placeholder: |
         例：GET /users をしたらユーザの一覧がJSONで返ってくる
   - type: textarea
+    id: inout
+    attributes:
+      label: "入力と出力"
+      description: |
+        リクエストとレスポンスの形式を書いてください
+  - type: textarea
     id: issue
     attributes:
       label: "関連issue&link"

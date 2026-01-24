@@ -1,1 +1,1 @@
-"""Services tests package."""
+"""サービステストモジュール."""
