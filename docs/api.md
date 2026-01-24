@@ -93,6 +93,11 @@ ERA サーバーとクライアント間の通信仕様です。
   "started_at": "2024-01-01T12:00:00Z",
   "ended_at": null
 }
+
+// エラーレスポンス (404 Not Found)
+{
+  "detail": "Not found"
+}
 ```
 
 #### セッション終了
@@ -110,6 +115,11 @@ ERA サーバーとクライアント間の通信仕様です。
   "status": "ended",
   "started_at": "2024-01-01T12:00:00Z",
   "ended_at": "2024-01-01T13:00:00Z"
+}
+
+// エラーレスポンス (404 Not Found)
+{
+  "detail": "Not found"
 }
 ```
 
@@ -148,6 +158,11 @@ Android クライアントから非言語特徴量を受信します。
   "received_at": "2024-01-01T12:00:00Z",
   "status": "accepted"
 }
+
+// エラーレスポンス (404 Not Found)
+{
+  "detail": "Session not found"
+}
 ```
 
 | フィールド | 型 | 説明 |
@@ -168,6 +183,10 @@ Android クライアントから非言語特徴量を受信します。
 **WebSocket `/api/realtime?session_id={session_id}`**
 
 リアルタイム双方向通信用の WebSocket 接続です。
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|-----|------|------|
+| `session_id` | string | ✓ | セッションID |
 
 ---
 
@@ -276,20 +295,22 @@ MediaPipeで算出された感情スコアと音声データを受け取り、ST
 }
 ```
 
-| フィールド | 型 | 説明 |
-|-----------|-----|------|
-| `emotion_scores` | object | MediaPipeで算出された感情スコア |
-| `audio_data` | string \| null | Base64エンコードされた音声データ |
-| `audio_format` | string \| null | 音声フォーマット ("opus", "wav", "pcm") |
-| `emotion` | object | 感情解釈結果（感情の言語化） |
-| `emotion.primary_emotion` | string | 主要感情 |
-| `emotion.intensity` | string | 強度 ("low", "medium", "high") |
-| `emotion.description` | string | 自然言語での説明 |
-| `emotion.suggestion` | string \| null | 行動提案 |
-| `transcription` | object \| null | STT（音声認識）結果 |
-| `suggestions` | array | LLMによる応答候補（2パターン） |
-| `situation_analysis` | string | 状況分析 |
-| `processing_time_ms` | int | 処理時間（ミリ秒） |
+| フィールド | 型 | 必須 | 説明 |
+|-----------|-----|------|------|
+| `session_id` | string | ✓ | セッションID |
+| `timestamp` | string | ✓ | クライアントタイムスタンプ (ISO 8601) |
+| `emotion_scores` | object | ✓ | MediaPipeで算出された感情スコア |
+| `audio_data` | string \| null | | Base64エンコードされた音声データ |
+| `audio_format` | string \| null | | 音声フォーマット ("opus", "wav", "pcm") |
+| `emotion` | object | ✓ | 感情解釈結果（感情の言語化） |
+| `emotion.primary_emotion` | string | ✓ | 主要感情 |
+| `emotion.intensity` | string | ✓ | 強度 ("low", "medium", "high") |
+| `emotion.description` | string | ✓ | 自然言語での説明 |
+| `emotion.suggestion` | string \| null | | 行動提案 |
+| `transcription` | object \| null | | STT（音声認識）結果 |
+| `suggestions` | array | ✓ | LLMによる応答候補（2パターン） |
+| `situation_analysis` | string | ✓ | 状況分析 |
+| `processing_time_ms` | int | ✓ | 処理時間（ミリ秒） |
 
 #### ERROR
 
@@ -314,15 +335,30 @@ MediaPipeで算出された感情スコアと音声データを受け取り、ST
 | ステータス | 説明 |
 |-----------|------|
 | 404 Not Found | セッション/リソースが見つからない |
-| 501 Not Implemented | 未実装のエンドポイント |
 
 ### WebSocket エラー
 
 `type: "ERROR"` のメッセージで通知されます。
 
+| エラーメッセージ | 説明 |
+|-----------------|------|
+| Invalid JSON | JSON パースエラー |
+| Unsupported message type | 未対応のメッセージタイプ |
+| Missing required fields: ... | 必須フィールド不足 |
+| Service not available | サービス未実装 |
+| Analysis failed: ... | 解析処理エラー |
+
 ---
 
 ## DTO 一覧
+
+### HealthResponse
+
+```typescript
+{
+  status: string;  // "ok"
+}
+```
 
 ### SessionResponse
 
@@ -341,7 +377,7 @@ MediaPipeで算出された感情スコアと音声データを受け取り、ST
 {
   session_id: string | null;
   timestamp: string | null;
-  facial: Record<string, number> | null;
+  facial: Record<string, number> | null;  // 0.0-1.0
   gaze: Record<string, number> | null;
   voice: Record<string, number> | null;
   extras: Record<string, any> | null;
@@ -359,25 +395,31 @@ MediaPipeで算出された感情スコアと音声データを受け取り、ST
 }
 ```
 
-### EmotionInterpretation
+### AudioFormat (enum)
 
 ```typescript
-{
-  primary_emotion: string;
-  intensity: "low" | "medium" | "high";
-  description: string;
-  suggestion: string | null;
-}
+"wav" | "opus" | "pcm"
 ```
 
 ### TranscriptionResult
 
 ```typescript
 {
-  text: string;
+  text: string;        // 認識されたテキスト
   confidence: number;  // 0.0-1.0
   language: string;    // "ja", "en", etc.
-  duration_ms: number;
+  duration_ms: number; // 音声の長さ（ミリ秒）
+}
+```
+
+### EmotionInterpretation
+
+```typescript
+{
+  primary_emotion: string;               // "happy", "sad", "confused", etc.
+  intensity: "low" | "medium" | "high";  // 強度
+  description: string;                   // 自然言語での説明
+  suggestion: string | null;             // 行動提案
 }
 ```
 
@@ -385,8 +427,84 @@ MediaPipeで算出された感情スコアと音声データを受け取り、ST
 
 ```typescript
 {
-  text: string;
+  text: string;    // 応答文
   intent: string;  // "共感を示す", "質問する", "話題を深める", etc.
+}
+```
+
+### AnalysisRequest
+
+```typescript
+{
+  type: "ANALYSIS_REQUEST";
+  session_id: string;
+  timestamp: string;                      // ISO 8601
+  emotion_scores: Record<string, number>;
+  audio_data: string | null;              // Base64エンコード
+  audio_format: string | null;
+}
+```
+
+### AnalysisResponse
+
+```typescript
+{
+  type: "ANALYSIS_RESPONSE";
+  timestamp: string;                      // ISO 8601
+  emotion: EmotionInterpretation;
+  transcription: TranscriptionResult | null;
+  suggestions: ResponseSuggestion[];      // 2パターン
+  situation_analysis: string;
+  processing_time_ms: number;
+}
+```
+
+### LLMResponseResult (内部用)
+
+```typescript
+{
+  responses: ResponseSuggestion[];  // 2パターン（異なる意図が必須）
+  situation_analysis: string;
+}
+```
+
+### CoachingResponse (内部用)
+
+```typescript
+{
+  advice: string;             // 30文字以内のアドバイス
+  strategy_tag: string;       // 戦略タグ (#共感 など)
+  reply_candidates: string[]; // 返答候補リスト
+  risk_score: number;         // 危険度 1-5
+}
+```
+
+### Speaker (enum)
+
+```typescript
+"user" | "partner"
+```
+
+- `user`: XRデバイス装着者
+- `partner`: 会話相手
+
+### EmotionContext
+
+```typescript
+{
+  primary_emotion: string;               // "happy", "confused", etc.
+  emotion_scores: Record<string, number>;
+}
+```
+
+### Utterance
+
+```typescript
+{
+  speaker: Speaker;
+  text: string;
+  timestamp: string;                       // ISO 8601
+  emotion_context: EmotionContext | null;
 }
 ```
 
