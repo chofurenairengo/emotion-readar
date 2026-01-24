@@ -22,14 +22,14 @@ services:
 
   firestore-emulator:
     image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
-    container_name: commuxr-firestore-emulator
+    container_name: era-irestore-emulator
     command: gcloud emulators firestore start --host-port=0.0.0.0:8080
     ports:
       - "8080:8080"
 
   firestore-ui:
     image: node:20-alpine
-    container_name: commuxr-firestore-ui
+    container_name: era-firestore-ui
     ports:
       - "4000:4000"
     environment:

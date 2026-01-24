@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comm-XR API Diagram</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; padding: 2rem; }
+    h1 { text-align: center; margin-bottom: 2rem; color: #333; }
+    h2 { margin: 2rem 0 1rem; color: #444; border-bottom: 2px solid #ddd; padding-bottom: 0.5rem; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .endpoint { background: #fff; border-radius: 8px; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden; }
+    .endpoint-header { display: flex; align-items: center; padding: 1rem; gap: 1rem; }
+    .method { padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: bold; font-size: 0.875rem; min-width: 70px; text-align: center; }
+    .get { background: #61affe; color: #fff; }
+    .post { background: #49cc90; color: #fff; }
+    .ws { background: #9b59b6; color: #fff; }
+    .path { font-family: monospace; font-size: 0.95rem; }
+    .desc { color: #666; font-size: 0.875rem; margin-left: auto; }
+    .body { background: #fafafa; padding: 1rem; border-top: 1px solid #eee; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .body > div { font-size: 0.85rem; }
+    .body h4 { color: #666; margin-bottom: 0.5rem; font-size: 0.75rem; text-transform: uppercase; }
+    pre { background: #2d2d2d; color: #f8f8f2; padding: 0.75rem; border-radius: 4px; overflow-x: auto; font-size: 0.8rem; }
+    .arrow { text-align: center; padding: 1rem; font-size: 2rem; color: #999; }
+    .flow { display: flex; align-items: center; justify-content: center; gap: 1rem; margin: 2rem 0; flex-wrap: wrap; }
+    .flow-box { background: #fff; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; }
+    .flow-arrow { font-size: 1.5rem; color: #999; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Comm-XR API</h1>
+
+    <!-- 全体フロー -->
+    <div class="flow">
+      <div class="flow-box"><strong>Android</strong><br><small>MediaPipe処理</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><strong>Server</strong><br><small>STT / LLM</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><strong>Unity</strong><br><small>HUD表示</small></div>
+    </div>
+
+    <h2>REST API</h2>
+
+    <!-- Health -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method get">GET</span>
+        <span class="path">/api/health</span>
+        <span class="desc">ヘルスチェック</span>
+      </div>
+      <div class="body">
+        <div><h4>Request</h4><pre>なし</pre></div>
+        <div><h4>Response 200</h4><pre>{ "status": "ok" }</pre></div>
+      </div>
+    </div>
+
+    <!-- Session Create -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method post">POST</span>
+        <span class="path">/api/sessions</span>
+        <span class="desc">セッション作成</span>
+      </div>
+      <div class="body">
+        <div><h4>Request</h4><pre>なし</pre></div>
+        <div><h4>Response 201</h4><pre>{
+  "id": "abc123",
+  "status": "active",
+  "started_at": "2024-01-01T12:00:00Z",
+  "ended_at": null
+}</pre></div>
+      </div>
+    </div>
+
+    <!-- Session Get -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method get">GET</span>
+        <span class="path">/api/sessions/{session_id}</span>
+        <span class="desc">セッション取得</span>
+      </div>
+      <div class="body">
+        <div><h4>Request</h4><pre>Path: session_id</pre></div>
+        <div><h4>Response 200</h4><pre>{
+  "id": "abc123",
+  "status": "active",
+  "started_at": "...",
+  "ended_at": null
+}</pre></div>
+      </div>
+    </div>
+
+    <!-- Session End -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method post">POST</span>
+        <span class="path">/api/sessions/{session_id}/end</span>
+        <span class="desc">セッション終了</span>
+      </div>
+      <div class="body">
+        <div><h4>Request</h4><pre>Path: session_id</pre></div>
+        <div><h4>Response 200</h4><pre>{
+  "id": "abc123",
+  "status": "ended",
+  "ended_at": "..."
+}</pre></div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method post">POST</span>
+        <span class="path">/api/features</span>
+        <span class="desc">非言語特徴量受信</span>
+      </div>
+      <div class="body">
+        <div><h4>Request</h4><pre>{
+  "session_id": "abc123",
+  "timestamp": "...",
+  "facial": { "smile": 0.85 },
+  "gaze": { "direction_x": 0.5 },
+  "voice": { "energy": 0.7 }
+}</pre></div>
+        <div><h4>Response 202</h4><pre>{
+  "id": "log123",
+  "session_id": "abc123",
+  "received_at": "...",
+  "status": "accepted"
+}</pre></div>
+      </div>
+    </div>
+
+    <h2>WebSocket API</h2>
+
+    <!-- Realtime -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method ws">WS</span>
+        <span class="path">/api/realtime?session_id={id}</span>
+        <span class="desc">リアルタイム通信</span>
+      </div>
+    </div>
+
+    <!-- PING/PONG -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method ws">MSG</span>
+        <span class="path">PING / PONG</span>
+        <span class="desc">接続確認</span>
+      </div>
+      <div class="body">
+        <div><h4>Client → Server</h4><pre>{ "type": "PING" }</pre></div>
+        <div><h4>Server → Client</h4><pre>{
+  "type": "PONG",
+  "timestamp": "..."
+}</pre></div>
+      </div>
+    </div>
+
+    <!-- RESET -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method ws">MSG</span>
+        <span class="path">RESET / RESET_ACK</span>
+        <span class="desc">セッションリセット</span>
+      </div>
+      <div class="body">
+        <div><h4>Client → Server</h4><pre>{ "type": "RESET" }</pre></div>
+        <div><h4>Server → Client</h4><pre>{
+  "type": "RESET_ACK",
+  "timestamp": "..."
+}</pre></div>
+      </div>
+    </div>
+
+    <!-- ANALYSIS -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method ws">MSG</span>
+        <span class="path">ANALYSIS_REQUEST / RESPONSE</span>
+        <span class="desc">解析リクエスト</span>
+      </div>
+      <div class="body">
+        <div><h4>Client → Server</h4><pre>{
+  "type": "ANALYSIS_REQUEST",
+  "session_id": "abc123",
+  "emotion_scores": {
+    "happy": 0.8,
+    "sad": 0.1
+  },
+  "audio_data": "Base64...",
+  "audio_format": "opus"
+}</pre></div>
+        <div><h4>Server → Client</h4><pre>{
+  "type": "ANALYSIS_RESPONSE",
+  "emotion": {
+    "primary_emotion": "happy",
+    "description": "相手は楽しそう"
+  },
+  "transcription": {
+    "text": "認識テキスト"
+  },
+  "suggestions": [
+    { "text": "それは面白い" },
+    { "text": "もっと教えて" }
+  ]
+}</pre></div>
+      </div>
+    </div>
+
+    <!-- ERROR -->
+    <div class="endpoint">
+      <div class="endpoint-header">
+        <span class="method ws">MSG</span>
+        <span class="path">ERROR</span>
+        <span class="desc">エラー通知</span>
+      </div>
+      <div class="body">
+        <div><h4>Server → Client</h4><pre>{
+  "type": "ERROR",
+  "message": "Invalid session",
+  "timestamp": "..."
+}</pre></div>
+        <div></div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
