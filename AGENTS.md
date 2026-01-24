@@ -10,7 +10,7 @@
   - `client/android/` is the native Android app (Gradle, Kotlin sources in `app/src/main`).
 - `server/` is the FastAPI backend (entry `main.py`, config in `pyproject.toml`/`uv.lock`, Dockerfile).
 - `docs/` holds architecture diagrams and notes.
-- `docker-compose.yml` starts a local API + DynamoDB stack; update paths if the backend folder moves.
+- `docker-compose.yml` starts a local API + Cloud Functions stack; update paths if the backend folder moves.
 
 ## Build, Test, and Development Commands
 - Backend setup: `cd server` then `uv sync` (use `uv sync --group dev` for lint/test tools).
@@ -35,107 +35,97 @@
 - PRs should include a brief summary, how to run or verify changes, and screenshots for UI/UX changes (Unity/Android). Link related issues when available.
 
 ## Configuration & Secrets
-- Local Docker uses `.env` values (AWS and DynamoDB settings). Do not commit secrets.
+- Local Docker uses `.env` values (Cloud Run, Cloud Functions settings). Do not commit secrets.
 - Python version is pinned via `server/.python-version` (3.14).
 
 ## 仕様書
 アーキテクチャは以下のようにする
 
-┌────────────────────────── 現実世界 ──────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────────┐
+│                          【1. 現実世界 (Reality)】                       │
+│                                                                          │
+│  [ 相手A ] [ 相手B ] ...           <========>      [ ユーザー (自分) ]   │
+│       │        │                                       ▲                 │
+└───────┼────────┼───────────────────────────────────────┼─────────────────┘
+        │光/音   │                                       │視覚 (HUD)
+        ▼        ▼                                       │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                【2. エッジデバイス (Android / Google AI Glass)】             │
+│                                                                             │
+│  ┌─ [ A) Android Native (知覚・解析層) ] ─────────────────────────────────┐  │
+│  │  ① 視覚解析 (MediaPipe / YOLO)                              　　　　   │  │
+│  │     ・顔検出 & ID管理 (Person A, Person B...)                          │  │
+│  │     ・基本表情 (笑顔、驚き) の瞬時判(あらかじめ定められた表情から最適な表情を選ぶ)   │  │
+│  │  ② 聴覚解析 (Audio Processing)                                        │  │
+│  │     ・VAD(発話検知) / 音量 / ピッチ                                    │  │
+│  │     ・DOA(音源定位) → 「誰が話しているか」特定                          │  │
+│  └─┬──────────────────────┬─────────────────────────────────────────────┘  │
+│    │(1) 即時データ        │(2) ストリーミング送信 (音声+映像特徴量)          │
+│    │    (Local)           │    (Serverへ)                                │
+│    ▼                      ▼                                            │
+│  ┌─ [ B) Unity (表示・通信層) ] ────────────────────────┐                │
+│  │  ■ [即時フィードバック] (遅延 < 100ms)               │                │
+│  │    ・基本感情絵文字 (happy/surprised/angry など) を顔の横に追従表示    │                │
+│  │    ・話者ハイライト (現在話している人の枠を強調)     │                │
+│  │    ※ 警告機能（早口・声量注意など）は実装しない      │                │
+│  │                                                      │                │
+│  │  ■ [AIアドバイス表示] (数秒〜十数秒に1回)            │                │
+│  │    ・深層感情分析 (「退屈そう」「疑っている」)       │                │
+│  │    ・会話戦略 / 回答候補 (2択)                       │                │
+│  └───────────▲──────────────────────────────────────┘                │
+└──────────────┼───────────────────────────────────────────────────────┘
+               │
+               │WS (JSON + Audio Binary)
+               ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                    【3. クラウド (GCP)】                                  │
+│                                                                          │
+│  ┌─ [ ERA Server (FastAPI / Clean Architecture) ] ────────────────┐  │
+│  │                                                                    │  │
+│  │  << 1. 蓄積・制御 (Orchestrator) >>                                │  │
+│  │   ・STT (文字起こし): Whisper等でテキスト化 (※内部理解用)          │  │
+│  │   ・文脈バッファ: [文1, 文2, 文3, 文4, 文5]                        │  │
+│  │      → 5文蓄積 or 長い沈黙検知 で LLM Trigger ON                  │  │
+│  │                                                                    │  │
+│  │  << 2. 思考・生成 (LLM Agent) >>                                   │  │
+│  │   Input: { "fast emotion": [happy], "history": [5文],             │  │
+│  │          "participants": [A, Bの特徴] }                            │  │
+│  │   [ 思考プロセス ]                                                 │  │
+│  │    ├─ Step 1: 高速RAG検索 (Tavily)                                 │  │
+│  │    │     "会話中の不明単語" "最新ニュース" ──► [Web検索] ──► 情報  │  │
+│  │    │                                                               │  │
+│  │    ├─ Step 2: マルチモーダル深層分析                               │  │
+│  │    │     Gemini 2.5 Flash Lite (Fine-tuned) を使用                 │  │
+│  │    │     LoRA等で「恋愛/親睦」文脈に特化させたモデルで推論         │  │
+│  │    │                                                               │  │
+│  │    └─ Step 3: アドバイス生成                                       │  │
+│  │           "検索事実" + "深層感情" + "文脈" ──► [選択肢案 x2]       │  │
+│  │                                                                    │  │
+│  │  << 3. 出力 (Response Builder) >>                                  │  │
+│  │   Json形式で返却:                                                  │  │
+│  │   {                                                                │  │
+│  │     "deep_emotions": [{"id":"A", "emotion":"happy", "desc":"..."}, ...],│  │
+│  │     "advice": {                                                             │
+│  │       // 態度・行動への一言アドバイス                                │
+│  │       "strategy": "視線を合わせ、ゆっくり頷いて",                     │
+│  │                                                                              │
+│  │       // 会話の選択肢（2択）                                                 │
+│  │       "reply_options": [                                                     │
+│  │         { "label": "共感", "text": "それは大変でしたね..." },                │
+│  │         { "label": "深掘", "text": "具体的にどういうこと？" }                │
+│  │       ]                                                                      │
+│  │     }                                                              │  │
+│  │   }                                                                │  │
+│  └───────────┬────────────────────────────────────────────────────┘  │
+│              │                                                        │
+│              ▼                                                        │
+│  ┌─ [ 外部連携API & DB ] ──────────────────────────────────────────┐   │
+│  │  ・Gemini 2.5 Flash Lite (Fine-tuned)                          │   │
+│  │  ・Tavily (Search)                                         │   │
+│  │  ・Cloud Functions → Firestore (会話ログ・成長記録の保存)             │   │
+│  └─────────────────────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────────────────────┘
 
-│  相手 / 自分                                                   │
-
-└───────────────┬───────────────────────────────┬──────────────┘
-
-                │ カメラ                          │ マイク(複数ch) + センサー
-
-                ▼                                ▼
-
-┌──────────────────────── Android端末（エッジ） ────────────────────────┐
-
-│  A) Androidネイティブ（Kotlin/C++）                                  │
-
-│   ├─ 画像認識：MediaPipe Face/Pose Landmarker                         │
-
-│   │    - 表情(Blendshape), 視線/頭部姿勢, 顔向き, 距離など            │
-
-│   ├─ 音声認識（前処理）：VAD/音量/ピッチ/スペクトル                   │
-
-│   ├─ (任意) 話者方向：DOA(マイクアレイ) + 画角内人物IDの照合          │
-
-│   └─ (任意) 端末内STT：軽量STT（可能なら）                            │
-
-│                                                                      │
-
-│  B) Unity（C#）                                                      │
-
-│   ├─ HUD/VFX：空気の可視化（粒子/色/揺らぎ）                          │
-
-│   ├─ UI：返答候補2-3 / 会話戦略タグ / 注意点                          │
-
-│   └─ 通信：WebSocket（リアルタイム） + HTTP（管理）                   │
-
-│                                                                      │
-
-│  データ方針：画像/生音声は基本「端末内で破棄」→送るのは特徴量のみ      │
-
-└─────────────────────────┬────────────────────────────────────────────┘
-
-                          │   送信（テキスト + 非言語特徴量）
-
-                          ▼
-
-┌──────────────────────────── AWS（クラウド） ───────────────────────────┐
-
-│  入口：ALB                                                            │
-
-│   ▼                                                                    │
-
-│  ECS Fargate：FastAPI（セッション/統合/LLM制御）                        │
-
-│   ├─ セッション管理（会話状態、直近N秒の文脈）                          │
-
-│   ├─ 音声認識（STT）                                                     │
-
-│   │    Option1: Amazon Transcribe（ストリーミングSTT）                  │
-
-│   │    Option2: Faster-Whisper（ECS別サービス）※重いので後回し推奨      │
-
-│   ├─ LLM：Gemini / OpenAI 等のAPI呼び出し                               │
-
-│   │    - 入力：STTテキスト + 特徴量(表情/視線/声トーン/話者ID)          │
-
-│   │    - 出力：候補返答2-3 + 戦略(共感/質問/深掘り/撤退) + 禁則          │
-
-│   ├─ 返答の整形（短文化、トーン調整、禁止語フィルタ）                   │
-
-│   └─ ログ/メトリクス（遅延p95、成功率）                                 │
-
-│                                                                      │
-
-│  永続化：                                                             │
-
-│   ├─ Cognito：認証                                                     │
-
-│   ├─ DynamoDB：セッション/特徴量時系列/評価指標                          │
-
-│   ├─ S3：任意で音声断片/デモ素材（同意がある場合のみ）                  │
-
-│   ├─ CloudWatch：監視・ログ                                             │
-
-│   └─ Secrets Manager：APIキー等                                         │
-
-└─────────────────────────┬────────────────────────────────────────────┘
-
-                          │ 応答（リアルタイムpush）
-
-                          ▼
-
-┌──────────────────────── Android端末（Unity HUD） ──────────────────────┐
-
-│  返答候補 / 戦略タグ / 注意点 → HUD表示（視界を邪魔しないMFUI）          │
-
-└──────────────────────────────────────────────────────────────────────┘
 
 
 
@@ -145,26 +135,14 @@
 
 作成：2025年12月23日
 
-更新履歴
-
-
-
-3の最後の文を追加(2025/12/25)
-
-3.4に類似製品のURL貼った(2025/12/28)
-
-最後の行に「課題と解決策」を追加(2025/12/28)
-
-プロジェクト名：コミュXR（Comm-XR）
+プロジェクト名：Emotion ReadAR（E.R.A）
 
 ～3Dゲームと非言語フィードバックの技術で「感情を可視化」し、対人能力を拡張するXRシステム～
-
 
 
 1. プロジェクト概要
 
 本プロジェクトは、眼鏡型XRデバイスを用い、対面コミュニケーションにおける言語（会話内容）と非言語（表情・視線・声のトーン）の情報をリアルタイムに解析して、その情報をもとに次にユーザーが発言すべき選択肢をアドバイスと共に表示することで、ユーザーの対人能力を拡張するシステムである。単なる「AIとの対話」に留まらず、現実の人間関係を豊かにするための「コミュニケーションの補助輪（Social Training Wheels）」となることを目指す。
-
 
 
 2. 解決したい課題
@@ -204,31 +182,113 @@ https://m.youtube.com/watch?v=eVcD1Th9fRU
 
 Google AI Glass（2026年発売想定）を核とした、エッジ・クラウドハイブリッド構成を採用する。
 
-コード スニペット
+## 1. アーキテクチャ概要
 
-graph TD     A[Google AI Glass] -- "視覚(外/内カメ)・音声(4chマイク)" --> B[Android Smartphone]     B -- "① YOLOv11/MediaPipe: 顔・表情解析" --> B     B -- "② 話者分離/音源定位: 発話者特定" --> B     B -- "③ ストリーミング(gRPC)" --> C[Cloud: Gemini 1.5/2.0 Flash]     C -- "④ 恋愛特化型返答/アドバイス生成" --> B     B -- "⑤ VFX/HUD情報の空間配置計算" --> A     A -- "⑥ 視界への透過表示(Spatial Emoji)" --> D[ユーザー]     B -- "長期分析データの保存" --> E[Firebase/恋AI連携]
+本システムは、「**エッジ・クラウド ハイブリッド構成**」を採用します。
+レイテンシ（遅延）が致命的となる「非言語情報の抽出（画像解析・音声前処理）」をAndroidエッジ端末側で完結させ、計算リソースを要する「文脈理解・推論生成（LLM）」をクラウド側（Cloud Run）へオフロードすることで、**リアルタイム性と高度な推論の両立**を実現します。
 
+また、サーバーサイドには**クリーンアーキテクチャ**を適用し、将来的なモデルの差し替えや機能拡張に耐えうる堅牢な設計とします。
 
+---
+
+## 2. クライアントサイド（Android端末 / Google AI Glass）
+
+**役割：感覚器官（Sensing）と インターフェース（UI/UX）**
+
+Android端末を演算コアとし、Glassをディスプレイおよび入力デバイスとして機能させます。UnityとAndroidネイティブ（Kotlin/C++）の連携により実装します。
+
+### A) センシング・解析層 (Android Native / Kotlin & C++)
+
+プライバシー保護と通信量削減のため、生データ（画像）は原則端末内で処理し、**「特徴量」のみ**をクラウドへ送信します。
+
+- **画像認識 (MediaPipe):**
+    - Blendshapeを用いて、相手の表情、視線、頭部の向きを数値化。
+    - Pose Landmarkerにより、身体の姿勢やジェスチャーを解析。
+- **音声認識前処理:**
+    - **VAD (Voice Activity Detection):** 発話区間のみを切り出し。
+    - **DOA (Direction of Arrival):** マイクアレイを用いて音源方向を特定し、画角内の人物IDと照合（誰が話したかを特定）。
+
+### B) アプリケーション層 (Unity / C#)
+
+ユーザー体験を司るHUD（Head-Up Display）の制御と、通信のハンドリングを行います。
+
+- **VFX/HUD:**
+    - 「空気の可視化」として、解析された感情値に応じたパーティクルや色相の変化をGlass上にオーバーレイ表示。
+    - **MFUI (Minimal Functional UI):** 視界を遮らないよう、返答候補や会話戦略タグ（「共感」「深掘り」など）をシンプルに表示。
+- **通信:**
+    - WebSocketを使用し、バイナリストリーム（音声）とJSON（特徴量）をリアルタイムにサーバーへ送信。
+
+---
+
+## 3. サーバーサイド（Cloud Run）
+
+**役割：頭脳（Brain）と 記憶（Memory）**
+
+FastAPI on Cloud Run を基盤とし、Googleの**Gemini 2.5 Flash Liteのファインチューニング済みモデル**を推論エンジンとして採用します。
+
+### ソフトウェアアーキテクチャ：クリーンアーキテクチャ
+
+ディレクトリ構成に基づき、関心事を以下の層に分離して実装します。
+
+1. **Core Layer (Foundation & Rules):**
+    - システム全体で共有される設定 (`config.py`)、例外定義、およびドメインの「契約」となるインターフェース (`interfaces/`) を定義。
+    - プロンプトエンジニアリング (`prompts/love_coach.py`) はここに集約し、AIの「人格」や「コーチング方針」を管理。
+2. **Model Layer (Domain Entities):**
+    - `session.py` など、システムの中心となるデータ構造を定義。外部ライブラリに依存しない純粋なデータクラス。
+3. **Service Layer (Use Cases / Brain):**
+    - **Chat Orchestrator:** 会話フローの制御中枢。STT結果、非言語特徴量、過去の文脈を統合し、AIエージェントへ指示を出す。
+    - **Agents (Love Coach):** 具体的なアドバイス生成ロジック。Core層のプロンプトとGemini APIを繋ぐ。
+4. **Interface Adapters (API & Infra):**
+    - `api/routers/chat.py`: WebSocketエンドポイントを提供し、クライアントとの接続を確立。
+    - `infra/external/gemini_client.py`: 実際にGemini APIを叩く実装詳細。
+    - `infra/repositories/firestore_repo.py`: 会話ログやセッション情報の永続化を担当。
+
+---
+
+## 4. データフロー (Information Pipeline)
+
+1. **入力:** 現実世界の「映像」と「音声」をGlass/スマホが取得。
+2. **エッジ解析 (Android):**
+    - 画像 → MediaPipeで「表情スコア」「視線データ」へ変換。
+    - 音声 → VADで切り出し、特徴量と共に送信。
+3. **転送:** WebSocket経由でテキスト＋非言語特徴量をCloud Runへ送信。
+4. **推論 (Cloud):**
+    - **STT:** 音声データをテキスト化（Google Cloud Speech-to-Text）。
+    - **LLM (Gemini):** 「テキスト」＋「非言語情報を言語化した情報（相手が怒っている、笑っている等）」＋「文脈」を入力。
+    - **出力:** 次の返答候補（2個）、会話戦略、アドバイスを生成。
+5. **フィードバック:** 生成結果を即座にAndroidへPush。
+6. **表示:** UnityがHUD上に情報を描画し、ユーザーの視界を拡張する。
+
+| **領域** | **技術要素** | **選定理由** |
+| --- | --- | --- |
+| **Edge Logic** | **Kotlin / C++ (MediaPipe)** | 低遅延・高負荷な画像処理をネイティブ層で処理するため。 |
+| **Edge UI** | **Unity (C#)** | 3D空間表現(VFX)とクロスプラットフォーム対応のため。 |
+| **Backend API** | **FastAPI (Python)** | 非同期処理に強く、AIライブラリ（Python製）との親和性が高いため。 |
+| **AI Model** | **Gemini 2.5 Flash** | マルチモーダル入力への対応と、リアルタイム対話に耐える応答速度。 |
+| **Database** | **Cloud Firestore** | セッション管理など、高速なRead/Writeとスケーラビリティのため。 |
+| **Architecture** | **Clean Architecture** | テスト容易性と、将来的なモジュール（STTエンジン等）の置換を容易にするため。 |
 
 5. 技術スタック
 
-1. フロントエンド（デバイス・描画層）
+5.1 フロントエンド（デバイス・描画層）
 
 ユーザーの視界に直接干渉し、直感的なHUD（ヘッドアップディスプレイ）を提供する領域です。
 
-項目技術・ツール備考開発エンジンUnity (2022.3 LTS+), C#VFX Graphを用いた高度な空間演出とマルチプラットフォーム対応。XR SDKAndroid XR SDK (Jetpack XR)2026年発売予定のGoogle AI Glassへの最適化。ARフレームワークAR Foundation / OpenXRグラスとスマホ、将来的な多機種展開を支える標準規格。空間UI設計Unity UI (UGUI) + Shader Graph透過型レンズでの視認性を追求した「最小機能UI（MFUI）」の実装。2. バックエンド（通信・制御層）
+項目技術・ツール備考開発エンジンUnity (2022.3 LTS+), C#VFX Graphを用いた高度な空間演出とマルチプラットフォーム対応。XR SDKAndroid XR SDK (Jetpack XR)2026年発売予定のGoogle AI Glassへの最適化。ARフレームワークAR Foundation / OpenXRグラスとスマホ、将来的な多機種展開を支える標準規格。空間UI設計Unity UI (UGUI) + Shader Graph透過型レンズでの視認性を追求した「最小機能UI（MFUI）」の実装。
+
+5.2 バックエンド（通信・制御層）
 
 デバイス間の高速なデータ同期と、解析・推論処理のオフロードを担当します。
 
-項目技術・ツール備考言語 / フレームワークPython (FastAPI)高並列処理と低遅延なAPIレスポンスの実現。通信プロトコルgRPC (Bidirectional Streaming)音声・映像バイナリデータの双方向・リアルタイム転送。音声解析エンジンFaster-Whisper会話のリアルタイムテキスト化（STT）。音源定位ロジックDOA (Direction of Arrival)マイクアレイを用いた話者の位置特定アルゴリズム。3. AI・API（解析・インテリジェンス層）
+項目技術・ツール備考言語 / フレームワークPython (FastAPI)高並列処理と低遅延なAPIレスポンスの実現。通信プロトコルgRPC (Bidirectional Streaming)音声・映像バイナリデータの双方向・リアルタイム転送。音声解析エンジンFaster-Whisper会話のリアルタイムテキスト化（STT）。音源定位ロジックDOA (Direction of Arrival)マイクアレイを用いた話者の位置特定アルゴリズム。
+
+5.3 AI・API（解析・インテリジェンス層）
 
 言語・非言語情報を統合し、コミュニケーションの「解」を生成します。
 
 項目技術・ツール備考物体検知・追跡YOLOv11複数人のリアルタイム検知およびIDトラッキング。骨格・表情抽出MediaPipe Landmarker表情（Blendshape）および視線の微細な動きの数値化。対話生成モデルGemini 1.5 Flash or 2.0 Flash (API)コンテキスト理解と高速な返答生成。モデル最適化LoRA (Low-Rank Adaptation)恋愛・親睦ドメインに特化したファインチューニング。感情分析独自学習済みCNN / PADモデル非言語スコアを心理学的な感情ステータスへ変換。アイトラッキングは内カメラないとできない→ジャイロで代替(顔の向きを判定)
 
-
-
-4. インフラ（基盤・保存層）
+5.4 インフラ（基盤・保存層）
 
 データの永続化と、スケーラブルな推論・分析環境を提供します。
 
@@ -358,7 +418,7 @@ comm-xr-server/
 
 │   │   └── repositories/
 
-│   │       └── dynamo_repo.py   # Boto3 (DynamoDB) の実装
+│   │       └── firestore_repo.py   # Firebase Admin SDK (Firestore) の実装
 
 │   │
 
@@ -398,7 +458,7 @@ comm-xr-server/
 
 │   # ※ サーバー起動には不要。開発者が手動で使う。
 
-│   ├── setup_dynamodb.py        # ローカル/開発用テーブル作成
+│   ├── setup_cloud_functions.py        # ローカル/開発用セットアップ
 
 │   └── test_websocket.py        # 接続テスト用クライアント
 
@@ -416,22 +476,23 @@ comm-xr-server/
 
 ├── Dockerfile                   # 本番デプロイ用
 
-├── docker-compose.yml           # ローカル開発用 (DynamoDB Local等)
+├── docker-compose.yml           # ローカル開発用 (Firestore Emulator等)
 
 ├── pyproject.toml               # ★uv: プロジェクト設定・依存関係
 
 ├── uv.lock                      # ★uv: 依存関係のロックファイル
 
-└── .python-version              # ★uv: Pythonバージョン指定 (3.11推奨)
+└── .python-version              # ★uv: Pythonバージョン指定 (3.14推奨)
 
 
 
 クリーンアーキテクチャーを基盤にした３層ファイルアーキテクチャーで構成されている
 
+appフォルダの直下にのみ__init__.pyファイルを置く。それ以外はいらない
 
+## 優先度低い
 
-・優先度低い
-
-人格が統一される
-
+人格が統一されるという問題
 →どんな自分になりたいかを最初に聞いて、プロンプトに組み込む。(遅延対策で文字数制限する)
+
+ローカルLLM(SLM)を使って即時応答とAgentやらせる
