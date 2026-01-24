@@ -17,12 +17,12 @@ def sample_context() -> list[Utterance]:
     return [
         Utterance(
             speaker=Speaker.USER,
-            text="明日の会議の件で相談があります",
+            text="最近どんな映画観た？",
             timestamp=datetime.now(timezone.utc),
         ),
         Utterance(
             speaker=Speaker.PARTNER,
-            text="はい、どのような相談でしょうか？",
+            text="この前、恋愛映画を観たんだけど、すごく良かったよ",
             timestamp=datetime.now(timezone.utc),
         ),
     ]
@@ -32,10 +32,10 @@ def sample_context() -> list[Utterance]:
 def sample_emotion() -> EmotionInterpretation:
     """サンプルの感情解釈."""
     return EmotionInterpretation(
-        primary_emotion="confused",
+        primary_emotion="happy",
         intensity="medium",
-        description="相手は困惑しているようです",
-        suggestion="説明を補足すると良いかもしれません",
+        description="相手は楽しそうに話しています",
+        suggestion="話題を深めると良いかもしれません",
     )
 
 
@@ -43,15 +43,15 @@ def sample_emotion() -> EmotionInterpretation:
 def valid_llm_response() -> str:
     """有効なLLMレスポンス."""
     return """{
-    "situation_analysis": "相手は会議の詳細を知りたがっています",
+    "situation_analysis": "相手は映画の話題で盛り上がっています",
     "responses": [
         {
-            "text": "明日の会議の開始時間を変更したいのですが、ご都合はいかがでしょうか？",
-            "intent": "具体的な提案をする"
+            "text": "どんな恋愛映画だったの？気になる！",
+            "intent": "話題を深める"
         },
         {
-            "text": "すみません、時間調整をお願いできませんか？",
-            "intent": "相手に配慮しながら提案する"
+            "text": "いいね！私も最近映画観たいなって思ってたんだ",
+            "intent": "共感を示す"
         }
     ]
 }"""
@@ -69,16 +69,16 @@ async def test_generate_responses_success(
     ) as mock_api:
         mock_api.return_value = valid_llm_response
 
-        service = LLMService(api_key="test-key")
+        service = LLMService(credentials_path="test-credentials.json")
         result = await service.generate_responses(
             conversation_context=sample_context,
             emotion_interpretation=sample_emotion,
-            partner_last_utterance="はい、どのような相談でしょうか？",
+            partner_last_utterance="この前、恋愛映画を観たんだけど、すごく良かったよ",
         )
 
         assert len(result.responses) == 2
         assert result.responses[0].intent != result.responses[1].intent
-        assert result.situation_analysis == "相手は会議の詳細を知りたがっています"
+        assert result.situation_analysis == "相手は映画の話題で盛り上がっています"
         mock_api.assert_called_once()
 
 
@@ -103,7 +103,7 @@ async def test_generate_responses_with_markdown_json(
     ) as mock_api:
         mock_api.return_value = markdown_response
 
-        service = LLMService(api_key="test-key")
+        service = LLMService(credentials_path="test-credentials.json")
         result = await service.generate_responses(
             conversation_context=sample_context,
             emotion_interpretation=sample_emotion,
@@ -125,7 +125,7 @@ async def test_parse_response_invalid_json(
     ) as mock_api:
         mock_api.return_value = "これはJSONではありません"
 
-        service = LLMService(api_key="test-key")
+        service = LLMService(credentials_path="test-credentials.json")
         with pytest.raises(LLMResponseParseError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -147,7 +147,7 @@ async def test_parse_response_missing_key(
     ) as mock_api:
         mock_api.return_value = incomplete_response
 
-        service = LLMService(api_key="test-key")
+        service = LLMService(credentials_path="test-credentials.json")
         with pytest.raises(LLMResponseParseError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -175,7 +175,7 @@ async def test_parse_response_same_intent_validation_error(
     ) as mock_api:
         mock_api.return_value = same_intent_response
 
-        service = LLMService(api_key="test-key")
+        service = LLMService(credentials_path="test-credentials.json")
         with pytest.raises(LLMResponseParseError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -203,7 +203,7 @@ async def test_retry_on_rate_limit(
     with patch.object(
         LLMService, "_call_api", side_effect=mock_call_api
     ):
-        service = LLMService(api_key="test-key")
+        service = LLMService(credentials_path="test-credentials.json")
         result = await service.generate_responses(
             conversation_context=sample_context,
             emotion_interpretation=sample_emotion,
@@ -225,7 +225,7 @@ async def test_rate_limit_max_retries_exceeded(
     ) as mock_api:
         mock_api.side_effect = Exception("429 rate limit")
 
-        service = LLMService(api_key="test-key")
+        service = LLMService(credentials_path="test-credentials.json")
         with pytest.raises(LLMRateLimitError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -245,7 +245,7 @@ async def test_non_rate_limit_error_raises_immediately(
     ) as mock_api:
         mock_api.side_effect = Exception("Internal server error")
 
-        service = LLMService(api_key="test-key")
+        service = LLMService(credentials_path="test-credentials.json")
         with pytest.raises(LLMError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -259,17 +259,17 @@ def test_build_prompt(
     sample_emotion: EmotionInterpretation,
 ) -> None:
     """プロンプト構築のテスト."""
-    service = LLMService(api_key="test-key")
+    service = LLMService(credentials_path="test-credentials.json")
     prompt = service._build_prompt(
         context=sample_context,
         emotion=sample_emotion,
-        last_utterance="はい、どのような相談でしょうか？",
+        last_utterance="この前、恋愛映画を観たんだけど、すごく良かったよ",
     )
 
     assert "会話履歴" in prompt
-    assert "明日の会議の件で相談があります" in prompt
+    assert "最近どんな映画観た？" in prompt
     assert "感情状態" in prompt
-    assert "confused" in prompt
+    assert "happy" in prompt
     assert "medium" in prompt
     assert "相手の最後の発話" in prompt
-    assert "はい、どのような相談でしょうか？" in prompt
+    assert "この前、恋愛映画を観たんだけど、すごく良かったよ" in prompt
