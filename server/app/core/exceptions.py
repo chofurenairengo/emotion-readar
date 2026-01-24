@@ -1,14 +1,7 @@
-class ERAException(Exception):
-    """Base exception for ERA."""
+"""アプリケーション例外定義."""
 
 
-class LLMError(ERAException):
-    """LLM推論エラー."""
+class STTError(Exception):
+    """音声認識エラー."""
 
-
-class LLMRateLimitError(LLMError):
-    """レートリミットエラー."""
-
-
-class LLMResponseParseError(LLMError):
-    """レスポンスパースエラー."""
+    pass

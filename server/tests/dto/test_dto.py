@@ -2,8 +2,6 @@
 
 from datetime import datetime, timezone
 
-import pytest
-
 from app.dto.audio import AudioFormat, TranscriptionResult
 from app.dto.conversation import EmotionContext, Speaker, Utterance
 from app.dto.emotion import EmotionChange, EmotionInterpretation
