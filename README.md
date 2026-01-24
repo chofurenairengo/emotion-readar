@@ -64,25 +64,92 @@
 
 ## Cloud Intelligence Layer（Google Cloud）
 
-インフラ:
+### GCPサービス構成（コスト最小化）
 
-- Cloud Load Balancing / Cloud Run / Firestore / Cloud Storage（任意）
-- Firebase Authentication / Cloud Monitoring / Secret Manager
+| 用途 | サービス | 選定理由 |
+|------|---------|----------|
+| API Server | **Cloud Run** | 従量課金、アイドル時$0、無料枠あり |
+| データベース | **Firestore** (Native Mode) | 無料枠が大きい（50K読み/20K書き/日） |
+| 認証 | **Firebase Authentication** | 無料（50K MAUまで） |
+| 音声認識 | **Cloud Speech-to-Text** | GCP統一、60分/月無料 |
+| LLM | **Gemini 2.5 Flash** (Vertex AI) | GCPネイティブ、高速・低コスト |
+| シークレット | **Secret Manager** | 6アクティブバージョン無料 |
+| ログ・監視 | **Cloud Logging** | 50GB/月無料 |
 
-API Server:
+### 採用しないサービス（コスト面）
+
+| サービス | 理由 | 代替 |
+|---------|------|------|
+| Cloud SQL | 常時稼働で高コスト | Firestore（サーバーレス） |
+| GKE | 管理オーバーヘッド・コスト | Cloud Run |
+| Cloud Load Balancer | 月額$18〜 | Cloud Run標準URL |
+| Pub/Sub | 小規模では不要 | WebSocket直接 |
+| Cloud Functions | 分散管理が煩雑 | Cloud Runに統合 |
+
+### Cloud Run 設定
+
+```yaml
+# 開発・MVP向け設定
+min-instances: 0          # アイドル時課金なし
+max-instances: 3          # スパイク対策
+cpu-throttling: true      # リクエスト処理時のみCPU課金
+memory: 512Mi-1Gi         # 最小限に抑える
+timeout: 300s             # WebSocket対応
+```
+
+### API Server
 
 - FastAPI / Docker / WebSocket + HTTP
+- エンドポイント:
+  - `/api/health` - ヘルスチェック
+  - `/api/sessions` - セッション管理
+  - `/api/features` - 非言語特徴量受信
+  - `/api/realtime` - WebSocketリアルタイム通信
 
-音声認識（STT）:
+### 音声認識（STT）
 
-- サーバー処理
-- Cloud Speech-to-Text（Streaming / 非 Streaming）
-- 将来的に Whisper 系へ差し替え可能
+- **Cloud Speech-to-Text**
+- Streaming / 非Streaming 両対応
+- 対応フォーマット: WAV (LINEAR16), PCM, OPUS
+- 言語: 日本語 (ja-JP) 優先
 
-LLM:
+### LLM（Gemini API）
+
+| モデル | 用途 |
+|--------|------|
+| **Gemini 2.5 Flash** | リアルタイム応答（推奨） |
 
 - 入力: STT テキスト / 非言語特徴量 / 会話コンテキスト
-- 出力: 返答候補（2〜3）/ 会話戦略タグ / 注意喚起（任意）
+- 出力: 返答候補（2パターン）/ 状況分析 / 会話戦略
+
+### 月額コスト試算（MVP/小規模運用）
+
+| サービス | 想定使用量 | 月額 |
+|---------|-----------|------|
+| Cloud Run | 10万リクエスト | $0〜5 |
+| Firestore | 無料枠内 | $0 |
+| Firebase Auth | 無料枠内 | $0 |
+| Speech-to-Text | 10時間 | $14 |
+| Gemini 2.5 Flash | 100万トークン | $0〜 |
+| Secret Manager | 無料枠内 | $0 |
+| **合計** | | **$15〜20/月** |
+
+### 環境変数
+
+```bash
+# GCPプロジェクト
+GCP_PROJECT_ID=your-project-id
+
+# Firebase/Firestore
+FIRESTORE_EMULATOR_HOST=localhost:8080  # ローカル開発時
+
+# 認証
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+
+# Gemini API
+GEMINI_API_KEY=your-gemini-api-key
+GEMINI_MODEL=gemini-2.5-flash
+```
 
 ## データ・プライバシー方針
 
