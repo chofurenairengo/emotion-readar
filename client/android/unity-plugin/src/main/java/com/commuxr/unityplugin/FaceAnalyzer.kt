@@ -22,29 +22,34 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class FaceAnalyzer(
-    private val context: Context,
+    context: Context,
     private val lifecycleOwner: LifecycleOwner,
     private val onFaceDataDetected: (String) -> Unit
 ) {
+    // ActivityではなくApplicationContextを保持してリークと干渉を防ぐ
+    private val appContext = context.applicationContext
     private var faceLandmarker: FaceLandmarker? = null
     private var cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private var lastProcessedMs: Long = 0
-    private val processIntervalMs: Long = 1000 
+    private val processIntervalMs: Long = 10000 // ★ 10秒に1回（まずは安定性確認のため）
 
     companion object {
         private const val TAG = "FaceAnalyzer"
     }
 
     fun start() {
-        setupFaceLandmarker()
-        startCamera()
+        cameraExecutor.execute {
+            setupFaceLandmarker()
+            // カメラ開始はメインスレッドで
+            ContextCompat.getMainExecutor(appContext).execute {
+                startCamera()
+            }
+        }
     }
 
     fun stop() {
         cameraExecutor.execute {
-            try {
-                faceLandmarker?.close()
-            } catch (e: Exception) {}
+            try { faceLandmarker?.close() } catch (e: Exception) {}
             faceLandmarker = null
         }
         cameraExecutor.shutdown()
@@ -54,7 +59,7 @@ class FaceAnalyzer(
         try {
             val baseOptions = BaseOptions.builder()
                 .setModelAssetPath("face_landmarker.task")
-                .setDelegate(Delegate.CPU)
+                .setDelegate(Delegate.CPU) // GPU競合を避けるためCPU固定
                 .build()
 
             val options = FaceLandmarkerOptions.builder()
@@ -64,73 +69,71 @@ class FaceAnalyzer(
                 .setOutputFaceBlendshapes(true)
                 .build()
 
-            faceLandmarker = FaceLandmarker.createFromOptions(context, options)
-            Log.d(TAG, "FaceLandmarker initialized")
+            faceLandmarker = FaceLandmarker.createFromOptions(appContext, options)
+            Log.d(TAG, "MediaPipe Initialized")
         } catch (e: Exception) {
-            Log.e(TAG, "Init failed", e)
+            Log.e(TAG, "MediaPipe Init Failed", e)
         }
     }
 
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(appContext)
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-            
-            val imageAnalysis = ImageAnalysis.Builder()
-                .setTargetResolution(Size(640, 480))
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-
-            imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                val now = SystemClock.elapsedRealtime()
-                
-                // ★ 1秒おきにログを出して、解析が動いているか確認
-                if (now - lastProcessedMs >= processIntervalMs) {
-                    Log.d(TAG, "Analysis loop running...")
-                }
-
-                if (now - lastProcessedMs < processIntervalMs || faceLandmarker == null) {
-                    imageProxy.close()
-                    return@setAnalyzer
-                }
-
-                try {
-                    lastProcessedMs = now
-                    val bitmap = imageProxy.toBitmap()
-                    val mpImage = BitmapImageBuilder(bitmap).build()
-                    val rotation = imageProxy.imageInfo.rotationDegrees
-                    
-                    val options = ImageProcessingOptions.builder()
-                        .setRotationDegrees(rotation)
-                        .build()
-
-                    val startTime = SystemClock.elapsedRealtime()
-                    val result = faceLandmarker?.detect(mpImage, options)
-                    val duration = SystemClock.elapsedRealtime() - startTime
-                    
-                    result?.let { res ->
-                        val faceCount = res.faceLandmarks().size
-                        // ★ 解析結果を毎回ログに出す
-                        Log.d(TAG, "Result: Faces=$faceCount, Time=${duration}ms, Rot=$rotation")
-
-                        if (faceCount > 0 && res.faceBlendshapes().isPresent) {
-                            val shapes = res.faceBlendshapes().get()[0]
-                            val smileL = shapes.find { it.categoryName() == "mouthSmileLeft" }?.score() ?: 0f
-                            val smileR = shapes.find { it.categoryName() == "mouthSmileRight" }?.score() ?: 0f
-                            val smile = (smileL + smileR) / 2f
-                            
-                            onFaceDataDetected(PayloadFactory.createFaceLite(smile, 0f, 0f, 0f, 0f, 0f))
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Analysis error", e)
-                } finally {
-                    imageProxy.close()
-                }
-            }
-
             try {
+                val cameraProvider = cameraProviderFuture.get()
+                
+                val imageAnalysis = ImageAnalysis.Builder()
+                    .setTargetResolution(Size(320, 240)) // 最低限の解像度
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+
+                imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
+                    val now = SystemClock.elapsedRealtime()
+                    
+                    // 解析タイミングでないなら即座にクローズ（CPU負荷ゼロ）
+                    if (now - lastProcessedMs < processIntervalMs || faceLandmarker == null) {
+                        imageProxy.close()
+                        return@setAnalyzer
+                    }
+
+                    try {
+                        lastProcessedMs = now
+                        Log.d(TAG, "Processing Start...")
+
+                        val bitmap = imageProxy.toBitmap() ?: return@setAnalyzer
+                        val mpImage = BitmapImageBuilder(bitmap).build()
+                        val rotation = imageProxy.imageInfo.rotationDegrees
+                        val options = ImageProcessingOptions.builder()
+                            .setRotationDegrees(rotation)
+                            .build()
+
+                        val result = faceLandmarker?.detect(mpImage, options)
+                        result?.let { res ->
+                            if (res.faceLandmarks().isNotEmpty() && res.faceBlendshapes().isPresent) {
+                                val shapes = res.faceBlendshapes().get()[0]
+                                val smileL = shapes.find { it.categoryName() == "mouthSmileLeft" }?.score() ?: 0f
+                                val smileR = shapes.find { it.categoryName() == "mouthSmileRight" }?.score() ?: 0f
+                                val smile = (smileL + smileR) / 2f
+                                
+                                Log.d(TAG, "Smile Detected: $smile")
+                                
+                                // 送信処理
+                                val json = PayloadFactory.createFaceLite(smile, 0f, 0f, 0f, 0f, 0f)
+                                onFaceDataDetected(json)
+                            } else {
+                                Log.d(TAG, "No Face in frame")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Processing Error", e)
+                    } finally {
+                        imageProxy.close()
+                    }
+                }
+
                 cameraProvider.unbindAll()
+                
+                // Quest 3 / 一般スマホ両対応のセレクター
                 val cameraSelector = if (cameraProvider.hasCamera(CameraSelector.DEFAULT_BACK_CAMERA)) {
                     CameraSelector.DEFAULT_BACK_CAMERA
                 } else {
@@ -139,10 +142,11 @@ class FaceAnalyzer(
 
                 val analysisUseCase: UseCase = imageAnalysis
                 cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, analysisUseCase)
-                Log.d(TAG, "Camera bound successfully")
+                Log.d(TAG, "Camera Pipeline Ready")
+
             } catch (e: Exception) {
-                Log.e(TAG, "Camera bind failed", e)
+                Log.e(TAG, "Camera Setup Failed", e)
             }
-        }, ContextCompat.getMainExecutor(context))
+        }, ContextCompat.getMainExecutor(appContext))
     }
 }
