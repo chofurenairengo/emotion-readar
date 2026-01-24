@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E.R.A - Architecture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+            background: #fff;
+            color: #333;
+            padding: 2rem;
+        }
+        h1 { text-align: center; font-size: 1.4rem; color: #222; margin-bottom: 0.3rem; }
+        .subtitle { text-align: center; color: #888; font-size: 0.8rem; margin-bottom: 2rem; }
+        .arch { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 0.5rem; }
+
+        .layer {
+            border: 2px solid;
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+        }
+        .layer-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Layer colors */
+        .l1 { border-color: #4caf50; }
+        .l1 .layer-title { color: #2e7d32; }
+        .l2 { border-color: #1976d2; }
+        .l2 .layer-title { color: #1565c0; }
+        .l3 { border-color: #e65100; }
+        .l3 .layer-title { color: #e65100; }
+
+        .row { display: flex; gap: 0.75rem; }
+        .box {
+            flex: 1;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 0.6rem 0.8rem;
+        }
+        .box-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 0.3rem;
+        }
+        .box ul {
+            list-style: none;
+            font-size: 0.72rem;
+            color: #666;
+        }
+        .box ul li { padding: 0.1rem 0; padding-left: 0.8rem; position: relative; }
+        .box ul li::before {
+            content: '';
+            position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            width: 4px; height: 4px; border-radius: 50%; background: #aaa;
+        }
+
+        .arrow {
+            text-align: center;
+            color: #999;
+            font-size: 0.75rem;
+            padding: 0.3rem 0;
+        }
+
+        .pipeline { display: flex; gap: 0.5rem; align-items: stretch; }
+        .step {
+            flex: 1;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 0.5rem 0.6rem;
+            font-size: 0.72rem;
+            color: #555;
+        }
+        .step strong { display: block; color: #333; margin-bottom: 0.2rem; font-size: 0.73rem; }
+
+        .services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.5rem;
+        }
+        .svc {
+            font-size: 0.68rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            color: #555;
+        }
+
+        @media (max-width: 600px) {
+            .row, .pipeline { flex-direction: column; }
+            body { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <h1>Emotion ReadAR (E.R.A)</h1>
+    <p class="subtitle">Edge-Cloud Hybrid Architecture</p>
+
+    <div class="arch">
+        <!-- Layer 1 -->
+        <div class="layer l1">
+            <div class="layer-title">1. 現実世界</div>
+            <div style="font-size:0.75rem; color:#555; text-align:center;">
+                [相手A] [相手B] ... &#x2194; 対面会話 &#x2194; [ユーザー]
+            </div>
+        </div>
+
+        <div class="arrow">&#x2193; 光・音声 &nbsp;&nbsp; &#x2191; HUD表示</div>
+
+        <!-- Layer 2 -->
+        <div class="layer l2">
+            <div class="layer-title">2. エッジデバイス (Android / Google AI Glass)</div>
+            <div class="row">
+                <div class="box">
+                    <div class="box-title">A) Android Native (解析)</div>
+                    <ul>
+                        <li>顔検出 & 表情判定 (MediaPipe)</li>
+                        <li>VAD / DOA (話者特定)</li>
+                        <li>姿勢解析 (Pose Landmarker)</li>
+                    </ul>
+                </div>
+                <div class="box">
+                    <div class="box-title">B) Unity (表示)</div>
+                    <ul>
+                        <li>感情表示 (&lt;100ms)</li>
+                        <li>話者ハイライト</li>
+                        <li>AI回答候補 (2択)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="arrow">&#x2193;&#x2191; WebSocket (JSON + Audio)</div>
+
+        <!-- Layer 3 -->
+        <div class="layer l3">
+            <div class="layer-title">3. クラウド (GCP / Cloud Run)</div>
+            <div class="pipeline">
+                <div class="step">
+                    <strong>1. Orchestrator</strong>
+                    STT &#x2192; 文脈バッファ (5文) &#x2192; LLM Trigger
+                </div>
+                <div class="step">
+                    <strong>2. LLM Agent</strong>
+                    RAG検索 + 深層分析 &#x2192; アドバイス生成
+                </div>
+                <div class="step">
+                    <strong>3. Response</strong>
+                    emotions + strategy + reply_options (JSON)
+                </div>
+            </div>
+            <div class="services">
+                <span class="svc">Gemini 2.5 Flash Lite</span>
+                <span class="svc">Cloud Speech-to-Text</span>
+                <span class="svc">Tavily (RAG)</span>
+                <span class="svc">Cloud Firestore</span>
+                <span class="svc">Cloud Functions</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

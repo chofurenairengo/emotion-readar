@@ -1,0 +1,33 @@
+
+name: "issueテンプレ"
+description: "調布恋愛連合のissueテンプレ"
+body:
+  - type: textarea
+    id: content
+    attributes:
+      label: "概要"
+      description: "このIssueの目的と内容を1行程度で簡潔に示す"
+      placeholder: |
+        〇〇の処理を作成する
+    validations:
+      required: true
+  - type: textarea
+    id: howTo
+    attributes:
+      label: "期待する仕様"
+      description: |
+        期待する仕様を書いて下さい
+      placeholder: |
+        例：GET /users をしたらユーザの一覧がJSONで返ってくる
+  - type: textarea
+    id: inout
+    attributes:
+      label: "入力と出力"
+      description: |
+        リクエストとレスポンスの形式を書いてください
+  - type: textarea
+    id: issue
+    attributes:
+      label: "関連issue&link"
+      description: |
+        関連するissueやリンクを表記して下さい

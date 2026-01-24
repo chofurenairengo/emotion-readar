@@ -39,4 +39,38 @@ client/android/Run
 
 # ===== Secrets =====
 .env
+.env.prod
+.venv/
+env/
+venv/
 Secrets.cs
+.env/
+
+# ===== Python caches =====
+__pycache__/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+*.pyc
+__pycache__
+
+# ===== Python caches =====
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+*.pyc
+
+# Google Drive Temporary Files
+.tmp.driveupload*
+
+# .claude フォルダ全体を一旦無視
+.claude/*
+
+# ただし、設定やスキルなどは共有対象にする（先頭に ! をつける）
+!.claude/agents/
+!.claude/rules/
+!.claude/commands/
+!.claude/skills/
+
+# ただし、MCPの設定ファイルだけは絶対に無視（秘密情報対策）
+.claude/mcp-configs.json

@@ -1,0 +1,41 @@
+
+services:
+  api:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./.env
+
+    environment:
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-dev-project}
+      - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
+      - FIRESTORE_PROJECT_ID=${FIRESTORE_PROJECT_ID:-dev-project}
+    depends_on:
+      - firestore-emulator
+    volumes:
+      - ./server/app:/app/app:rw
+    working_dir: /app
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  firestore-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    container_name: era-irestore-emulator
+    command: gcloud emulators firestore start --host-port=0.0.0.0:8080
+    ports:
+      - "8080:8080"
+
+  firestore-ui:
+    image: node:20-alpine
+    container_name: era-firestore-ui
+    ports:
+      - "4000:4000"
+    environment:
+      FIRESTORE_EMULATOR_HOST: firestore-emulator:8080
+      GCLOUD_PROJECT: ${GCP_PROJECT_ID:-dev-project}
+    depends_on:
+      - firestore-emulator
+    command: >
+      sh -c "npm install -g firebase-tools && firebase emulators:start --only ui --project dev-project"
