@@ -3,6 +3,7 @@
 ## 概要
 
 音声データをテキストに変換する音声認識（Speech-to-Text）サービスを実装する。
+**Google Cloud Speech-to-Text API** を使用。
 
 ## 期待する仕様
 
@@ -19,14 +20,14 @@ from app.dto.audio import AudioFormat, TranscriptionResult
 
 
 class STTService:
-    """音声認識サービス"""
+    """音声認識サービス（Google Cloud Speech-to-Text使用）"""
 
-    def __init__(self, api_key: str | None = None):
+    def __init__(self) -> None:
         """
         初期化
 
-        Args:
-            api_key: STTサービスのAPIキー（Whisper API使用時）
+        環境変数 GOOGLE_APPLICATION_CREDENTIALS に認証情報のパスを設定するか、
+        Google Cloud SDKでログイン済みである必要があります。
         """
         pass
 
@@ -44,7 +45,7 @@ class STTService:
             audio_data: 音声のバイナリデータ
             format: 音声フォーマット (wav, opus, pcm)
             sample_rate: サンプリングレート（デフォルト16000Hz）
-            language: 言語ヒント（デフォルト日本語）
+            language: 言語コード（デフォルト日本語 "ja"）
 
         Returns:
             TranscriptionResult:
@@ -57,68 +58,28 @@ class STTService:
             STTError: 音声認識に失敗した場合
         """
         pass
-
-    def _decode_audio(
-        self,
-        audio_data: bytes,
-        format: AudioFormat,
-    ) -> bytes:
-        """
-        音声データをデコード（必要に応じてWAVに変換）
-
-        Args:
-            audio_data: 入力音声データ
-            format: 入力フォーマット
-
-        Returns:
-            デコードされた音声データ（WAV形式）
-        """
-        pass
 ```
 
 ### 例外クラス
 
 ```python
-# app/core/exceptions.py に追加
+# app/core/exceptions.py
 
 class STTError(Exception):
     """音声認識エラー"""
     pass
 ```
 
-### 実装オプション
+### 実装詳細
 
-MVP段階では以下のいずれかを選択：
+#### Google Cloud Speech-to-Text API
 
-#### オプション1: OpenAI Whisper API（推奨）
-```python
-import openai
-
-class STTService:
-    def __init__(self, api_key: str):
-        self.client = openai.OpenAI(api_key=api_key)
-
-    async def transcribe(self, audio_data: bytes, ...) -> TranscriptionResult:
-        response = self.client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio_data,
-            language=language,
-        )
-        return TranscriptionResult(
-            text=response.text,
-            confidence=1.0,  # Whisper APIは信頼度を返さない
-            language=language,
-            duration_ms=...,
-        )
-```
-
-#### オプション2: Google Cloud Speech-to-Text
 ```python
 from google.cloud import speech
 
 class STTService:
-    def __init__(self):
-        self.client = speech.SpeechClient()
+    def __init__(self) -> None:
+        self._client = speech.SpeechClient()
 
     async def transcribe(self, audio_data: bytes, ...) -> TranscriptionResult:
         audio = speech.RecognitionAudio(content=audio_data)
@@ -126,55 +87,31 @@ class STTService:
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=sample_rate,
             language_code="ja-JP",
+            enable_automatic_punctuation=True,
         )
-        response = self.client.recognize(config=config, audio=audio)
+        response = self._client.recognize(config=config, audio=audio)
         # ...
-```
-
-#### オプション3: faster-whisper（ローカル実行）
-```python
-from faster_whisper import WhisperModel
-
-class STTService:
-    def __init__(self, model_size: str = "base"):
-        self.model = WhisperModel(model_size, device="cpu")
-
-    async def transcribe(self, audio_data: bytes, ...) -> TranscriptionResult:
-        segments, info = self.model.transcribe(audio_data, language=language)
-        text = "".join([segment.text for segment in segments])
-        return TranscriptionResult(
-            text=text,
-            confidence=info.language_probability,
-            language=info.language,
-            duration_ms=int(info.duration * 1000),
-        )
 ```
 
 ### 音声フォーマット対応
 
-| フォーマット | 説明 | 対応 |
+| フォーマット | エンコーディング | 対応 |
 |---|---|---|
-| WAV | 非圧縮PCM | 必須 |
-| OPUS | 圧縮（WebRTC標準） | 推奨 |
-| PCM | 生データ | オプション |
+| WAV | LINEAR16 | ✅ 対応 |
+| PCM | LINEAR16 | ✅ 対応 |
+| OPUS | OGG_OPUS | ✅ 対応 |
 
-### 依存関係追加（`pyproject.toml`）
+### 言語コードマッピング
 
-Whisper API使用時:
-```toml
-dependencies = [
-    "openai>=1.0.0",
-]
-```
+| 入力 | Google Cloud形式 |
+|---|---|
+| `ja` | `ja-JP` |
+| `en` | `en-US` |
+| `ko` | `ko-KR` |
+| `zh` | `zh-CN` |
 
-faster-whisper使用時:
-```toml
-dependencies = [
-    "faster-whisper>=0.10.0",
-]
-```
+### 依存関係（`pyproject.toml`）
 
-Google Cloud使用時:
 ```toml
 dependencies = [
     "google-cloud-speech>=2.0.0",
@@ -183,22 +120,49 @@ dependencies = [
 
 ### 環境変数
 
-```
-# Whisper API
-OPENAI_API_KEY=sk-...
+```bash
+# サービスアカウントキーのパス
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
 
-# Google Cloud
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
+# または、gcloud CLI でログイン
+gcloud auth application-default login
 ```
+
+### GCP設定手順
+
+1. **Speech-to-Text APIを有効化**
+   ```bash
+   gcloud services enable speech.googleapis.com
+   ```
+
+2. **サービスアカウントを作成**
+   ```bash
+   gcloud iam service-accounts create stt-service \
+     --display-name="STT Service Account"
+   ```
+
+3. **キーをダウンロード**
+   ```bash
+   gcloud iam service-accounts keys create key.json \
+     --iam-account=stt-service@PROJECT_ID.iam.gserviceaccount.com
+   ```
+
+4. **環境変数を設定**
+   ```bash
+   export GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json
+   ```
 
 ## 完了条件
 
-- [ ] `STTService`クラスが実装されている
-- [ ] WAV形式の音声を認識できる
-- [ ] 日本語の音声を正しく認識できる
-- [ ] エラーハンドリングが実装されている
-- [ ] 単体テストが作成されている
-- [ ] `mypy`でエラーがない
+- [x] `STTService`クラスが実装されている
+- [x] WAV形式の音声を認識できる
+- [x] PCM形式の音声を認識できる
+- [x] OPUS形式の音声を認識できる
+- [x] 日本語の音声を正しく認識できる
+- [x] エラーハンドリングが実装されている
+- [x] 単体テストが作成されている（10件）
+- [x] `mypy`でエラーがない
+- [x] `ruff`でエラーがない
 
 ## テストケース
 
@@ -211,7 +175,7 @@ from app.dto.audio import AudioFormat
 @pytest.mark.asyncio
 async def test_transcribe_japanese_wav():
     """日本語WAV音声の認識テスト"""
-    service = STTService(api_key="...")
+    service = STTService()
     with open("tests/fixtures/hello_japanese.wav", "rb") as f:
         audio_data = f.read()
 
@@ -228,5 +192,5 @@ async def test_transcribe_japanese_wav():
 
 ## 関連Issue
 
-- 親Issue: サーバーサイドMVP実装（Epic）
-- 依存: #1 DTO定義
+- 親Issue: #30 [Epic] サーバーサイドMVP実装
+- 依存: #31 DTO定義
