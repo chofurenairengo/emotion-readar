@@ -85,7 +85,16 @@ def _build_credentials(emulator_host: str) -> credentials.Base | None:
     sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT", "")
     if sa_json:
         logger.info("FIREBASE_SERVICE_ACCOUNT 環境変数からサービスアカウントを使用")
-        sa_dict = json.loads(sa_json)
+        try:
+            sa_dict = json.loads(sa_json)
+        except json.JSONDecodeError as exc:
+            logger.error(
+                "FIREBASE_SERVICE_ACCOUNT 環境変数のJSONパースに失敗しました: %s",
+                exc,
+            )
+            raise ValueError(
+                "Invalid JSON in FIREBASE_SERVICE_ACCOUNT environment variable"
+            ) from exc
         return credentials.Certificate(sa_dict)
 
     creds_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "")
