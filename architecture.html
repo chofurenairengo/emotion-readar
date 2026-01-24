@@ -3,742 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emotion ReadAR - System Architecture</title>
+    <title>E.R.A - Architecture</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', 'Hiragino Sans', 'Meiryo', sans-serif;
-            background: #0f0f1a;
-            color: #e0e0e0;
-            min-height: 100vh;
+            font-family: 'Segoe UI', 'Hiragino Sans', sans-serif;
+            background: #fff;
+            color: #333;
             padding: 2rem;
         }
-
-        h1 {
-            text-align: center;
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #888;
-            margin-bottom: 2.5rem;
-            font-size: 0.9rem;
-        }
-
-        .architecture {
-            max-width: 1100px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            position: relative;
-        }
+        h1 { text-align: center; font-size: 1.4rem; color: #222; margin-bottom: 0.3rem; }
+        .subtitle { text-align: center; color: #888; font-size: 0.8rem; margin-bottom: 2rem; }
+        .arch { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 0.5rem; }
 
         .layer {
-            border-radius: 16px;
-            padding: 1.5rem;
-            position: relative;
-        }
-
-        .layer-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-        }
-
-        .layer-number {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.9rem;
-            flex-shrink: 0;
-        }
-
-        .layer-title {
-            font-size: 1.2rem;
-            font-weight: 700;
-        }
-
-        .layer-role {
-            font-size: 0.8rem;
-            color: #aaa;
-            margin-left: auto;
-            background: rgba(255,255,255,0.05);
-            padding: 0.25rem 0.75rem;
-            border-radius: 12px;
-        }
-
-        /* Layer 1: Reality */
-        .layer-reality {
-            background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(76, 175, 80, 0.03));
-            border: 1px solid rgba(76, 175, 80, 0.3);
-        }
-
-        .layer-reality .layer-number {
-            background: rgba(76, 175, 80, 0.2);
-            color: #4caf50;
-        }
-
-        .layer-reality .layer-title {
-            color: #81c784;
-        }
-
-        .reality-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.5rem 1rem;
-        }
-
-        .person {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .person-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .person-label {
-            font-size: 0.75rem;
-            color: #aaa;
-        }
-
-        .persons-group {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .interaction-arrow {
-            color: #4caf50;
-            font-size: 1.5rem;
-            opacity: 0.6;
-        }
-
-        .user-icon {
-            background: rgba(33, 150, 243, 0.2);
-            border: 2px solid rgba(33, 150, 243, 0.5);
-        }
-
-        .other-icon {
-            background: rgba(76, 175, 80, 0.15);
-            border: 2px solid rgba(76, 175, 80, 0.4);
-        }
-
-        /* Layer 2: Edge */
-        .layer-edge {
-            background: linear-gradient(135deg, rgba(33, 150, 243, 0.08), rgba(33, 150, 243, 0.03));
-            border: 1px solid rgba(33, 150, 243, 0.3);
-        }
-
-        .layer-edge .layer-number {
-            background: rgba(33, 150, 243, 0.2);
-            color: #2196f3;
-        }
-
-        .layer-edge .layer-title {
-            color: #64b5f6;
-        }
-
-        .edge-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .sub-block {
-            border-radius: 12px;
-            padding: 1rem;
-        }
-
-        .sub-block-title {
-            font-size: 0.9rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .sub-block-title .badge {
-            font-size: 0.7rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 8px;
-            font-weight: 400;
-        }
-
-        .feature-list {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-
-        .feature-list li {
-            font-size: 0.8rem;
-            color: #bbb;
-            padding-left: 1rem;
-            position: relative;
-        }
-
-        .feature-list li::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-        }
-
-        .android-block {
-            background: rgba(33, 150, 243, 0.08);
-            border: 1px solid rgba(33, 150, 243, 0.2);
-        }
-
-        .android-block .feature-list li::before {
-            background: #42a5f5;
-        }
-
-        .unity-block {
-            background: rgba(156, 39, 176, 0.08);
-            border: 1px solid rgba(156, 39, 176, 0.2);
-        }
-
-        .unity-block .feature-list li::before {
-            background: #ab47bc;
-        }
-
-        .unity-block .sub-block-title {
-            color: #ce93d8;
-        }
-
-        .android-block .sub-block-title {
-            color: #90caf9;
-        }
-
-        .badge-android {
-            background: rgba(33, 150, 243, 0.15);
-            color: #64b5f6;
-        }
-
-        .badge-unity {
-            background: rgba(156, 39, 176, 0.15);
-            color: #ce93d8;
-        }
-
-        .data-output {
-            display: flex;
-            gap: 0.75rem;
-            margin-top: 0.75rem;
-        }
-
-        .data-tag {
-            font-size: 0.7rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #999;
-        }
-
-        .feedback-section {
-            margin-top: 0.75rem;
-            padding-top: 0.75rem;
-            border-top: 1px dashed rgba(156, 39, 176, 0.2);
-        }
-
-        .feedback-section .section-label {
-            font-size: 0.75rem;
-            color: #ab47bc;
-            margin-bottom: 0.4rem;
-            font-weight: 600;
-        }
-
-        /* Connection arrows */
-        .connection {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            padding: 0.5rem;
-        }
-
-        .connection-line {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.2rem;
-        }
-
-        .connection-arrow {
-            font-size: 1.2rem;
-            color: #667eea;
-        }
-
-        .connection-label {
-            font-size: 0.7rem;
-            color: #888;
-            background: rgba(102, 126, 234, 0.1);
-            padding: 0.2rem 0.6rem;
-            border-radius: 8px;
-            border: 1px solid rgba(102, 126, 234, 0.2);
-        }
-
-        /* Layer 3: Cloud */
-        .layer-cloud {
-            background: linear-gradient(135deg, rgba(255, 152, 0, 0.08), rgba(255, 152, 0, 0.03));
-            border: 1px solid rgba(255, 152, 0, 0.3);
-        }
-
-        .layer-cloud .layer-number {
-            background: rgba(255, 152, 0, 0.2);
-            color: #ff9800;
-        }
-
-        .layer-cloud .layer-title {
-            color: #ffb74d;
-        }
-
-        .cloud-content {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1rem;
-        }
-
-        .pipeline {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .pipeline-step {
+            border: 2px solid;
             border-radius: 10px;
-            padding: 0.75rem 1rem;
-            position: relative;
+            padding: 1rem 1.2rem;
         }
-
-        .pipeline-step-header {
+        .layer-title {
             font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 0.4rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
         }
 
-        .step-number {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.65rem;
-            font-weight: bold;
-        }
+        /* Layer colors */
+        .l1 { border-color: #4caf50; }
+        .l1 .layer-title { color: #2e7d32; }
+        .l2 { border-color: #1976d2; }
+        .l2 .layer-title { color: #1565c0; }
+        .l3 { border-color: #e65100; }
+        .l3 .layer-title { color: #e65100; }
 
-        .step-orchestrator {
-            background: rgba(255, 193, 7, 0.08);
-            border: 1px solid rgba(255, 193, 7, 0.2);
-        }
-
-        .step-orchestrator .pipeline-step-header {
-            color: #ffd54f;
-        }
-
-        .step-orchestrator .step-number {
-            background: rgba(255, 193, 7, 0.2);
-            color: #ffd54f;
-        }
-
-        .step-llm {
-            background: rgba(244, 67, 54, 0.08);
-            border: 1px solid rgba(244, 67, 54, 0.2);
-        }
-
-        .step-llm .pipeline-step-header {
-            color: #ef9a9a;
-        }
-
-        .step-llm .step-number {
-            background: rgba(244, 67, 54, 0.2);
-            color: #ef9a9a;
-        }
-
-        .step-output {
-            background: rgba(76, 175, 80, 0.08);
-            border: 1px solid rgba(76, 175, 80, 0.2);
-        }
-
-        .step-output .pipeline-step-header {
-            color: #a5d6a7;
-        }
-
-        .step-output .step-number {
-            background: rgba(76, 175, 80, 0.2);
-            color: #a5d6a7;
-        }
-
-        .step-detail {
-            font-size: 0.75rem;
-            color: #999;
-            padding-left: 1.75rem;
-        }
-
-        .external-services {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .service-card {
-            border-radius: 8px;
-            padding: 0.6rem 0.8rem;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .service-icon {
-            width: 28px;
-            height: 28px;
+        .row { display: flex; gap: 0.75rem; }
+        .box {
+            flex: 1;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
             border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            flex-shrink: 0;
+            padding: 0.6rem 0.8rem;
         }
-
-        .service-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .service-name {
+        .box-title {
             font-size: 0.75rem;
             font-weight: 600;
-            color: #ddd;
+            color: #555;
+            margin-bottom: 0.3rem;
+        }
+        .box ul {
+            list-style: none;
+            font-size: 0.72rem;
+            color: #666;
+        }
+        .box ul li { padding: 0.1rem 0; padding-left: 0.8rem; position: relative; }
+        .box ul li::before {
+            content: '';
+            position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            width: 4px; height: 4px; border-radius: 50%; background: #aaa;
         }
 
-        .service-desc {
-            font-size: 0.65rem;
-            color: #888;
+        .arrow {
+            text-align: center;
+            color: #999;
+            font-size: 0.75rem;
+            padding: 0.3rem 0;
         }
 
-        .gemini-icon { background: rgba(66, 133, 244, 0.2); color: #4285f4; }
-        .stt-icon { background: rgba(52, 168, 83, 0.2); color: #34a853; }
-        .tavily-icon { background: rgba(251, 188, 4, 0.2); color: #fbbc04; }
-        .firestore-icon { background: rgba(255, 152, 0, 0.2); color: #ff9800; }
-        .functions-icon { background: rgba(156, 39, 176, 0.2); color: #ab47bc; }
-
-        /* JSON Output */
-        .json-output {
-            margin-top: 1rem;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            font-family: 'Consolas', 'Monaco', monospace;
-            font-size: 0.7rem;
-            color: #a5d6a7;
-            border: 1px solid rgba(76, 175, 80, 0.15);
-            overflow-x: auto;
+        .pipeline { display: flex; gap: 0.5rem; align-items: stretch; }
+        .step {
+            flex: 1;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 0.5rem 0.6rem;
+            font-size: 0.72rem;
+            color: #555;
         }
+        .step strong { display: block; color: #333; margin-bottom: 0.2rem; font-size: 0.73rem; }
 
-        .json-key { color: #81d4fa; }
-        .json-string { color: #c5e1a5; }
-        .json-bracket { color: #888; }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .edge-content {
-                grid-template-columns: 1fr;
-            }
-            .cloud-content {
-                grid-template-columns: 1fr;
-            }
-            .reality-content {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            body {
-                padding: 1rem;
-            }
-            h1 {
-                font-size: 1.5rem;
-            }
-        }
-
-        /* Data flow animation */
-        @keyframes pulse {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
-        }
-
-        .connection-arrow {
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        /* Legend */
-        .legend {
-            max-width: 1100px;
-            margin: 2rem auto 0;
+        .services {
             display: flex;
             flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: center;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
             gap: 0.4rem;
-            font-size: 0.75rem;
-            color: #888;
+            margin-top: 0.5rem;
+        }
+        .svc {
+            font-size: 0.68rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            color: #555;
         }
 
-        .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
+        @media (max-width: 600px) {
+            .row, .pipeline { flex-direction: column; }
+            body { padding: 1rem; }
         }
-
-        .dot-edge { background: #2196f3; }
-        .dot-unity { background: #9c27b0; }
-        .dot-cloud { background: #ff9800; }
-        .dot-reality { background: #4caf50; }
     </style>
 </head>
 <body>
     <h1>Emotion ReadAR (E.R.A)</h1>
     <p class="subtitle">Edge-Cloud Hybrid Architecture</p>
 
-    <div class="architecture">
-        <!-- Layer 1: Reality -->
-        <div class="layer layer-reality">
-            <div class="layer-header">
-                <div class="layer-number">1</div>
-                <div class="layer-title">現実世界 (Reality)</div>
-            </div>
-            <div class="reality-content">
-                <div class="persons-group">
-                    <div class="person">
-                        <div class="person-icon other-icon">A</div>
-                        <div class="person-label">相手A</div>
-                    </div>
-                    <div class="person">
-                        <div class="person-icon other-icon">B</div>
-                        <div class="person-label">相手B</div>
-                    </div>
-                </div>
-                <div class="interaction-arrow">&#x2194; 対面会話 &#x2194;</div>
-                <div class="person">
-                    <div class="person-icon user-icon">U</div>
-                    <div class="person-label">ユーザー (自分)</div>
-                </div>
+    <div class="arch">
+        <!-- Layer 1 -->
+        <div class="layer l1">
+            <div class="layer-title">1. 現実世界</div>
+            <div style="font-size:0.75rem; color:#555; text-align:center;">
+                [相手A] [相手B] ... &#x2194; 対面会話 &#x2194; [ユーザー]
             </div>
         </div>
 
-        <!-- Connection: Reality -> Edge -->
-        <div class="connection">
-            <div class="connection-line">
-                <div class="connection-label">光 / 音声</div>
-                <div class="connection-arrow">&#x2193;</div>
-            </div>
-            <div class="connection-line">
-                <div class="connection-arrow">&#x2191;</div>
-                <div class="connection-label">視覚 HUD</div>
-            </div>
-        </div>
+        <div class="arrow">&#x2193; 光・音声 &nbsp;&nbsp; &#x2191; HUD表示</div>
 
-        <!-- Layer 2: Edge Device -->
-        <div class="layer layer-edge">
-            <div class="layer-header">
-                <div class="layer-number">2</div>
-                <div class="layer-title">エッジデバイス (Android / Google AI Glass)</div>
-                <div class="layer-role">感覚器官 + UI/UX</div>
-            </div>
-            <div class="edge-content">
-                <!-- Android Native -->
-                <div class="sub-block android-block">
-                    <div class="sub-block-title">
-                        A) Android Native
-                        <span class="badge badge-android">知覚・解析層</span>
-                    </div>
-                    <ul class="feature-list">
-                        <li>顔検出 & ID管理 (MediaPipe)</li>
-                        <li>基本表情の瞬時判定 (Blendshape)</li>
-                        <li>VAD (発話検知) / 音量 / ピッチ</li>
-                        <li>DOA (音源定位) → 話者特定</li>
-                        <li>姿勢・ジェスチャー解析 (Pose Landmarker)</li>
+        <!-- Layer 2 -->
+        <div class="layer l2">
+            <div class="layer-title">2. エッジデバイス (Android / Google AI Glass)</div>
+            <div class="row">
+                <div class="box">
+                    <div class="box-title">A) Android Native (解析)</div>
+                    <ul>
+                        <li>顔検出 & 表情判定 (MediaPipe)</li>
+                        <li>VAD / DOA (話者特定)</li>
+                        <li>姿勢解析 (Pose Landmarker)</li>
                     </ul>
-                    <div class="data-output">
-                        <span class="data-tag">即時データ (Local)</span>
-                        <span class="data-tag">特徴量 (Server送信)</span>
-                    </div>
                 </div>
-
-                <!-- Unity -->
-                <div class="sub-block unity-block">
-                    <div class="sub-block-title">
-                        B) Unity
-                        <span class="badge badge-unity">表示・通信層</span>
-                    </div>
-                    <ul class="feature-list">
-                        <li>基本感情の顔横追従表示 (&lt; 100ms)</li>
-                        <li>話者ハイライト表示</li>
-                        <li>MFUI (最小機能UI)</li>
+                <div class="box">
+                    <div class="box-title">B) Unity (表示)</div>
+                    <ul>
+                        <li>感情表示 (&lt;100ms)</li>
+                        <li>話者ハイライト</li>
+                        <li>AI回答候補 (2択)</li>
                     </ul>
-                    <div class="feedback-section">
-                        <div class="section-label">AIアドバイス表示 (数秒〜十数秒に1回)</div>
-                        <ul class="feature-list">
-                            <li>深層感情分析結果</li>
-                            <li>会話戦略 / 回答候補 (2択)</li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Connection: Edge -> Cloud -->
-        <div class="connection">
-            <div class="connection-line">
-                <div class="connection-label">WebSocket (JSON + Audio Binary)</div>
-                <div class="connection-arrow">&#x2193; &#x2191;</div>
-            </div>
-        </div>
+        <div class="arrow">&#x2193;&#x2191; WebSocket (JSON + Audio)</div>
 
-        <!-- Layer 3: Cloud -->
-        <div class="layer layer-cloud">
-            <div class="layer-header">
-                <div class="layer-number">3</div>
-                <div class="layer-title">クラウド (GCP / Cloud Run)</div>
-                <div class="layer-role">頭脳 + 記憶</div>
-            </div>
-            <div class="cloud-content">
-                <!-- Pipeline -->
-                <div class="pipeline">
-                    <div class="pipeline-step step-orchestrator">
-                        <div class="pipeline-step-header">
-                            <div class="step-number">1</div>
-                            蓄積・制御 (Orchestrator)
-                        </div>
-                        <div class="step-detail">
-                            STT (文字起こし) → 文脈バッファ [5文蓄積 or 沈黙検知] → LLM Trigger
-                        </div>
-                    </div>
-                    <div class="pipeline-step step-llm">
-                        <div class="pipeline-step-header">
-                            <div class="step-number">2</div>
-                            思考・生成 (LLM Agent)
-                        </div>
-                        <div class="step-detail">
-                            Step 1: 高速RAG検索 (Tavily)<br>
-                            Step 2: マルチモーダル深層分析 (Gemini Fine-tuned)<br>
-                            Step 3: アドバイス生成 (検索事実 + 深層感情 + 文脈)
-                        </div>
-                    </div>
-                    <div class="pipeline-step step-output">
-                        <div class="pipeline-step-header">
-                            <div class="step-number">3</div>
-                            出力 (Response Builder)
-                        </div>
-                        <div class="step-detail">
-                            deep_emotions + strategy + reply_options (2択) を JSON で返却
-                        </div>
-                    </div>
-
-                    <!-- JSON Output Example -->
-                    <div class="json-output">
-                        <span class="json-bracket">{</span><br>
-                        &nbsp;&nbsp;<span class="json-key">"deep_emotions"</span>: [<span class="json-bracket">{</span><span class="json-key">"id"</span>: <span class="json-string">"A"</span>, <span class="json-key">"emotion"</span>: <span class="json-string">"interested"</span><span class="json-bracket">}</span>],<br>
-                        &nbsp;&nbsp;<span class="json-key">"advice"</span>: <span class="json-bracket">{</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"strategy"</span>: <span class="json-string">"視線を合わせ、ゆっくり頷いて"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="json-key">"reply_options"</span>: [<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-bracket">{</span><span class="json-key">"label"</span>: <span class="json-string">"共感"</span>, <span class="json-key">"text"</span>: <span class="json-string">"それは大変でしたね..."</span><span class="json-bracket">}</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="json-bracket">{</span><span class="json-key">"label"</span>: <span class="json-string">"深掘"</span>, <span class="json-key">"text"</span>: <span class="json-string">"具体的にどういうこと？"</span><span class="json-bracket">}</span><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;]<br>
-                        &nbsp;&nbsp;<span class="json-bracket">}</span><br>
-                        <span class="json-bracket">}</span>
-                    </div>
+        <!-- Layer 3 -->
+        <div class="layer l3">
+            <div class="layer-title">3. クラウド (GCP / Cloud Run)</div>
+            <div class="pipeline">
+                <div class="step">
+                    <strong>1. Orchestrator</strong>
+                    STT &#x2192; 文脈バッファ (5文) &#x2192; LLM Trigger
                 </div>
-
-                <!-- External Services -->
-                <div class="external-services">
-                    <div style="font-size: 0.8rem; color: #ffb74d; font-weight: 600; margin-bottom: 0.25rem;">外部連携API & DB</div>
-                    <div class="service-card">
-                        <div class="service-icon gemini-icon">G</div>
-                        <div class="service-info">
-                            <div class="service-name">Gemini 2.5 Flash Lite</div>
-                            <div class="service-desc">Fine-tuned / LoRA対応</div>
-                        </div>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-icon stt-icon">S</div>
-                        <div class="service-info">
-                            <div class="service-name">Cloud Speech-to-Text</div>
-                            <div class="service-desc">リアルタイム音声認識</div>
-                        </div>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-icon tavily-icon">T</div>
-                        <div class="service-info">
-                            <div class="service-name">Tavily</div>
-                            <div class="service-desc">高速RAG検索</div>
-                        </div>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-icon firestore-icon">F</div>
-                        <div class="service-info">
-                            <div class="service-name">Cloud Firestore</div>
-                            <div class="service-desc">会話ログ・成長記録</div>
-                        </div>
-                    </div>
-                    <div class="service-card">
-                        <div class="service-icon functions-icon">CF</div>
-                        <div class="service-info">
-                            <div class="service-name">Cloud Functions</div>
-                            <div class="service-desc">データ書き込みトリガー</div>
-                        </div>
-                    </div>
+                <div class="step">
+                    <strong>2. LLM Agent</strong>
+                    RAG検索 + 深層分析 &#x2192; アドバイス生成
+                </div>
+                <div class="step">
+                    <strong>3. Response</strong>
+                    emotions + strategy + reply_options (JSON)
                 </div>
             </div>
+            <div class="services">
+                <span class="svc">Gemini 2.5 Flash Lite</span>
+                <span class="svc">Cloud Speech-to-Text</span>
+                <span class="svc">Tavily (RAG)</span>
+                <span class="svc">Cloud Firestore</span>
+                <span class="svc">Cloud Functions</span>
+            </div>
         </div>
-    </div>
-
-    <!-- Legend -->
-    <div class="legend">
-        <div class="legend-item"><div class="legend-dot dot-reality"></div>現実世界</div>
-        <div class="legend-item"><div class="legend-dot dot-edge"></div>Android Native</div>
-        <div class="legend-item"><div class="legend-dot dot-unity"></div>Unity (HUD)</div>
-        <div class="legend-item"><div class="legend-dot dot-cloud"></div>Cloud (GCP)</div>
     </div>
 </body>
 </html>
