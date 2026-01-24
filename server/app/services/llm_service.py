@@ -30,7 +30,7 @@ SYSTEM_PROMPT = """あなたは対面コミュニケーションを支援する�
 以下のJSON形式で回答してください:
 
 {
-    "situation_analysis": "現在の状況の分析（1-2文）",
+    "situation_analysis": "現在の状況分析（20〜30文字程度の簡潔な1文）",
     "responses": [
         {
             "text": "応答文1",
@@ -60,16 +60,20 @@ MAX_DELAY = 10.0
 class LLMService:
     """LLM推論サービス（Gemini API）."""
 
-    def __init__(self, api_key: str, model: str = "gemini-1.5-flash") -> None:
+    def __init__(
+        self,
+        credentials_path: str | None = None,
+        model: str = "tunedModels/era-tuned-model",
+    ) -> None:
         """初期化.
 
         Args:
-            api_key: Gemini APIキー
-            model: 使用するモデル名
+            credentials_path: サービスアカウントJSONキーのパス
+            model: 使用するモデル名（ファインチューニング済みモデル）
         """
         self._model = ChatGoogleGenerativeAI(
             model=model,
-            google_api_key=api_key,
+            credentials=credentials_path,
             temperature=0.7,
         )
 

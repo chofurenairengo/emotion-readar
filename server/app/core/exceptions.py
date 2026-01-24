@@ -1,8 +1,8 @@
-class CommXRException(Exception):
-    """Base exception for Comm-XR."""
+class ERAException(Exception):
+    """Base exception for ERA."""
 
 
-class LLMError(CommXRException):
+class LLMError(ERAException):
     """LLM推論エラー."""
 
 
