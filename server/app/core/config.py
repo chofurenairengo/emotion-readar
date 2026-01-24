@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -8,28 +6,31 @@ class Settings(BaseSettings):
     アプリケーション全体の設定管理クラス
     .envファイルの値を自動で読み込みます
     """
-    # 必須項目 (宣言のみでデフォルト値なし = .envに無いと起動時にエラーになる)
-    GEMINI_API_KEY: str
-    FT_MODEL_ID: str
 
-    # 任意項目 (デフォルト値あり)
+    # GCP設定 (サービスアカウント認証: jsonkey -> アクセストークン取得)
+    GCP_PROJECT_ID: str  # GCPプロジェクトID
+    GCP_LOCATION: str = "asia-northeast1"  # Vertex AIのリージョン
+
+    # モデル設定
+    FT_MODEL_ID: str  # Geminiモデル名 (例: gemini-1.5-flash)
+
+    # 任意項目
     ENV_STATE: str = "dev"
-    PROJECT_NAME: str = "Comm-XR"
-
-    # 将来的にAWS用の設定もここに追加可能
-    # AWS_REGION: str = "ap-northeast-1"
+    PROJECT_NAME: str = "ERA"
 
     # Pydanticの設定
     model_config = SettingsConfigDict(
-        env_file=".env",             # 読み込むファイル名
-        env_file_encoding="utf-8",   # 文字コード
-        case_sensitive=True          # 大文字小文字を区別する (GEMINI_API_KEY != gemini_api_key)
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
     )
 
-# @lru_cache: 設定を何度も読み込まないようにキャッシュする（高速化）
-@lru_cache
-def get_settings():
-    return Settings()
 
-# アプリ全体で使うインスタンス
-settings = get_settings()
+_settings: Settings | None = None
+
+
+def get_settings() -> Settings:
+    global _settings
+    if _settings is None:
+        _settings = Settings()
+    return _settings
