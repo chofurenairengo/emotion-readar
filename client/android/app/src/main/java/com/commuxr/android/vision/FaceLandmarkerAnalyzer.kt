@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.os.SystemClock
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import com.commuxr.android.feature.vision.EmotionScoreCalculator
 import com.commuxr.android.unity.UnityMessageSender
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.core.BaseOptions
@@ -69,14 +70,16 @@ class FaceLandmarkerAnalyzer(
         lastSentAtMs = now
 
         val categories = blendshapes.firstOrNull().orEmpty()
-        val mouthSmileLeft = categories
-            .firstOrNull { it.categoryName() == "mouthSmileLeft" }
-            ?.score() ?: 0f
+        val emotionScores = EmotionScoreCalculator.calculate(categories)
 
         val payload = JSONObject()
         payload.put("type", "face")
         payload.put("timestampMs", now)
-        payload.put("mouthSmileLeft", mouthSmileLeft)
+
+        // 8種類の感情スコアを追加
+        emotionScores.forEach { (emotion, score) ->
+            payload.put(emotion, score)
+        }
 
         unityMessageSender.send(payload.toString())
     }
