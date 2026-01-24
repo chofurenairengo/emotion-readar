@@ -7,13 +7,16 @@ class Settings(BaseSettings):
     .envファイルの値を自動で読み込みます
     """
 
-    # 必須項目 (宣言のみでデフォルト値なし = .envに無いと起動時にエラーになる)
-    GEMINI_API_KEY: str
-    FT_MODEL_ID: str
+    # GCP設定 (サービスアカウント認証: jsonkey -> アクセストークン取得)
+    GCP_PROJECT_ID: str  # GCPプロジェクトID
+    GCP_LOCATION: str = "asia-northeast1"  # Vertex AIのリージョン
 
-    # 任意項目 (デフォルト値あり)
+    # モデル設定
+    FT_MODEL_ID: str  # Geminiモデル名 (例: gemini-1.5-flash)
+
+    # 任意項目
     ENV_STATE: str = "dev"
-    PROJECT_NAME: str = "Comm-XR"
+    PROJECT_NAME: str = "ERA"
 
     # Pydanticの設定
     model_config = SettingsConfigDict(

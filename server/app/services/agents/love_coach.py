@@ -10,7 +10,7 @@ from app.dto.llm import LLMResponseResult
 from app.infra.external.gemini_client import LLMClientFactory
 
 
-class CommXRAgent(AgentInterface):
+class ERAAgent(AgentInterface):
     def __init__(self) -> None:
         # 1. API接続の確立
         self.llm = LLMClientFactory.create_ft_client()
@@ -69,4 +69,4 @@ class CommXRAgent(AgentInterface):
         return cast(LLMResponseResult, result)
 
 
-LoveCoachAgent = CommXRAgent
+LoveCoachAgent = ERAAgent
