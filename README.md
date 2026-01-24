@@ -72,7 +72,7 @@
 | データベース | **Firestore** (Native Mode) | 無料枠が大きい（50K読み/20K書き/日） |
 | 認証 | **Firebase Authentication** | 無料（50K MAUまで） |
 | 音声認識 | **Cloud Speech-to-Text** | GCP統一、60分/月無料 |
-| LLM | **Gemini 2.5 Flash** (Vertex AI) | GCPネイティブ、高速・低コスト |
+| LLM | **Gemini 2.5 Flash (finetuned)** (Vertex AI) | GCPネイティブ、高速・低コスト |
 | シークレット | **Secret Manager** | 6アクティブバージョン無料 |
 | ログ・監視 | **Cloud Logging** | 50GB/月無料 |
 
@@ -117,7 +117,7 @@ timeout: 300s             # WebSocket対応
 
 | モデル | 用途 |
 |--------|------|
-| **Gemini 2.5 Flash** | リアルタイム応答（推奨） |
+| **Gemini 2.5 Flash (finetuned)** | リアルタイム応答（推奨） |
 
 - 入力: STT テキスト / 非言語特徴量 / 会話コンテキスト
 - 出力: 返答候補（2パターン）/ 状況分析 / 会話戦略
@@ -130,7 +130,7 @@ timeout: 300s             # WebSocket対応
 | Firestore | 無料枠内 | $0 |
 | Firebase Auth | 無料枠内 | $0 |
 | Speech-to-Text | 10時間 | $14 |
-| Gemini 2.5 Flash | 100万トークン | $0〜 |
+| Gemini 2.5 Flash (finetuned) | 100万トークン | $0〜 |
 | Secret Manager | 無料枠内 | $0 |
 | **合計** | | **$15〜20/月** |
 
@@ -146,9 +146,8 @@ FIRESTORE_EMULATOR_HOST=localhost:8080  # ローカル開発時
 # 認証
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
 
-# Gemini API
-GEMINI_API_KEY=your-gemini-api-key
-GEMINI_MODEL=gemini-2.5-flash
+# Gemini API (Vertex AI) - JSON keyで認証
+GEMINI_MODEL=tunedModels/your-finetuned-model-id
 ```
 
 ## データ・プライバシー方針
