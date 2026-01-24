@@ -1,5 +1,8 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.api.auth import get_current_user
 from app.api.dependencies import get_session_service
 from app.dto.feature import FeatureRequest, FeatureResponse
 from app.services.feature_service import record_features
@@ -15,6 +18,7 @@ router = APIRouter(tags=["features"])
 )
 def receive_features(
     payload: FeatureRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
 ) -> FeatureResponse:
     try:
