@@ -27,7 +27,7 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
-    // 直接文字列で指定するように修正
+    implementation("androidx.lifecycle:lifecycle-process:2.6.1") // ★これを追加
     implementation("com.google.mediapipe:tasks-vision:0.10.14")
     implementation("com.google.code.gson:gson:2.10.1")
 }

@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ProcessLifecycleOwner;
 
 public final class PluginBridge {
     private static final String TAG = "PluginBridge";
@@ -16,30 +17,33 @@ public final class PluginBridge {
         Log.d(TAG, "start()");
 
         try {
-            // UnityのPlayerActivityを取得
             Class<?> unityPlayerClass = Class.forName("com.unity3d.player.UnityPlayer");
             Activity activity = (Activity) unityPlayerClass.getField("currentActivity").get(null);
 
-            if (activity instanceof LifecycleOwner) {
-                final LifecycleOwner lifecycleOwner = (LifecycleOwner) activity;
-                
-                new Handler(Looper.getMainLooper()).post(() -> {
+            // ★ UnityのActivityがLifecycleOwnerでなくても、ProcessLifecycleOwnerを使えば解決できる
+            new Handler(Looper.getMainLooper()).post(() -> {
+                try {
                     if (faceAnalyzer != null) {
                         faceAnalyzer.stop();
                     }
+
+                    // アプリ全体のライフサイクルを取得
+                    LifecycleOwner lifecycleOwner = ProcessLifecycleOwner.get();
+                    
                     faceAnalyzer = new FaceAnalyzer(activity, lifecycleOwner, (json) -> {
                         sendUnityMessage("FaceReceiver", "OnFaceData", json);
-                        return null; // Unit in Kotlin
+                        return null; 
                     });
+                    
                     faceAnalyzer.start();
-                    Log.d(TAG, "FaceAnalyzer started");
-                });
-            } else {
-                Log.e(TAG, "Activity is not a LifecycleOwner. Make sure you are using a compatible Unity version or custom Activity.");
-            }
+                    Log.d(TAG, "FaceAnalyzer started successfully with ProcessLifecycleOwner");
+                } catch (Exception e) {
+                    Log.e(TAG, "Failed to start FaceAnalyzer in main thread", e);
+                }
+            });
 
         } catch (Exception e) {
-            Log.e(TAG, "Failed to initialize FaceAnalyzer", e);
+            Log.e(TAG, "Failed to initialize PluginBridge", e);
         }
     }
 

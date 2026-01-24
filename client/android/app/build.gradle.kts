@@ -5,14 +5,13 @@ plugins {
 
 android {
     namespace = "com.commuxr.android"
-    compileSdk {
-        version = release(36)
-    }
+    // 安定版の34に変更
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.commuxr.android"
-        minSdk = 22
-        targetSdk = 36
+        minSdk = 24 // MediaPipeの要件
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -29,11 +28,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "1.8"
     }
     buildFeatures {
         compose = true
