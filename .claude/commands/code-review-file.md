@@ -190,20 +190,37 @@ After saving, tell the user:
 
 ## Output Guidelines
 
-**IMPORTANT - Token Optimization**:
-- Do NOT repeat the full report content in the chat response
-- Only output a brief summary after saving to file
-- Keep chat response under 200 tokens
+**CRITICAL - Token Optimization (MUST FOLLOW)**:
 
-Example chat output after saving:
+After saving the report to `CODEREVIEW.md`:
+
+1. **DO NOT** output the report content to terminal
+2. **DO NOT** list individual issues in terminal
+3. **DO NOT** show code snippets in terminal
+4. **DO NOT** repeat anything that's already in CODEREVIEW.md
+
+**ONLY output this minimal format (under 100 tokens)**:
+
+```
+Saved to `CODEREVIEW.md`
+
+Summary: CRITICAL=[n], HIGH=[n], MEDIUM=[n], LOW=[n]
+Recommendation: [BLOCK/NEEDS FIXES/APPROVED WITH NOTES/APPROVED]
+
+[One-line description of main changes, max 80 chars]
+```
+
+**Example**:
 ```
 Saved to `CODEREVIEW.md`
 
 Summary: CRITICAL=0, HIGH=1, MEDIUM=2, LOW=3
 Recommendation: NEEDS FIXES
 
-Use Copilot to execute: @workspace /execute-review
+主な変更: APIエンドポイントの認証処理追加
 ```
+
+**Rationale**: Full details are in CODEREVIEW.md. Terminal output is for quick status only.
 
 ## Notes
 

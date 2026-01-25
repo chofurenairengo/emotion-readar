@@ -27,22 +27,22 @@
 
 ---
 
-## Copilot コマンド (.vscode/)
+## Copilot コマンド (.github/prompts/)
 
 | コマンド             | 説明                                                 |
 | -------------------- | ---------------------------------------------------- |
 | `/execute-plan`      | PLAN.md を実行（指定された内容のみ実装）             |
 | `/execute-review`    | CODEREVIEW.md の問題を修正（記載された問題のみ修正） |
-| `/run-claude-review` | Claude Code レビュー実行の手順書                     |
+| `/run-claude-review` | Claude CLI でレビューを自動実行                       |
 
 ---
 
-## 統合ワークフロー (.vscode/)
+## 統合ワークフロー (.github/prompts/)
 
 | ワークフロー                       | ステップ                                                     |
 | ---------------------------------- | ------------------------------------------------------------ |
-| `/execute-plan-code-review-file`   | 1. Copilot `/execute-plan` → 2. Claude `/code-review-file`   |
-| `/execute-review-code-review-file` | 1. Copilot `/execute-review` → 2. Claude `/code-review-file` |
+| `/execute-plan-code-review-file`   | 1. Copilot 実装 → 2. Claude CLI `/code-review-file`         |
+| `/execute-review-code-review-file` | 1. Copilot 修正 → 2. Claude CLI `/code-review-file`         |
 
 ---
 

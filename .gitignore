@@ -16,11 +16,6 @@
 
 # JetBrains Rider / VS / etc
 .vscode/*
-!.vscode/execute-plan.md
-!.vscode/execute-plan-code-review-file.md
-!.vscode/execute-review.md
-!.vscode/execute-review-code-review-file.md
-!.vscode/run-claude-review.md
 
 .idea/
 *.csproj
