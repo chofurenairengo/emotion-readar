@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "android"
 include(":app")
+include(":unity-plugin")

@@ -31,6 +31,12 @@
 # OS files
 .DS_Store
 
+# ===== Android =====
+*.apk
+*.aab
+client/android/Get
+client/android/Run
+
 # ===== Secrets =====
 .env
 .env.prod
