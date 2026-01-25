@@ -202,7 +202,7 @@ Saved to `CODEREVIEW.md`
 Summary: CRITICAL=0, HIGH=1, MEDIUM=2, LOW=3
 Recommendation: NEEDS FIXES
 
-Use Copilot to execute: @CODEREVIEW /execute-review
+Use Copilot to execute: @workspace /execute-review
 ```
 
 ## Notes

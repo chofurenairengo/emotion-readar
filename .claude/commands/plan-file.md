@@ -118,7 +118,7 @@ Overview: [1-2 sentence summary]
 Phases: 3
 Files affected: 5
 
-Use Copilot to execute: @PLAN.md /execute-plan
+Use Copilot to execute: @workspace /execute-plan
 ```
 
 ## Notes
