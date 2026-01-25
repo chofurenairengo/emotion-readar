@@ -95,3 +95,87 @@ def test_www_authenticate_header_present(client: TestClient) -> None:
     response = client.post("/api/sessions")
     assert response.status_code == 401
     assert response.headers.get("WWW-Authenticate") == "Bearer"
+
+
+def test_access_other_user_session_returns_403(client: TestClient) -> None:
+    """他のユーザーのセッションにアクセスすると403が返る。"""
+    # ユーザーAでセッション作成
+    user_a_claims = {"uid": "user-a-123", "email": "a@example.com"}
+    with patch(
+        "app.api.auth.verify_id_token",
+        return_value=user_a_claims,
+    ):
+        create_resp = client.post(
+            "/api/sessions",
+            headers={"Authorization": "Bearer user-a-token"},
+        )
+        session_id = create_resp.json()["id"]
+
+    # ユーザーBでそのセッションにアクセス
+    user_b_claims = {"uid": "user-b-456", "email": "b@example.com"}
+    with patch(
+        "app.api.auth.verify_id_token",
+        return_value=user_b_claims,
+    ):
+        get_resp = client.get(
+            f"/api/sessions/{session_id}",
+            headers={"Authorization": "Bearer user-b-token"},
+        )
+    assert get_resp.status_code == 403
+    assert "permission" in get_resp.json()["detail"].lower()
+
+
+def test_end_other_user_session_returns_403(client: TestClient) -> None:
+    """他のユーザーのセッションを終了しようとすると403が返る。"""
+    # ユーザーAでセッション作成
+    user_a_claims = {"uid": "user-a-123", "email": "a@example.com"}
+    with patch(
+        "app.api.auth.verify_id_token",
+        return_value=user_a_claims,
+    ):
+        create_resp = client.post(
+            "/api/sessions",
+            headers={"Authorization": "Bearer user-a-token"},
+        )
+        session_id = create_resp.json()["id"]
+
+    # ユーザーBでそのセッションを終了しようとする
+    user_b_claims = {"uid": "user-b-456", "email": "b@example.com"}
+    with patch(
+        "app.api.auth.verify_id_token",
+        return_value=user_b_claims,
+    ):
+        end_resp = client.post(
+            f"/api/sessions/{session_id}/end",
+            headers={"Authorization": "Bearer user-b-token"},
+        )
+    assert end_resp.status_code == 403
+    assert "permission" in end_resp.json()["detail"].lower()
+
+
+# verify_websocket_token のユニットテスト
+import pytest
+
+from app.api.auth import verify_websocket_token
+
+
+def test_verify_websocket_token_empty_string() -> None:
+    """空文字列でValueErrorが発生する."""
+    with pytest.raises(ValueError, match="Missing"):
+        verify_websocket_token("")
+
+
+def test_verify_websocket_token_invalid() -> None:
+    """無効なトークンでValueErrorが発生する."""
+    with patch("app.api.auth.verify_id_token", side_effect=Exception("Invalid")):
+        with pytest.raises(ValueError, match="Invalid or expired"):
+            verify_websocket_token("bad-token")
+
+
+def test_verify_websocket_token_valid() -> None:
+    """有効なトークンでユーザー情報が返る."""
+    mock_claims = {"uid": "ws-user-123", "email": "ws@example.com"}
+    with patch("app.api.auth.verify_id_token", return_value=mock_claims):
+        result = verify_websocket_token("valid-token")
+    assert result["uid"] == "ws-user-123"
+    assert result["email"] == "ws@example.com"

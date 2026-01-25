@@ -7,7 +7,12 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 
-from app.api.dependencies import get_connection_manager, get_response_generator
+from app.api.auth import verify_websocket_token
+from app.api.dependencies import (
+    get_connection_manager,
+    get_response_generator,
+    get_session_service,
+)
 from app.dto.audio import AudioFormat
 from app.services.connection_manager import ConnectionManager
 
@@ -34,9 +39,30 @@ def _error_payload(message: str, detail: Any | None = None) -> dict[str, Any]:
 async def realtime(
     websocket: WebSocket,
     session_id: str = Query(...),
+    token: str = Query(...),
     connection_manager: ConnectionManager = Depends(get_connection_manager),
 ) -> None:
-    await connection_manager.connect(websocket, session_id)
+    # 先に accept() を実行
+    await websocket.accept()
+
+    # トークン検証
+    try:
+        user_info = verify_websocket_token(token)
+    except ValueError as exc:
+        await websocket.close(code=4001, reason=str(exc))
+        return
+
+    # セッション所有者検証
+    session_service = get_session_service()
+    session = session_service.get_session(session_id)
+    if session is None:
+        await websocket.close(code=4004, reason="Session not found")
+        return
+    if session.owner_id != user_info["uid"]:
+        await websocket.close(code=4003, reason="You don't have permission to access this session")
+        return
+
+    await connection_manager.register(websocket, session_id)
     try:
         while True:
             try:
@@ -113,7 +139,7 @@ async def _handle_analysis_request(
             format_str = message.get("audio_format", "wav")
             audio_format = AudioFormat(format_str)
         except Exception as e:
-            logger.warning(f"Failed to decode audio data: {e}")
+            logger.warning("Failed to decode audio data: %s", e)
             # 音声デコード失敗時は処理を継続（音声なしとして扱う）
             audio_data = None
             audio_format = None
@@ -132,8 +158,8 @@ async def _handle_analysis_request(
         await websocket.send_json(result.model_dump(mode="json"))
 
     except NotImplementedError as e:
-        logger.error(f"ResponseGeneratorService not implemented: {e}")
+        logger.error("ResponseGeneratorService not implemented: %s", e)
         await websocket.send_json(_error_payload("Service not available", str(e)))
     except Exception as e:
-        logger.exception(f"Analysis request failed: {e}")
+        logger.exception("Analysis request failed: %s", e)
         await websocket.send_json(_error_payload(f"Analysis failed: {str(e)}"))

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.auth import get_current_user
 from app.api.dependencies import get_session_service
+from app.core.exceptions import SessionPermissionError
 from app.dto.session import SessionResponse
 from app.services.session_service import SessionService
 
@@ -20,7 +21,7 @@ def start_session(
     current_user: dict[str, Any] = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
 ) -> SessionResponse:
-    session = session_service.create_session()
+    session = session_service.create_session(owner_id=current_user["uid"])
     return SessionResponse.from_model(session)
 
 
@@ -35,6 +36,16 @@ def finish_session(
     current_user: dict[str, Any] = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
 ) -> SessionResponse:
+    try:
+        session_service.verify_owner(session_id, current_user["uid"])
+    except LookupError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    except SessionPermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        )
+
     session = session_service.end_session(session_id)
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
@@ -52,7 +63,13 @@ def read_session(
     current_user: dict[str, Any] = Depends(get_current_user),
     session_service: SessionService = Depends(get_session_service),
 ) -> SessionResponse:
-    session = session_service.get_session(session_id)
-    if session is None:
+    try:
+        session = session_service.verify_owner(session_id, current_user["uid"])
+    except LookupError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    except SessionPermissionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=str(exc),
+        )
     return SessionResponse.from_model(session)

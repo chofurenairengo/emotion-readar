@@ -5,6 +5,7 @@ from datetime import datetime
 @dataclass
 class Session:
     id: str
+    owner_id: str
     status: str
     started_at: datetime
     ended_at: datetime | None = None
