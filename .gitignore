@@ -15,7 +15,13 @@
 !/[Pp]roject[Ss]ettings/**/*.meta
 
 # JetBrains Rider / VS / etc
-.vscode/
+.vscode/*
+!.vscode/execute-plan.md
+!.vscode/execute-plan-code-review-file.md
+!.vscode/execute-review.md
+!.vscode/execute-review-code-review-file.md
+!.vscode/run-claude-review.md
+
 .idea/
 *.csproj
 *.sln
@@ -74,3 +80,7 @@ __pycache__
 
 # ただし、MCPの設定ファイルだけは絶対に無視（秘密情報対策）
 .claude/mcp-configs.json
+
+# AI implementation plan
+/PLAN.md
+/CODEREVIEW.md
