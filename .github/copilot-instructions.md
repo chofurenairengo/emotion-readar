@@ -12,7 +12,7 @@
 
 ---
 
-## コマンド一覧
+## コマンド一覧 (.github/prompts/)
 
 ### 実行コマンド
 
@@ -20,12 +20,7 @@
 |----------|------|
 | `/execute-plan` | PLAN.md の実装計画を実行 |
 | `/execute-review` | CODEREVIEW.md の問題を修正 |
-
-### 手順書コマンド
-
-| コマンド | 説明 |
-|----------|------|
-| `/run-claude-review` | Claude Code でレビューを実行する手順 |
+| `/run-claude-review` | Claude CLI でレビューを自動実行 |
 
 ### 統合ワークフロー
 
@@ -127,4 +122,5 @@ CODEREVIEW.md に記載された問題を修正します。
 - `PLAN.md` - 実装計画（Claude Code が生成）
 - `CODEREVIEW.md` - レビュー結果（Claude Code が生成）
 - `AGENTS.md` - プロジェクト仕様書
-- `docs/claude_skills.md` - Claude Code コマンドリファレンス
+- `docs/copilot-skills.md` - Copilot コマンドリファレンス
+- `docs/claude-skills.md` - Claude Code コマンドリファレンス

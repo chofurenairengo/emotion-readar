@@ -105,21 +105,39 @@ The plan should be written in a way that Copilot can understand:
 
 ## Output Guidelines
 
-**IMPORTANT - Token Optimization**:
-- Do NOT repeat the full plan content in the chat response
-- Only output a brief summary after saving to file
-- Keep chat response under 200 tokens
+**CRITICAL - Token Optimization (MUST FOLLOW)**:
 
-Example chat output after saving:
+After saving the plan to `PLAN.md`:
+
+1. **DO NOT** output the plan content to terminal
+2. **DO NOT** list implementation steps in terminal
+3. **DO NOT** show code snippets in terminal
+4. **DO NOT** repeat anything that's already in PLAN.md
+
+**ONLY output this minimal format (under 100 tokens)**:
+
 ```
 Saved to `PLAN.md`
 
-Overview: [1-2 sentence summary]
-Phases: 3
-Files affected: 5
+Overview: [One-line summary, max 60 chars]
+Phases: [n]
+Files affected: [n]
 
-Use Copilot to execute: @workspace /execute-plan
+Next: Run Copilot /execute-plan
 ```
+
+**Example**:
+```
+Saved to `PLAN.md`
+
+Overview: CORS設定の実装とテスト追加
+Phases: 2
+Files affected: 3
+
+Next: Run Copilot /execute-plan
+```
+
+**Rationale**: Full details are in PLAN.md. Terminal output is for quick status only.
 
 ## Notes
 
