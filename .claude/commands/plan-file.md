@@ -102,27 +102,23 @@ The plan should be written in a way that Copilot can understand:
 2. **Include code snippets** showing exactly what to add/change
 3. **Use clear action verbs**: "Add", "Create", "Modify", "Delete", "Rename"
 4. **Show context** for code changes (surrounding lines when helpful)
-5. **Keep Japanese for this project** (CLAUDE.md specifies Japanese as main language)
 
-## Example Usage
+## Output Guidelines
 
+**IMPORTANT - Token Optimization**:
+- Do NOT repeat the full plan content in the chat response
+- Only output a brief summary after saving to file
+- Keep chat response under 200 tokens
+
+Example chat output after saving:
 ```
-User: /plan-file WebSocketでリアルタイム通知機能を追加したい
+Saved to `PLAN.md`
 
-[Agent analyzes codebase, creates detailed plan, saves to PLAN.md]
+Overview: [1-2 sentence summary]
+Phases: 3
+Files affected: 5
 
-Agent: 計画を PLAN.md に保存しました。
-
-保存場所: c:\commuxr\PLAN.md
-
-このファイルをVSCodeで開いて、Copilotに以下のように指示できます：
-- "このPLAN.mdの内容に従って実装してください"
-- "@workspace PLAN.mdの計画を実行して"
-
-計画の概要：
-1. Phase 1: WebSocket接続の基盤実装
-2. Phase 2: 通知サービスの作成
-3. Phase 3: フロントエンド統合
+Use Copilot to execute: @workspace /execute-plan
 ```
 
 ## Notes
@@ -130,4 +126,3 @@ Agent: 計画を PLAN.md に保存しました。
 - This command does NOT write any implementation code - only the plan
 - The plan file is always overwritten to prevent file accumulation
 - Plans should be detailed enough for Copilot to implement without ambiguity
-- Include both Japanese and English comments where appropriate for this project
