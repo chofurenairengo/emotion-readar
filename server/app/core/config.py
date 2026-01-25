@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # CORS設定
     ALLOWED_ORIGINS: str = ""  # カンマ区切りのオリジンリスト
 
+    # Secret Manager設定
+    USE_SECRET_MANAGER: bool = False  # Secret Managerを使用するかどうか
+
     # Pydanticの設定
     model_config = SettingsConfigDict(
         env_file=".env",

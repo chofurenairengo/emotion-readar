@@ -4,6 +4,10 @@
     GOOGLE_APPLICATION_CREDENTIALS: サービスアカウントキーファイルのパス
     FIREBASE_SERVICE_ACCOUNT: サービスアカウントキーのJSON文字列（ファイル不要）
     FIREBASE_AUTH_EMULATOR_HOST: Auth Emulatorのホスト（例: localhost:9099）
+
+Secret Manager:
+    USE_SECRET_MANAGER=true の場合、FIREBASE_SERVICE_ACCOUNT は
+    Secret Manager から取得されます。
 """
 
 from __future__ import annotations
@@ -14,6 +18,8 @@ import os
 
 import firebase_admin
 from firebase_admin import auth, credentials
+
+from app.infra.secret_manager import get_secret
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +32,11 @@ def initialize_firebase() -> firebase_admin.App:
     既に初期化済みの場合は既存インスタンスを返す。
 
     認証情報の優先順位:
-        1. FIREBASE_SERVICE_ACCOUNT 環境変数（JSON文字列）
-        2. GOOGLE_APPLICATION_CREDENTIALS 環境変数（キーファイルパス）
-        3. ADC（Application Default Credentials）
-        4. 認証情報なし（エミュレータ利用時）
+        1. Secret Manager（USE_SECRET_MANAGER=true の場合）
+        2. FIREBASE_SERVICE_ACCOUNT 環境変数（JSON文字列）
+        3. GOOGLE_APPLICATION_CREDENTIALS 環境変数（キーファイルパス）
+        4. ADC（Application Default Credentials）
+        5. 認証情報なし（エミュレータ利用時）
     """
     global _app
 
@@ -81,19 +88,28 @@ def verify_id_token(id_token: str) -> dict:
 
 
 def _build_credentials(emulator_host: str) -> credentials.Base | None:
-    """環境に応じた認証情報を生成する。"""
-    sa_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT", "")
+    """環境に応じた認証情報を生成する。
+
+    認証情報の優先順位:
+        1. Secret Manager / FIREBASE_SERVICE_ACCOUNT（JSON文字列）
+        2. GOOGLE_APPLICATION_CREDENTIALS（キーファイルパス）
+        3. ADC（Application Default Credentials）
+        4. 認証情報なし（エミュレータ利用時）
+    """
+    # Secret Manager または環境変数から取得
+    sa_json = get_secret("FIREBASE_SERVICE_ACCOUNT")
     if sa_json:
-        logger.info("FIREBASE_SERVICE_ACCOUNT 環境変数からサービスアカウントを使用")
+        logger.info("FIREBASE_SERVICE_ACCOUNT からサービスアカウントを使用")
         try:
             sa_dict = json.loads(sa_json)
         except json.JSONDecodeError as exc:
             logger.error(
-                "FIREBASE_SERVICE_ACCOUNT 環境変数のJSONパースに失敗しました: %s",
+                "FIREBASE_SERVICE_ACCOUNT のJSONパースに失敗しました: %s",
                 exc,
             )
             raise ValueError(
-                "Invalid JSON in FIREBASE_SERVICE_ACCOUNT environment variable"
+                "Invalid JSON in FIREBASE_SERVICE_ACCOUNT "
+                "(from Secret Manager or environment variable)"
             ) from exc
         return credentials.Certificate(sa_dict)
 
