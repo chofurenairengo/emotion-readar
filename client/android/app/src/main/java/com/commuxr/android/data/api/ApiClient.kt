@@ -43,8 +43,10 @@ object ApiClient {
 
     /**
      * OkHttp クライアント
+     *
+     * WebSocketClient等から再利用可能（同一モジュール内でアクセス可能）
      */
-    private val okHttpClient: OkHttpClient by lazy {
+    internal val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
             .connectTimeout(CONNECT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
