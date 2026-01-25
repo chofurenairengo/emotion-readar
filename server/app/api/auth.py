@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import Request, HTTPException, status
+from fastapi import HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.infra.firebase import verify_id_token
@@ -67,3 +67,30 @@ async def get_current_user(
     }
     request.state.user = user_info
     return user_info
+
+
+def verify_websocket_token(token: str) -> dict[str, Any]:
+    """WebSocket接続用のトークン検証.
+
+    Args:
+        token: Firebase ID Token
+
+    Returns:
+        dict: ユーザー情報 {"uid": str, "email": str | None}
+
+    Raises:
+        ValueError: トークンが無効または期限切れの場合
+    """
+    if not token:
+        raise ValueError("Missing authentication token")
+
+    try:
+        decoded = verify_id_token(token)
+    except Exception as exc:
+        logger.warning("WebSocket token verification failed: %s", exc)
+        raise ValueError("Invalid or expired token") from exc
+
+    return {
+        "uid": decoded.get("uid", ""),
+        "email": decoded.get("email"),
+    }

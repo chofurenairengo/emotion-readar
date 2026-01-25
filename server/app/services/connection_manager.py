@@ -16,7 +16,12 @@ class ConnectionManager:
         self._lock = asyncio.Lock()
 
     async def connect(self, websocket: WebSocket, session_id: str) -> None:
+        """WebSocket接続を受け入れて登録する."""
         await websocket.accept()
+        await self.register(websocket, session_id)
+
+    async def register(self, websocket: WebSocket, session_id: str) -> None:
+        """既にacceptされたWebSocket接続を登録する."""
         async with self._lock:
             self._connection_sessions[websocket] = session_id
             self._session_connections.setdefault(session_id, set()).add(websocket)

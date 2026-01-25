@@ -16,3 +16,7 @@ class LLMResponseParseError(LLMError):
 
 class STTError(ERAException):
     """音声認識エラー."""
+
+
+class SessionPermissionError(ERAException):
+    """セッションへのアクセス権限がない."""
