@@ -18,101 +18,103 @@ class TestGetSecret:
         """各テスト前にキャッシュをクリア"""
         clear_cache()
 
-    @patch("app.infra.secret_manager.get_settings")
-    def test_returns_env_var_when_secret_manager_disabled(
-        self, mock_get_settings: MagicMock
-    ) -> None:
+    def test_returns_env_var_when_secret_manager_disabled(self) -> None:
         """Secret Manager無効時は環境変数から取得"""
-        mock_settings = MagicMock()
-        mock_settings.USE_SECRET_MANAGER = False
-        mock_settings.ENV_STATE = "dev"
-        mock_get_settings.return_value = mock_settings
-
-        with patch.dict("os.environ", {"TEST_SECRET": "env_value"}):
+        with patch.dict(
+            "os.environ",
+            {
+                "USE_SECRET_MANAGER": "false",
+                "ENV_STATE": "dev",
+                "TEST_SECRET": "env_value",
+            },
+        ):
             result = get_secret("TEST_SECRET")
 
         assert result == "env_value"
 
-    @patch("app.infra.secret_manager.get_settings")
-    def test_returns_default_when_not_found_in_dev(
-        self, mock_get_settings: MagicMock
-    ) -> None:
+    def test_returns_default_when_not_found_in_dev(self) -> None:
         """開発環境でシークレットが見つからない場合はNoneを返す"""
-        mock_settings = MagicMock()
-        mock_settings.USE_SECRET_MANAGER = False
-        mock_settings.ENV_STATE = "dev"
-        mock_get_settings.return_value = mock_settings
-
-        with patch.dict("os.environ", {}, clear=True):
+        with patch.dict(
+            "os.environ",
+            {"USE_SECRET_MANAGER": "false", "ENV_STATE": "dev"},
+            clear=True,
+        ):
             result = get_secret("NONEXISTENT_SECRET")
 
         assert result is None
 
-    @patch("app.infra.secret_manager.get_settings")
-    def test_returns_explicit_default(
-        self, mock_get_settings: MagicMock
-    ) -> None:
+    def test_returns_explicit_default(self) -> None:
         """明示的なデフォルト値がある場合はそれを返す"""
-        mock_settings = MagicMock()
-        mock_settings.USE_SECRET_MANAGER = False
-        mock_settings.ENV_STATE = "dev"
-        mock_get_settings.return_value = mock_settings
-
-        with patch.dict("os.environ", {}, clear=True):
+        with patch.dict(
+            "os.environ",
+            {"USE_SECRET_MANAGER": "false", "ENV_STATE": "dev"},
+            clear=True,
+        ):
             result = get_secret("NONEXISTENT_SECRET", default="default_value")
 
         assert result == "default_value"
 
-    @patch("app.infra.secret_manager.get_settings")
-    def test_raises_error_in_prod_when_not_found(
-        self, mock_get_settings: MagicMock
-    ) -> None:
+    def test_raises_error_in_prod_when_not_found(self) -> None:
         """本番環境でシークレットが見つからない場合はエラー"""
-        mock_settings = MagicMock()
-        mock_settings.USE_SECRET_MANAGER = False
-        mock_settings.ENV_STATE = "prod"
-        mock_get_settings.return_value = mock_settings
-
-        with patch.dict("os.environ", {}, clear=True):
+        with patch.dict(
+            "os.environ",
+            {"USE_SECRET_MANAGER": "false", "ENV_STATE": "prod"},
+            clear=True,
+        ):
             with pytest.raises(ValueError, match="Secret 'MISSING_SECRET' not found"):
                 get_secret("MISSING_SECRET")
 
     @patch("app.infra.secret_manager._fetch_from_secret_manager")
-    @patch("app.infra.secret_manager.get_settings")
     def test_fetches_from_secret_manager_when_enabled(
-        self,
-        mock_get_settings: MagicMock,
-        mock_fetch: MagicMock,
+        self, mock_fetch: MagicMock
     ) -> None:
         """Secret Manager有効時はSecret Managerから取得"""
-        mock_settings = MagicMock()
-        mock_settings.USE_SECRET_MANAGER = True
-        mock_settings.GCP_PROJECT_ID = "test-project"
-        mock_settings.ENV_STATE = "prod"
-        mock_get_settings.return_value = mock_settings
         mock_fetch.return_value = "secret_from_sm"
 
-        result = get_secret("MY_SECRET")
+        with patch.dict(
+            "os.environ",
+            {
+                "USE_SECRET_MANAGER": "true",
+                "GCP_PROJECT_ID": "test-project",
+                "ENV_STATE": "prod",
+            },
+        ):
+            result = get_secret("MY_SECRET")
 
         assert result == "secret_from_sm"
         mock_fetch.assert_called_once_with("MY_SECRET", "test-project")
 
     @patch("app.infra.secret_manager._fetch_from_secret_manager")
-    @patch("app.infra.secret_manager.get_settings")
     def test_falls_back_to_env_when_secret_manager_fails(
-        self,
-        mock_get_settings: MagicMock,
-        mock_fetch: MagicMock,
+        self, mock_fetch: MagicMock
     ) -> None:
-        """Secret Manager取得失敗時は環境変数にフォールバック"""
-        mock_settings = MagicMock()
-        mock_settings.USE_SECRET_MANAGER = True
-        mock_settings.GCP_PROJECT_ID = "test-project"
-        mock_settings.ENV_STATE = "dev"
-        mock_get_settings.return_value = mock_settings
+        """Secret Managerが失敗した場合は環境変数にフォールバック"""
         mock_fetch.side_effect = GoogleAPIError("Network error")
 
-        with patch.dict("os.environ", {"MY_SECRET": "env_fallback"}):
+        with patch.dict(
+            "os.environ",
+            {
+                "USE_SECRET_MANAGER": "true",
+                "GCP_PROJECT_ID": "test-project",
+                "ENV_STATE": "dev",
+                "MY_SECRET": "env_fallback",
+            },
+        ):
+            result = get_secret("MY_SECRET")
+
+        assert result == "env_fallback"
+
+    def test_falls_back_to_env_when_gcp_project_id_missing(self) -> None:
+        """GCP_PROJECT_IDが未設定の場合は環境変数にフォールバック"""
+        with patch.dict(
+            "os.environ",
+            {
+                "USE_SECRET_MANAGER": "true",
+                "GCP_PROJECT_ID": "",
+                "ENV_STATE": "dev",
+                "MY_SECRET": "env_fallback",
+            },
+        ):
             result = get_secret("MY_SECRET")
 
         assert result == "env_fallback"

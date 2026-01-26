@@ -3,9 +3,14 @@
 環境変数:
     USE_SECRET_MANAGER: Secret Managerを使用するかどうか（true/false）
     GCP_PROJECT_ID: GCPプロジェクトID
+    ENV_STATE: 環境状態（dev/prod）
 
 使用例:
     secret = get_secret("FIREBASE_SERVICE_ACCOUNT")
+
+注意:
+    このモジュールは Settings 初期化前に使用できるよう、
+    os.environ から直接環境変数を読み取ります。
 """
 
 from __future__ import annotations
@@ -16,8 +21,6 @@ from functools import lru_cache
 from typing import TYPE_CHECKING
 
 from google.api_core.exceptions import GoogleAPIError
-
-from app.core.config import get_settings
 
 if TYPE_CHECKING:
     from google.cloud.secretmanager import SecretManagerServiceClient
@@ -76,20 +79,32 @@ def get_secret(secret_id: str, default: str | None = None) -> str | None:
 
     Raises:
         ValueError: 本番環境でシークレットが見つからない場合
+
+    Note:
+        このメソッドは Settings 初期化前に使用できるよう、
+        os.environ から直接環境変数を読み取ります。
     """
-    settings = get_settings()
+    use_secret_manager = os.environ.get("USE_SECRET_MANAGER", "false").lower() == "true"
+    env_state = os.environ.get("ENV_STATE", "prod")
+    gcp_project_id = os.environ.get("GCP_PROJECT_ID", "")
 
     # Secret Managerが有効な場合
-    if settings.USE_SECRET_MANAGER:
-        try:
-            return _fetch_from_secret_manager(secret_id, settings.GCP_PROJECT_ID)
-        except GoogleAPIError as e:
+    if use_secret_manager:
+        if not gcp_project_id:
             logger.warning(
-                "Secret Manager からの取得に失敗: %s (error: %s)。"
-                "環境変数にフォールバックします。",
-                secret_id,
-                e,
+                "USE_SECRET_MANAGER=true ですが GCP_PROJECT_ID が設定されていません。"
+                "環境変数にフォールバックします。"
             )
+        else:
+            try:
+                return _fetch_from_secret_manager(secret_id, gcp_project_id)
+            except GoogleAPIError as e:
+                logger.warning(
+                    "Secret Manager からの取得に失敗: %s (error: %s)。"
+                    " 環境変数にフォールバックします。",
+                    secret_id,
+                    e,
+                )
 
     # 環境変数フォールバック
     env_value = os.environ.get(secret_id)
@@ -102,7 +117,7 @@ def get_secret(secret_id: str, default: str | None = None) -> str | None:
         return default
 
     # 本番環境でシークレットが見つからない場合はエラー
-    if settings.ENV_STATE != "dev":
+    if env_state != "dev":
         raise ValueError(
             f"Secret '{secret_id}' not found. "
             f"Set USE_SECRET_MANAGER=true and configure Secret Manager, "
