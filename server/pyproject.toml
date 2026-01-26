@@ -15,6 +15,7 @@ dependencies = [
     "python-dotenv>=1.2.1",
     "firebase-admin>=6.6.0",
     "google-cloud-speech>=2.29.0",
+    "google-cloud-firestore>=2.19.0",
 ]
 
 [tool.black]
