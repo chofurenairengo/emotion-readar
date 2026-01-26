@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     # CORS設定
     ALLOWED_ORIGINS: str = ""  # カンマ区切りのオリジンリスト
 
+    # レート制限設定
+    RATE_LIMIT_DEFAULT: int = 100  # デフォルト: 100 req/min
+    RATE_LIMIT_WINDOW_SECONDS: int = 60  # ウィンドウ: 60秒
+
     # Pydanticの設定
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -63,6 +67,20 @@ class Settings(BaseSettings):
             )
 
         return origins
+
+    @property
+    def rate_limits(self) -> dict[str, int]:
+        """エンドポイントごとのレート制限値を返す。
+
+        Returns:
+            dict: パスパターン -> 1分あたりの最大リクエスト数
+        """
+        return {
+            "/api/sessions": 30,  # セッション作成: 30 req/min
+            "/api/sessions/*/end": 30,  # セッション終了: 30 req/min
+            "/api/features": 100,  # 特徴量送信: 100 req/min
+            "default": self.RATE_LIMIT_DEFAULT,  # デフォルト: 100 req/min
+        }
 
 
 _settings: Settings | None = None
