@@ -47,7 +47,7 @@ class FirestoreSessionRepository(SessionRepository):
     def exists(self, session_id: str) -> bool:
         """セッションの存在確認"""
         doc = self._collection.document(session_id).get()
-        return doc.exists
+        return bool(doc.exists)
 
     def _to_session(self, data: dict[str, Any]) -> Session:
         """Firestoreデータ → Sessionモデル変換"""
