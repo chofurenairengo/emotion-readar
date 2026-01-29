@@ -2,6 +2,12 @@
 
 Comprehensive security and quality review of uncommitted changes:
 
+0. **Scope Verification (MUST DO FIRST)**:
+   - Check current Git branch name (e.g., `feature/#95`) to identify the issue number
+   - Run `gh issue view <number>` to understand the expected scope
+   - Read `PLAN.md` if it exists to understand the implementation plan
+   - During review, flag any changes outside the issue/plan scope as HIGH severity "Scope Violation"
+
 1. Get changed files: git diff --name-only HEAD
 
 2. For each changed file, check for:
