@@ -85,7 +85,9 @@ def new_function():
 
 1. Write the plan to `PLAN.md` in the project root using the Write tool
 2. Overwrite any existing content (do not append)
-3. Confirm to the user that the file has been saved
+3. If `PLAN.md` does not exist, create it automatically — do NOT ask for permission
+4. Do NOT ask for permission to overwrite an existing `PLAN.md` — always overwrite silently
+5. Confirm to the user that the file has been saved
 
 ### Step 4: Inform the User
 
@@ -102,6 +104,15 @@ The plan should be written in a way that Copilot can understand:
 2. **Include code snippets** showing exactly what to add/change
 3. **Use clear action verbs**: "Add", "Create", "Modify", "Delete", "Rename"
 4. **Show context** for code changes (surrounding lines when helpful)
+
+## Issue Independence Rule (MANDATORY)
+
+**CRITICAL**: Unless dependencies are explicitly specified in the issue, assume each issue is independent. Do NOT:
+- Reference or depend on code from other issues that may not be merged yet
+- Assume other issues' implementations exist
+- Create cross-issue dependencies
+
+Plan ONLY based on the current state of the `main` branch plus changes in the current issue's scope.
 
 ## Output Guidelines
 
