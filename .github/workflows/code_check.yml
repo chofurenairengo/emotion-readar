@@ -34,6 +34,4 @@ jobs:
       # 3. Mypyで型チェック
       - name: Run Mypy
         working-directory: server
-      # 3. Mypyで型チェック
-      - name: Run Mypy
         run: uv run mypy .
