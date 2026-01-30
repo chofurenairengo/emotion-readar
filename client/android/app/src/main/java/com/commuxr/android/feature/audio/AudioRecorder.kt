@@ -58,7 +58,6 @@ class AudioRecorder {
      * 録音を開始
      *
      * @throws SecurityException RECORD_AUDIO権限がない場合
-     * @throws IllegalStateException すでに録音中の場合
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun startRecording() {
@@ -97,10 +96,20 @@ class AudioRecorder {
 
             audioRecord = record
             recordingBuffer = ByteArrayOutputStream()
+
+            try {
+                record.startRecording()
+            } catch (e: IllegalStateException) {
+                Log.e(TAG, "Failed to start recording", e)
+                record.release()
+                audioRecord = null
+                recordingBuffer = null
+                _state.value = RecordingState.Error("Failed to start recording")
+                return
+            }
+
             isRecording.set(true)
             _state.value = RecordingState.Recording
-
-            record.startRecording()
 
             // バックグラウンドで録音データを読み取る
             Thread {
@@ -182,9 +191,23 @@ class AudioRecorder {
                 synchronized(bufferLock) {
                     recordingBuffer?.write(buffer, 0, bytesRead)
                 }
-            } else if (bytesRead == AudioRecord.ERROR_INVALID_OPERATION) {
-                Log.e(TAG, "AudioRecord read error: ERROR_INVALID_OPERATION")
-                _state.value = RecordingState.Error("Read error")
+            } else if (bytesRead == 0) {
+                try {
+                    Thread.sleep(10)
+                } catch (e: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    break
+                }
+            } else {
+                val errorMessage = when (bytesRead) {
+                    AudioRecord.ERROR_INVALID_OPERATION -> "ERROR_INVALID_OPERATION"
+                    AudioRecord.ERROR_BAD_VALUE -> "ERROR_BAD_VALUE"
+                    AudioRecord.ERROR_DEAD_OBJECT -> "ERROR_DEAD_OBJECT"
+                    else -> "UNKNOWN_ERROR($bytesRead)"
+                }
+                Log.e(TAG, "AudioRecord read error: $errorMessage")
+                isRecording.set(false)
+                _state.value = RecordingState.Error("Read error: $errorMessage")
                 break
             }
         }
