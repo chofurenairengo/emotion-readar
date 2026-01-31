@@ -40,7 +40,7 @@ async def get_current_user(
                 detail="Missing authentication token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        token = auth_header[len("Bearer "):]
+        token = auth_header[len("Bearer ") :]
     else:
         token = credentials.credentials
 

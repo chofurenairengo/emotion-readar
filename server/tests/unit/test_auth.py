@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
+
+from app.api.auth import verify_websocket_token
 
 
 def test_health_endpoint_no_auth_required(client: TestClient) -> None:
@@ -154,9 +157,6 @@ def test_end_other_user_session_returns_403(client: TestClient) -> None:
 
 
 # verify_websocket_token のユニットテスト
-import pytest
-
-from app.api.auth import verify_websocket_token
 
 
 def test_verify_websocket_token_empty_string() -> None:
