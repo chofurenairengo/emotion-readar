@@ -25,6 +25,14 @@ logger = logging.getLogger(__name__)
 
 _bearer_scheme = HTTPBearer(auto_error=False)
 
+# 開発用認証バイパス設定
+_settings = get_settings()
+_DEV_AUTH_BYPASS: bool = _settings.DEV_AUTH_BYPASS
+_DEV_USER: dict[str, Any] = {
+    "uid": "dev-user-001",
+    "email": "dev@example.com",
+}
+
 # UUID正規表現パターン
 _UUID_PATTERN = re.compile(
     r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",

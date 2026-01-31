@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     ENV_STATE: str = "dev"
     PROJECT_NAME: str = "ERA"
 
+    # 開発用認証バイパス（本番環境では絶対にtrueにしないこと）
+    DEV_AUTH_BYPASS: bool = False
+
     # CORS設定
     ALLOWED_ORIGINS: str = ""  # カンマ区切りのオリジンリスト
 
