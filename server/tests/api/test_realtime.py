@@ -23,12 +23,15 @@ def mock_auth_and_session():
     mock_session = MagicMock()
     mock_session.owner_id = "test-user-123"
 
-    with patch(
-        "app.api.routers.realtime.verify_websocket_token",
-        return_value=mock_claims,
-    ), patch(
-        "app.api.routers.realtime.get_session_service",
-    ) as mock_get_service:
+    with (
+        patch(
+            "app.api.routers.realtime.verify_websocket_token",
+            return_value=mock_claims,
+        ),
+        patch(
+            "app.api.routers.realtime.get_session_service",
+        ) as mock_get_service,
+    ):
         mock_service = MagicMock()
         mock_service.get_session.return_value = mock_session
         mock_get_service.return_value = mock_service
@@ -44,7 +47,9 @@ class TestWebSocketAuthentication:
             "app.api.routers.realtime.verify_websocket_token",
             side_effect=ValueError("Invalid or expired token"),
         ):
-            with client.websocket_connect("/api/realtime?session_id=test&token=invalid") as ws:
+            with client.websocket_connect(
+                "/api/realtime?session_id=test&token=invalid"
+            ) as ws:
                 # 接続は確立されるが、すぐにクローズされる
                 with pytest.raises(WebSocketDisconnect) as exc_info:
                     ws.receive_json()
@@ -53,16 +58,21 @@ class TestWebSocketAuthentication:
     def test_session_not_found_closes_connection(self, client: TestClient) -> None:
         """セッションが見つからない場合は接続がクローズされる."""
         mock_claims = {"uid": "test-user-123", "email": "test@example.com"}
-        with patch(
-            "app.api.routers.realtime.verify_websocket_token",
-            return_value=mock_claims,
-        ), patch(
-            "app.api.routers.realtime.get_session_service",
-        ) as mock_get_service:
+        with (
+            patch(
+                "app.api.routers.realtime.verify_websocket_token",
+                return_value=mock_claims,
+            ),
+            patch(
+                "app.api.routers.realtime.get_session_service",
+            ) as mock_get_service,
+        ):
             mock_service = MagicMock()
             mock_service.get_session.return_value = None
             mock_get_service.return_value = mock_service
-            with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+            with client.websocket_connect(
+                "/api/realtime?session_id=test&token=valid"
+            ) as ws:
                 with pytest.raises(WebSocketDisconnect) as exc_info:
                     ws.receive_json()
                 assert exc_info.value.code == 4004
@@ -73,16 +83,21 @@ class TestWebSocketAuthentication:
         mock_session = MagicMock()
         mock_session.owner_id = "different-user-456"
 
-        with patch(
-            "app.api.routers.realtime.verify_websocket_token",
-            return_value=mock_claims,
-        ), patch(
-            "app.api.routers.realtime.get_session_service",
-        ) as mock_get_service:
+        with (
+            patch(
+                "app.api.routers.realtime.verify_websocket_token",
+                return_value=mock_claims,
+            ),
+            patch(
+                "app.api.routers.realtime.get_session_service",
+            ) as mock_get_service,
+        ):
             mock_service = MagicMock()
             mock_service.get_session.return_value = mock_session
             mock_get_service.return_value = mock_service
-            with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+            with client.websocket_connect(
+                "/api/realtime?session_id=test&token=valid"
+            ) as ws:
                 with pytest.raises(WebSocketDisconnect) as exc_info:
                     ws.receive_json()
                 assert exc_info.value.code == 4003
@@ -93,7 +108,9 @@ class TestWebSocketPing:
 
     def test_ping_returns_pong(self, client: TestClient, mock_auth_and_session) -> None:
         """PINGメッセージにPONGで応答する."""
-        with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+        with client.websocket_connect(
+            "/api/realtime?session_id=test&token=valid"
+        ) as ws:
             ws.send_json({"type": "PING"})
             response = ws.receive_json()
             assert response["type"] == "PONG"
@@ -105,7 +122,9 @@ class TestWebSocketReset:
 
     def test_reset_returns_ack(self, client: TestClient, mock_auth_and_session) -> None:
         """RESETメッセージにRESET_ACKで応答する."""
-        with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+        with client.websocket_connect(
+            "/api/realtime?session_id=test&token=valid"
+        ) as ws:
             ws.send_json({"type": "RESET"})
             response = ws.receive_json()
             assert response["type"] == "RESET_ACK"
@@ -115,9 +134,13 @@ class TestWebSocketReset:
 class TestWebSocketErrorReport:
     """ERROR_REPORTテスト."""
 
-    def test_error_report_returns_ack(self, client: TestClient, mock_auth_and_session) -> None:
+    def test_error_report_returns_ack(
+        self, client: TestClient, mock_auth_and_session
+    ) -> None:
         """ERROR_REPORTメッセージにERROR_ACKで応答する."""
-        with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+        with client.websocket_connect(
+            "/api/realtime?session_id=test&token=valid"
+        ) as ws:
             ws.send_json({"type": "ERROR_REPORT", "error": "test error"})
             response = ws.receive_json()
             assert response["type"] == "ERROR_ACK"
@@ -127,17 +150,25 @@ class TestWebSocketErrorReport:
 class TestWebSocketInvalidMessage:
     """不正メッセージテスト."""
 
-    def test_invalid_json_returns_error(self, client: TestClient, mock_auth_and_session) -> None:
+    def test_invalid_json_returns_error(
+        self, client: TestClient, mock_auth_and_session
+    ) -> None:
         """不正なJSONにERRORで応答する."""
-        with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+        with client.websocket_connect(
+            "/api/realtime?session_id=test&token=valid"
+        ) as ws:
             ws.send_text("not json")
             response = ws.receive_json()
             assert response["type"] == "ERROR"
             assert "Invalid JSON" in response["message"]
 
-    def test_unknown_type_returns_error(self, client: TestClient, mock_auth_and_session) -> None:
+    def test_unknown_type_returns_error(
+        self, client: TestClient, mock_auth_and_session
+    ) -> None:
         """不明なメッセージタイプにERRORで応答する."""
-        with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+        with client.websocket_connect(
+            "/api/realtime?session_id=test&token=valid"
+        ) as ws:
             ws.send_json({"type": "UNKNOWN_TYPE"})
             response = ws.receive_json()
             assert response["type"] == "ERROR"
@@ -172,14 +203,19 @@ class TestWebSocketAnalysisRequest:
         return mock_service
 
     def test_analysis_request_returns_response(
-        self, client: TestClient, mock_response_generator: MagicMock, mock_auth_and_session
+        self,
+        client: TestClient,
+        mock_response_generator: MagicMock,
+        mock_auth_and_session,
     ) -> None:
         """ANALYSIS_REQUESTにANALYSIS_RESPONSEで応答する."""
         with patch(
             "app.api.routers.realtime.get_response_generator",
             return_value=mock_response_generator,
         ):
-            with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+            with client.websocket_connect(
+                "/api/realtime?session_id=test&token=valid"
+            ) as ws:
                 ws.send_json(
                     {
                         "type": "ANALYSIS_REQUEST",
@@ -192,7 +228,10 @@ class TestWebSocketAnalysisRequest:
                 assert response["type"] == "ANALYSIS_RESPONSE"
 
     def test_analysis_request_with_audio(
-        self, client: TestClient, mock_response_generator: MagicMock, mock_auth_and_session
+        self,
+        client: TestClient,
+        mock_response_generator: MagicMock,
+        mock_auth_and_session,
     ) -> None:
         """音声付きANALYSIS_REQUESTが正しく処理される."""
         fake_audio = base64.b64encode(b"fake-audio-data").decode()
@@ -201,7 +240,9 @@ class TestWebSocketAnalysisRequest:
             "app.api.routers.realtime.get_response_generator",
             return_value=mock_response_generator,
         ):
-            with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+            with client.websocket_connect(
+                "/api/realtime?session_id=test&token=valid"
+            ) as ws:
                 ws.send_json(
                     {
                         "type": "ANALYSIS_REQUEST",
@@ -219,7 +260,9 @@ class TestWebSocketAnalysisRequest:
         self, client: TestClient, mock_auth_and_session
     ) -> None:
         """session_idがない場合はエラーを返す."""
-        with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+        with client.websocket_connect(
+            "/api/realtime?session_id=test&token=valid"
+        ) as ws:
             ws.send_json(
                 {
                     "type": "ANALYSIS_REQUEST",
@@ -235,7 +278,9 @@ class TestWebSocketAnalysisRequest:
         self, client: TestClient, mock_auth_and_session
     ) -> None:
         """emotion_scoresがない場合はエラーを返す."""
-        with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+        with client.websocket_connect(
+            "/api/realtime?session_id=test&token=valid"
+        ) as ws:
             ws.send_json(
                 {
                     "type": "ANALYSIS_REQUEST",
@@ -248,14 +293,19 @@ class TestWebSocketAnalysisRequest:
             assert "emotion_scores" in response["message"]
 
     def test_analysis_request_invalid_audio_continues_processing(
-        self, client: TestClient, mock_response_generator: MagicMock, mock_auth_and_session
+        self,
+        client: TestClient,
+        mock_response_generator: MagicMock,
+        mock_auth_and_session,
     ) -> None:
         """無効なaudio_dataでも処理を継続する."""
         with patch(
             "app.api.routers.realtime.get_response_generator",
             return_value=mock_response_generator,
         ):
-            with client.websocket_connect("/api/realtime?session_id=test&token=valid") as ws:
+            with client.websocket_connect(
+                "/api/realtime?session_id=test&token=valid"
+            ) as ws:
                 ws.send_json(
                     {
                         "type": "ANALYSIS_REQUEST",

@@ -220,9 +220,7 @@ class TestVerifyIdToken:
                 return_value=MagicMock(),
             ),
             patch.object(firebase.firebase_admin, "_apps", {}),
-            patch.object(
-                firebase.auth, "verify_id_token", return_value=expected
-            ),
+            patch.object(firebase.auth, "verify_id_token", return_value=expected),
         ):
             result = firebase.verify_id_token("valid-token")
             assert result == expected

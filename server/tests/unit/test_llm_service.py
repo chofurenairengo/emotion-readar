@@ -64,9 +64,7 @@ async def test_generate_responses_success(
     valid_llm_response: str,
 ) -> None:
     """正常系: 応答生成が成功する."""
-    with patch.object(
-        LLMService, "_call_api", new_callable=AsyncMock
-    ) as mock_api:
+    with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = valid_llm_response
 
         service = LLMService(credentials_path="test-credentials.json")
@@ -98,9 +96,7 @@ async def test_generate_responses_with_markdown_json(
 }
 ```"""
 
-    with patch.object(
-        LLMService, "_call_api", new_callable=AsyncMock
-    ) as mock_api:
+    with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = markdown_response
 
         service = LLMService(credentials_path="test-credentials.json")
@@ -120,9 +116,7 @@ async def test_parse_response_invalid_json(
     sample_emotion: EmotionInterpretation,
 ) -> None:
     """不正なJSONでLLMResponseParseErrorが発生する."""
-    with patch.object(
-        LLMService, "_call_api", new_callable=AsyncMock
-    ) as mock_api:
+    with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = "これはJSONではありません"
 
         service = LLMService(credentials_path="test-credentials.json")
@@ -142,9 +136,7 @@ async def test_parse_response_missing_key(
     """必要なキーが欠けている場合にLLMResponseParseErrorが発生する."""
     incomplete_response = '{"situation_analysis": "分析のみ"}'
 
-    with patch.object(
-        LLMService, "_call_api", new_callable=AsyncMock
-    ) as mock_api:
+    with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = incomplete_response
 
         service = LLMService(credentials_path="test-credentials.json")
@@ -170,9 +162,7 @@ async def test_parse_response_same_intent_validation_error(
     ]
 }"""
 
-    with patch.object(
-        LLMService, "_call_api", new_callable=AsyncMock
-    ) as mock_api:
+    with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = same_intent_response
 
         service = LLMService(credentials_path="test-credentials.json")
@@ -200,9 +190,7 @@ async def test_retry_on_rate_limit(
             raise Exception("429 rate limit exceeded")
         return valid_llm_response
 
-    with patch.object(
-        LLMService, "_call_api", side_effect=mock_call_api
-    ):
+    with patch.object(LLMService, "_call_api", side_effect=mock_call_api):
         service = LLMService(credentials_path="test-credentials.json")
         result = await service.generate_responses(
             conversation_context=sample_context,
@@ -220,9 +208,7 @@ async def test_rate_limit_max_retries_exceeded(
     sample_emotion: EmotionInterpretation,
 ) -> None:
     """リトライ上限を超えるとLLMRateLimitErrorが発生する."""
-    with patch.object(
-        LLMService, "_call_api", new_callable=AsyncMock
-    ) as mock_api:
+    with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.side_effect = Exception("429 rate limit")
 
         service = LLMService(credentials_path="test-credentials.json")
@@ -240,9 +226,7 @@ async def test_non_rate_limit_error_raises_immediately(
     sample_emotion: EmotionInterpretation,
 ) -> None:
     """レートリミット以外のエラーは即座にLLMErrorを発生させる."""
-    with patch.object(
-        LLMService, "_call_api", new_callable=AsyncMock
-    ) as mock_api:
+    with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.side_effect = Exception("Internal server error")
 
         service = LLMService(credentials_path="test-credentials.json")
