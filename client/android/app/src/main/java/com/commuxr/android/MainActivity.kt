@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.commuxr.android.core.ui.theme.AndroidTheme
+import com.commuxr.android.ui.theme.AndroidTheme
 import com.commuxr.android.feature.camera.CameraScreen
 import com.commuxr.android.unity.UnityMessageSender
 import com.commuxr.android.vision.FaceLandmarkerAnalyzer
