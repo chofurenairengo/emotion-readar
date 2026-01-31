@@ -12,7 +12,6 @@ from app.services.stt_service import STTService
 _session_repository = InMemorySessionRepository()
 _session_service = SessionService(_session_repository)
 _connection_manager = ConnectionManager()
-_response_generator: Any = None
 
 _stt_service: STTService | None = None
 _conversation_service: ConversationService | None = None

@@ -67,7 +67,7 @@ async def test_generate_responses_success(
     with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = valid_llm_response
 
-        service = LLMService(credentials_path="test-credentials.json")
+        service = LLMService()
         result = await service.generate_responses(
             conversation_context=sample_context,
             emotion_interpretation=sample_emotion,
@@ -99,7 +99,7 @@ async def test_generate_responses_with_markdown_json(
     with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = markdown_response
 
-        service = LLMService(credentials_path="test-credentials.json")
+        service = LLMService()
         result = await service.generate_responses(
             conversation_context=sample_context,
             emotion_interpretation=sample_emotion,
@@ -119,7 +119,7 @@ async def test_parse_response_invalid_json(
     with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = "これはJSONではありません"
 
-        service = LLMService(credentials_path="test-credentials.json")
+        service = LLMService()
         with pytest.raises(LLMResponseParseError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -139,7 +139,7 @@ async def test_parse_response_missing_key(
     with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = incomplete_response
 
-        service = LLMService(credentials_path="test-credentials.json")
+        service = LLMService()
         with pytest.raises(LLMResponseParseError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -165,7 +165,7 @@ async def test_parse_response_same_intent_validation_error(
     with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.return_value = same_intent_response
 
-        service = LLMService(credentials_path="test-credentials.json")
+        service = LLMService()
         with pytest.raises(LLMResponseParseError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -190,8 +190,10 @@ async def test_retry_on_rate_limit(
             raise Exception("429 rate limit exceeded")
         return valid_llm_response
 
-    with patch.object(LLMService, "_call_api", side_effect=mock_call_api):
-        service = LLMService(credentials_path="test-credentials.json")
+    with patch.object(
+        LLMService, "_call_api", side_effect=mock_call_api
+    ):
+        service = LLMService()
         result = await service.generate_responses(
             conversation_context=sample_context,
             emotion_interpretation=sample_emotion,
@@ -211,7 +213,7 @@ async def test_rate_limit_max_retries_exceeded(
     with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.side_effect = Exception("429 rate limit")
 
-        service = LLMService(credentials_path="test-credentials.json")
+        service = LLMService()
         with pytest.raises(LLMRateLimitError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -229,7 +231,7 @@ async def test_non_rate_limit_error_raises_immediately(
     with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
         mock_api.side_effect = Exception("Internal server error")
 
-        service = LLMService(credentials_path="test-credentials.json")
+        service = LLMService()
         with pytest.raises(LLMError):
             await service.generate_responses(
                 conversation_context=sample_context,
@@ -243,7 +245,7 @@ def test_build_prompt(
     sample_emotion: EmotionInterpretation,
 ) -> None:
     """プロンプト構築のテスト."""
-    service = LLMService(credentials_path="test-credentials.json")
+    service = LLMService()
     prompt = service._build_prompt(
         context=sample_context,
         emotion=sample_emotion,

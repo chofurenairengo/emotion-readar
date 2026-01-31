@@ -23,6 +23,11 @@ def receive_features(
     session_service: SessionService = Depends(get_session_service),
 ) -> FeatureResponse:
     # 所有者検証
+    if payload.session_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="session_id is required",
+        )
     try:
         session_service.verify_owner(payload.session_id, current_user["uid"])
     except LookupError:

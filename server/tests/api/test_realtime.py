@@ -2,6 +2,7 @@
 
 import base64
 from datetime import datetime, timezone
+from typing import Generator
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -17,7 +18,7 @@ def client() -> TestClient:
 
 
 @pytest.fixture
-def mock_auth_and_session():
+def mock_auth_and_session() -> Generator[None, None, None]:
     """認証とセッション検証のモック."""
     mock_claims = {"uid": "test-user-123", "email": "test@example.com"}
     mock_session = MagicMock()
@@ -106,7 +107,7 @@ class TestWebSocketAuthentication:
 class TestWebSocketPing:
     """PING/PONGテスト."""
 
-    def test_ping_returns_pong(self, client: TestClient, mock_auth_and_session) -> None:
+    def test_ping_returns_pong(self, client: TestClient, mock_auth_and_session: None) -> None:
         """PINGメッセージにPONGで応答する."""
         with client.websocket_connect(
             "/api/realtime?session_id=test&token=valid"
@@ -120,7 +121,7 @@ class TestWebSocketPing:
 class TestWebSocketReset:
     """RESETテスト."""
 
-    def test_reset_returns_ack(self, client: TestClient, mock_auth_and_session) -> None:
+    def test_reset_returns_ack(self, client: TestClient, mock_auth_and_session: None) -> None:
         """RESETメッセージにRESET_ACKで応答する."""
         with client.websocket_connect(
             "/api/realtime?session_id=test&token=valid"
@@ -257,7 +258,7 @@ class TestWebSocketAnalysisRequest:
                 assert response["type"] == "ANALYSIS_RESPONSE"
 
     def test_analysis_request_missing_session_id_returns_error(
-        self, client: TestClient, mock_auth_and_session
+        self, client: TestClient, mock_auth_and_session: None
     ) -> None:
         """session_idがない場合はエラーを返す."""
         with client.websocket_connect(
@@ -275,7 +276,7 @@ class TestWebSocketAnalysisRequest:
             assert "session_id" in response["message"]
 
     def test_analysis_request_missing_emotion_scores_returns_error(
-        self, client: TestClient, mock_auth_and_session
+        self, client: TestClient, mock_auth_and_session: None
     ) -> None:
         """emotion_scoresがない場合はエラーを返す."""
         with client.websocket_connect(
