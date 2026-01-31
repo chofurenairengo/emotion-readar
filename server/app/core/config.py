@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     # レート制限設定
     RATE_LIMIT_DEFAULT: int = 100  # デフォルト: 100 req/min
     RATE_LIMIT_WINDOW_SECONDS: int = 60  # ウィンドウ: 60秒
+    # Secret Manager設定
+    USE_SECRET_MANAGER: bool = False  # Secret Managerを使用するかどうか
 
     # Pydanticの設定
     model_config = SettingsConfigDict(

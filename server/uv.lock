@@ -39,6 +39,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "firebase-admin" },
+    { name = "google-cloud-secret-manager" },
     { name = "google-cloud-firestore" },
     { name = "google-cloud-speech" },
     { name = "langchain-core" },
@@ -62,6 +63,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.128.0" },
     { name = "firebase-admin", specifier = ">=6.6.0" },
+    { name = "google-cloud-secret-manager", specifier = ">=2.21.0" },
     { name = "google-cloud-firestore", specifier = ">=2.19.0" },
     { name = "google-cloud-speech", specifier = ">=2.29.0" },
     { name = "langchain-core", specifier = ">=1.2.6" },
@@ -571,6 +573,23 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/4e/7f/db00b2820475793a52958dc55fe9ec2eb8e863546e05fcece9b921f86ebe/google_cloud_resource_manager-1.16.0.tar.gz", hash = "sha256:cc938f87cc36c2672f062b1e541650629e0d954c405a4dac35ceedee70c267c3", size = 459840, upload-time = "2026-01-15T13:04:07.726Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/ff/4b28bcc791d9d7e4ac8fea00fbd90ccb236afda56746a3b4564d2ae45df3/google_cloud_resource_manager-1.16.0-py3-none-any.whl", hash = "sha256:fb9a2ad2b5053c508e1c407ac31abfd1a22e91c32876c1892830724195819a28", size = 400218, upload-time = "2026-01-15T13:02:47.378Z" },
+]
+
+[[package]]
+name = "google-cloud-secret-manager"
+version = "2.26.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "google-api-core", extra = ["grpc"] },
+    { name = "google-auth" },
+    { name = "grpc-google-iam-v1" },
+    { name = "grpcio" },
+    { name = "proto-plus" },
+    { name = "protobuf" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c3/9c/a6c7144bc96df77376ae3fcc916fb639c40814c2e4bba2051d31dc136cd0/google_cloud_secret_manager-2.26.0.tar.gz", hash = "sha256:0d1d6f76327685a0ed78a4cf50f289e1bfbbe56026ed0affa98663b86d6d50d6", size = 277603, upload-time = "2025-12-18T00:29:31.065Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c8/30/a58739dd12cec0f7f761ed1efb518aed2250a407d4ed14c5a0eeee7eaaf9/google_cloud_secret_manager-2.26.0-py3-none-any.whl", hash = "sha256:940a5447a6ec9951446fd1a0f22c81a4303fde164cd747aae152c5f5c8e6723e", size = 223623, upload-time = "2025-12-18T00:29:29.311Z" },
 ]
 
 [[package]]
