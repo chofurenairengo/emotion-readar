@@ -1,6 +1,6 @@
 # API リファレンス
 
-> 関連: [Issue #30 - サーバーサイドMVP実装](https://github.com/chofurenairengo/commuxr/issues/30)
+> 関連: [Issue #30 - サーバーサイドMVP実装](https://github.com/chofurenairengo/emotion-readar/issues/30)
 
 ERA サーバーとクライアント間の通信仕様です。
 
@@ -512,7 +512,7 @@ MediaPipeで算出された感情スコアと音声データを受け取り、ST
 
 ## 関連Issue
 
-- [#30 サーバーサイドMVP実装](https://github.com/chofurenairengo/commuxr/issues/30)
+- [#30 サーバーサイドMVP実装](https://github.com/chofurenairengo/emotion-readar/issues/30)
   - #1 DTO定義
   - #2 STTサービス実装
   - #3 会話履歴管理サービス実装
