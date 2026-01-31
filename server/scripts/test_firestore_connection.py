@@ -4,7 +4,7 @@ import os
 import sys
 
 from dotenv import load_dotenv
-from google.cloud import firestore
+from google.cloud import firestore  # type: ignore[attr-defined]
 
 
 def test_connection() -> None:

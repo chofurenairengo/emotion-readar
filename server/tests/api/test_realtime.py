@@ -136,7 +136,7 @@ class TestWebSocketErrorReport:
     """ERROR_REPORTテスト."""
 
     def test_error_report_returns_ack(
-        self, client: TestClient, mock_auth_and_session
+        self, client: TestClient, mock_auth_and_session: None
     ) -> None:
         """ERROR_REPORTメッセージにERROR_ACKで応答する."""
         with client.websocket_connect(
@@ -152,7 +152,7 @@ class TestWebSocketInvalidMessage:
     """不正メッセージテスト."""
 
     def test_invalid_json_returns_error(
-        self, client: TestClient, mock_auth_and_session
+        self, client: TestClient, mock_auth_and_session: None
     ) -> None:
         """不正なJSONにERRORで応答する."""
         with client.websocket_connect(
@@ -164,7 +164,7 @@ class TestWebSocketInvalidMessage:
             assert "Invalid JSON" in response["message"]
 
     def test_unknown_type_returns_error(
-        self, client: TestClient, mock_auth_and_session
+        self, client: TestClient, mock_auth_and_session: None
     ) -> None:
         """不明なメッセージタイプにERRORで応答する."""
         with client.websocket_connect(
@@ -207,7 +207,7 @@ class TestWebSocketAnalysisRequest:
         self,
         client: TestClient,
         mock_response_generator: MagicMock,
-        mock_auth_and_session,
+        mock_auth_and_session: None,
     ) -> None:
         """ANALYSIS_REQUESTにANALYSIS_RESPONSEで応答する."""
         with patch(
@@ -232,7 +232,7 @@ class TestWebSocketAnalysisRequest:
         self,
         client: TestClient,
         mock_response_generator: MagicMock,
-        mock_auth_and_session,
+        mock_auth_and_session: None,
     ) -> None:
         """音声付きANALYSIS_REQUESTが正しく処理される."""
         fake_audio = base64.b64encode(b"fake-audio-data").decode()
@@ -297,7 +297,7 @@ class TestWebSocketAnalysisRequest:
         self,
         client: TestClient,
         mock_response_generator: MagicMock,
-        mock_auth_and_session,
+        mock_auth_and_session: None,
     ) -> None:
         """無効なaudio_dataでも処理を継続する."""
         with patch(
