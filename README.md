@@ -1,4 +1,4 @@
-# Comm-XR Design Document
+# ERA Design Document
 
 画像認識・音声認識・LLM 統合 XR システム
 
@@ -159,7 +159,7 @@ GEMINI_MODEL=tunedModels/your-finetuned-model-id
 
 ## リポジトリ構成（モノレポ）
 
-comm-xr/
+era/
 ├─ client/
 │ ├─ unity/
 │ └─ android-native/
@@ -188,7 +188,7 @@ comm-xr/
 
 - アーキテクチャ図: docs/architecture.md
 
-comm-xr/
+era/
 ├─ README.md
 ├─ .gitignore
 ├─ .gitattributes # 改行/Unity 差分対策
@@ -212,7 +212,7 @@ comm-xr/
 │ ├─ build.gradle.kts
 │ ├─ launcher/ # Unity 起動
 │ ├─ unityLibrary/ # Unity export 生成物（触るの最小）
-│ └─ commxr-native/ # ★Kotlin 本体（MediaPipe/音声/Bridge）
+│ └─ era-native/ # ★Kotlin 本体（MediaPipe/音声/Bridge）
 │ └─ src/main/...
 │
 ├─ server/

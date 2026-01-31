@@ -1,4 +1,4 @@
-# commuxr server
+# ERA server
 
 FastAPI backend.
 

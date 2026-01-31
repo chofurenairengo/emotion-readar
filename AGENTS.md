@@ -348,7 +348,7 @@ FastAPI on Cloud Run を基盤とし、Googleの**Gemini 2.5 Flash Liteのファ
 
 ## サーバーサイドのファイル構成
 
-comm-xr-server/
+era-server/
 
 ├── app/
 
@@ -362,7 +362,7 @@ comm-xr-server/
 
 │   │   ├── config.py            # 環境変数・定数 (Pydantic Settings)
 
-│   │   ├── exceptions.py        # カスタム例外定義 (CommXRExceptionなど)
+│   │   ├── exceptions.py        # カスタム例外定義 (ERAExceptionなど)
 
 │   │   ├── prompts/             # プロンプト管理
 
