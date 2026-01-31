@@ -97,7 +97,7 @@ def _build_credentials(emulator_host: str) -> credentials.Base | None:
         4. 認証情報なし（エミュレータ利用時）
     """
     # Secret Manager または環境変数から取得
-    sa_json = get_secret("FIREBASE_SERVICE_ACCOUNT")
+    sa_json = get_secret("FIREBASE_SERVICE_ACCOUNT", default="")
     if sa_json:
         logger.info("FIREBASE_SERVICE_ACCOUNT からサービスアカウントを使用")
         try:

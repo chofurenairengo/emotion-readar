@@ -94,7 +94,7 @@ def get_secret(secret_id: str, default: str | None = None) -> str | None:
         os.environ から直接環境変数を読み取ります。
     """
     use_secret_manager = os.environ.get("USE_SECRET_MANAGER", "false").lower() == "true"
-    env_state = os.environ.get("ENV_STATE", "prod")
+    env_state = os.environ.get("ENV_STATE", "dev")
     gcp_project_id = os.environ.get("GCP_PROJECT_ID", "")
 
     # Secret Managerが有効な場合
@@ -143,7 +143,7 @@ def clear_cache() -> None:
         この関数は主にテスト用です。本番環境での使用は推奨されません。
     """
     # 本番で呼ばれた場合のみ警告
-    if os.environ.get("ENV_STATE") != "dev":
+    if os.environ.get("ENV_STATE", "dev") != "dev":
         import warnings
 
         warnings.warn(
