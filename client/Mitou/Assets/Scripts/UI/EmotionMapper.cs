@@ -23,7 +23,7 @@ namespace ERA.UI
             { "high", 1.2f }
         };
 
-        private const string DefaultIcon = "\u2753";  // ❓
+        private const string DefaultIcon = "\u2026\u2026";  // ……
         private const float DefaultScale = 1.0f;
 
         public static string GetIcon(string primaryEmotion)
