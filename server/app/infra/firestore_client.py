@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 
-from google.cloud import firestore
+from google.cloud import firestore  # type: ignore[attr-defined,unused-ignore]
 
 
 @lru_cache(maxsize=1)
