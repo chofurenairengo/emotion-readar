@@ -18,3 +18,11 @@ class InMemorySessionRepository(SessionRepository):
     def get(self, session_id: str) -> Session | None:
         with self._lock:
             return self._sessions.get(session_id)
+
+    def delete(self, session_id: str) -> None:
+        with self._lock:
+            self._sessions.pop(session_id, None)
+
+    def exists(self, session_id: str) -> bool:
+        with self._lock:
+            return session_id in self._sessions

@@ -72,6 +72,7 @@ __pycache__
 !.claude/rules/
 !.claude/commands/
 !.claude/skills/
+!.claude/settings.json
 
 # ただし、MCPの設定ファイルだけは絶対に無視（秘密情報対策）
 .claude/mcp-configs.json

@@ -59,7 +59,9 @@ async def realtime(
         await websocket.close(code=4004, reason="Session not found")
         return
     if session.owner_id != user_info["uid"]:
-        await websocket.close(code=4003, reason="You don't have permission to access this session")
+        await websocket.close(
+            code=4003, reason="You don't have permission to access this session"
+        )
         return
 
     await connection_manager.register(websocket, session_id)

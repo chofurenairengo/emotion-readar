@@ -15,9 +15,18 @@ Follow the same rules as `/execute-review`:
 - Fix in priority order: CRITICAL > HIGH > MEDIUM > LOW
 - Ask if any fix is unclear
 
-### Step 2: Run Claude Code review
+### Step 2: Wait for developer to accept changes
 
-After fixes are complete, run the following command in the terminal (from workspace root):
+**IMPORTANT**: After fixes are complete:
+
+1. **Inform the user** that fixes are done and they should review the changes
+2. **Wait for the developer to accept/keep the changes** in their IDE before proceeding
+3. **Do NOT automatically run Claude review** — ask the user to confirm they have accepted the changes first
+4. Only after the user confirms, proceed to Step 3
+
+### Step 3: Run Claude Code review
+
+After the developer has confirmed they accepted the changes, run the following command in the terminal (from workspace root):
 
 ```bash
 claude --allowedTools "Write" -p "/code-review-file"
@@ -28,7 +37,7 @@ This automatically:
 - Executes `/code-review-file` slash command
 - Regenerates `CODEREVIEW.md` to verify fixes (auto-overwrite enabled)
 
-### Step 3: Report results
+### Step 4: Report results
 
 Report the review summary to the user.
 If CRITICAL/HIGH issues remain, notify the user to run this command again.
