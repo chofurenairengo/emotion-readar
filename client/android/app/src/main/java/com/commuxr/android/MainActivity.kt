@@ -33,7 +33,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.commuxr.android.ui.theme.AndroidTheme
+import com.commuxr.android.core.ui.theme.AndroidTheme
 import com.commuxr.android.unity.UnityMessageSender
 import com.commuxr.android.vision.FaceLandmarkerAnalyzer
 import java.util.concurrent.ExecutorService

@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.moshi.kotlin)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
+    implementation(libs.accompanist.permissions)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.coroutines.test)
