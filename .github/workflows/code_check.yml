@@ -40,15 +40,15 @@ jobs:
         working-directory: server
         run: uv run mypy .
 
-      # 4. 変更があれば自動コミット＆プッシュ
-      - name: Commit and push if changed
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "style: auto-format with Ruff and Black"
-            git push
-          fi
+      # # 4. 変更があれば自動コミット＆プッシュ
+      # - name: Commit and push if changed
+      #   run: |
+      #     git config --global user.name "github-actions[bot]"
+      #     git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      #     git add -A
+      #     if git diff --staged --quiet; then
+      #       echo "No changes to commit"
+      #     else
+      #       git commit -m "style: auto-format with Ruff and Black"
+      #       git push
+      #     fi
