@@ -1,5 +1,3 @@
-from typing import Any
-
 from app.infra.repositories.in_memory_session_repo import InMemorySessionRepository
 from app.services.connection_manager import ConnectionManager
 from app.services.conversation_service import ConversationService
@@ -32,28 +30,32 @@ def get_stt_service() -> STTService:
     global _stt_service
     if _stt_service is None:
         _stt_service = STTService()
-    return _stt_service
+    stt_service = _stt_service
+    return stt_service
 
 
 def get_conversation_service() -> ConversationService:
     global _conversation_service
     if _conversation_service is None:
         _conversation_service = ConversationService()
-    return _conversation_service
+    conversation_service = _conversation_service
+    return conversation_service
 
 
 def get_emotion_interpreter() -> EmotionInterpreterService:
     global _emotion_interpreter
     if _emotion_interpreter is None:
         _emotion_interpreter = EmotionInterpreterService()
-    return _emotion_interpreter
+    emotion_interpreter = _emotion_interpreter
+    return emotion_interpreter
 
 
 def get_llm_service() -> LLMService:
     global _llm_service
     if _llm_service is None:
         _llm_service = LLMService()
-    return _llm_service
+    llm_service = _llm_service
+    return llm_service
 
 
 def get_response_generator() -> ResponseGeneratorService:
@@ -65,4 +67,5 @@ def get_response_generator() -> ResponseGeneratorService:
             emotion_interpreter=get_emotion_interpreter(),
             llm_service=get_llm_service(),
         )
-    return _response_generator
+    response_generator = _response_generator
+    return response_generator
