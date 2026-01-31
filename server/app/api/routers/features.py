@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.auth import get_current_user
+from app.api.auth import check_rate_limit
 from app.api.dependencies import get_session_service
 from app.core.exceptions import SessionPermissionError
 from app.dto.feature import FeatureRequest, FeatureResponse
@@ -19,7 +19,7 @@ router = APIRouter(tags=["features"])
 )
 def receive_features(
     payload: FeatureRequest,
-    current_user: dict[str, Any] = Depends(get_current_user),
+    current_user: dict[str, Any] = Depends(check_rate_limit),
     session_service: SessionService = Depends(get_session_service),
 ) -> FeatureResponse:
     # 所有者検証
