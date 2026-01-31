@@ -15,9 +15,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * 録音状態
  */
 sealed class RecordingState {
-    data object Idle : RecordingState()
-    data object Recording : RecordingState()
-    data object Stopped : RecordingState()
+    object Idle : RecordingState()
+    object Recording : RecordingState()
+    object Stopped : RecordingState()
     data class Error(val message: String) : RecordingState()
 }
 

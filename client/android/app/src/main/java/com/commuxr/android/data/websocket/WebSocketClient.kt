@@ -195,7 +195,7 @@ class WebSocketClient(
             @Suppress("UNCHECKED_CAST")
             val adapter = moshi.adapter(message!!::class.java) as JsonAdapter<T>
             val json = adapter.toJson(message)
-            Log.d(TAG, "Sending message type: ${message::class.simpleName}")  // 機密情報を含めない
+            Log.d(TAG, "Sending message type: ${message!!::class.simpleName}")  // 機密情報を含めない
             ws.send(json)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to send message: ${e.javaClass.simpleName}", e)
