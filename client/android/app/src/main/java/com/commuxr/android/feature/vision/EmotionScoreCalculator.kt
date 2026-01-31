@@ -21,9 +21,9 @@ object EmotionScoreCalculator {
      * Blendshapeから感情スコアを算出
      *
      * @param blendshapes MediaPipeから取得したBlendshapeリスト
-     * @return 感情名とスコア(0.0~1.0)のマップ
+     * @return 8種類の感情スコア(0.0~1.0)
      */
-    fun calculate(blendshapes: List<Category>): Map<String, Float> {
+    fun calculate(blendshapes: List<Category>): EmotionScores {
         val blendshapeMap = blendshapes.associate { it.categoryName() to it.score() }
 
         val happy = calculateHappy(blendshapeMap)
@@ -38,15 +38,15 @@ object EmotionScoreCalculator {
         val maxEmotion = maxOf(happy, sad, angry, confused, surprised, fearful, disgusted)
         val neutral = (1.0f - maxEmotion).coerceIn(0f, 1f)
 
-        return mapOf(
-            "happy" to happy,
-            "sad" to sad,
-            "angry" to angry,
-            "confused" to confused,
-            "surprised" to surprised,
-            "neutral" to neutral,
-            "fearful" to fearful,
-            "disgusted" to disgusted
+        return EmotionScores(
+            happy = happy,
+            sad = sad,
+            angry = angry,
+            confused = confused,
+            surprised = surprised,
+            neutral = neutral,
+            fearful = fearful,
+            disgusted = disgusted,
         )
     }
 
