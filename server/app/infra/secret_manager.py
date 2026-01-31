@@ -109,10 +109,10 @@ def get_secret(secret_id: str, default: str | None = None) -> str | None:
                 return _fetch_from_secret_manager(secret_id, gcp_project_id)
             except GoogleAPIError as e:
                 logger.warning(
-                    "Secret Manager からの取得に失敗: %s (error: %s)。"
+                    "Secret Manager からの取得に失敗: %s (error_type: %s)。"
                     " 環境変数にフォールバックします。",
                     _mask(secret_id),
-                    e,
+                    type(e).__name__,
                 )
 
     # 環境変数フォールバック

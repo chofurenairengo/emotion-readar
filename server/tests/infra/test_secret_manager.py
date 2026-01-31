@@ -6,9 +6,34 @@ from google.api_core.exceptions import GoogleAPIError
 from app.infra.secret_manager import (
     _fetch_from_secret_manager,
     _get_client,
+    _mask,
     clear_cache,
     get_secret,
 )
+
+
+class TestMask:
+    """_mask関数のテスト"""
+
+    def test_mask_empty_string(self) -> None:
+        """空文字列は****を返す"""
+        assert _mask("") == "****"
+
+    def test_mask_short_string(self) -> None:
+        """4文字未満は****を返す"""
+        assert _mask("ABC") == "****"
+
+    def test_mask_exactly_four_chars(self) -> None:
+        """ちょうど4文字は****を返す"""
+        assert _mask("ABCD") == "****"
+
+    def test_mask_five_chars(self) -> None:
+        """5文字は先頭4文字+****を返す"""
+        assert _mask("ABCDE") == "ABCD****"
+
+    def test_mask_long_string(self) -> None:
+        """長い文字列は先頭4文字+****を返す"""
+        assert _mask("FIREBASE_SERVICE_ACCOUNT") == "FIRE****"
 
 
 class TestGetSecret:
