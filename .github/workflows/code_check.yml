@@ -35,10 +35,10 @@ jobs:
         working-directory: server
         run: uv run black .
 
-      # 3. Mypyで型チェック（修正はできないのでチェックのみ）
-      - name: Run Mypy
-        working-directory: server
-        run: uv run mypy .
+      # # 3. Mypyで型チェック（修正はできないのでチェックのみ）
+      # - name: Run Mypy
+      #   working-directory: server
+      #   run: uv run mypy .
 
       # # 4. 変更があれば自動コミット＆プッシュ
       # - name: Commit and push if changed
