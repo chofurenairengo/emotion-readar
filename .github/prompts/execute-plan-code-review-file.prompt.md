@@ -14,9 +14,18 @@ Follow the same rules as `/execute-plan`:
 - Do NOT add extra improvements or refactoring
 - Ask if anything is unclear
 
-### Step 2: Run Claude Code review
+### Step 2: Wait for developer to accept changes
 
-After implementation is complete, run the following command in the terminal (from workspace root):
+**IMPORTANT**: After implementation is complete:
+
+1. **Inform the user** that implementation is done and they should review the changes
+2. **Wait for the developer to accept/keep the changes** in their IDE before proceeding
+3. **Do NOT automatically run Claude review** — ask the user to confirm they have accepted the changes first
+4. Only after the user confirms, proceed to Step 3
+
+### Step 3: Run Claude Code review
+
+After the developer has confirmed they accepted the changes, run the following command in the terminal (from workspace root):
 
 ```bash
 claude --allowedTools "Write" -p "/code-review-file"
@@ -27,7 +36,7 @@ This automatically:
 - Executes `/code-review-file` slash command
 - Saves results to `CODEREVIEW.md` (auto-overwrite enabled)
 
-### Step 3: Report results
+### Step 4: Report results
 
 Report the review summary to the user.
 
