@@ -27,6 +27,15 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+_MASK_VISIBLE_CHARS = 4
+
+
+def _mask(value: str) -> str:
+    """文字列をマスキングする（先頭数文字 + ****）。"""
+    if len(value) <= _MASK_VISIBLE_CHARS:
+        return "****"
+    return value[:_MASK_VISIBLE_CHARS] + "****"
+
 
 @lru_cache(maxsize=1)
 def _get_client() -> SecretManagerServiceClient:
@@ -58,7 +67,7 @@ def _fetch_from_secret_manager(secret_id: str, project_id: str) -> str:
     response = client.access_secret_version(request={"name": name})
     secret_value = response.payload.data.decode("UTF-8")
 
-    logger.debug("Secret Manager からシークレットを取得: %s", secret_id)
+    logger.debug("Secret Manager からシークレットを取得: %s", _mask(secret_id))
     return secret_value
 
 
@@ -102,14 +111,14 @@ def get_secret(secret_id: str, default: str | None = None) -> str | None:
                 logger.warning(
                     "Secret Manager からの取得に失敗: %s (error: %s)。"
                     " 環境変数にフォールバックします。",
-                    secret_id,
+                    _mask(secret_id),
                     e,
                 )
 
     # 環境変数フォールバック
     env_value = os.environ.get(secret_id)
     if env_value:
-        logger.debug("環境変数からシークレットを取得: %s", secret_id)
+        logger.debug("環境変数からシークレットを取得: %s", _mask(secret_id))
         return env_value
 
     # デフォルト値
@@ -119,9 +128,9 @@ def get_secret(secret_id: str, default: str | None = None) -> str | None:
     # 本番環境でシークレットが見つからない場合はエラー
     if env_state != "dev":
         raise ValueError(
-            f"Secret '{secret_id}' not found. "
+            f"Secret '{_mask(secret_id)}' not found. "
             f"Set USE_SECRET_MANAGER=true and configure Secret Manager, "
-            f"or set the {secret_id} environment variable."
+            f"or set the corresponding environment variable."
         )
 
     return None
