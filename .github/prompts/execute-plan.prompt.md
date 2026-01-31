@@ -24,6 +24,13 @@ Execute the implementation plan defined in PLAN.md.
 5. Run tests specified in Testing Requirements
 6. Verify all Success Criteria are met
 
+## Issue Independence Rule (MANDATORY)
+
+**Each issue MUST be implemented independently.** Unless dependencies are explicitly specified:
+- Do NOT reference or depend on code from other issues that may not be merged yet
+- Do NOT assume other issues' implementations exist
+- Implement based ONLY on the current state of the codebase plus the current issue's PLAN.md
+
 ## Important Notes
 
 - If PLAN.md does not exist, notify the user

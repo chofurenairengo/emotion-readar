@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+from typing import Any, cast
 
 import firebase_admin
 from firebase_admin import auth, credentials
@@ -69,7 +70,7 @@ def get_firebase_app() -> firebase_admin.App:
     return _app
 
 
-def verify_id_token(id_token: str) -> dict:
+def verify_id_token(id_token: str) -> dict[str, Any]:
     """Firebase ID Token を検証し、デコード済みクレームを返す。
 
     Args:
@@ -84,7 +85,7 @@ def verify_id_token(id_token: str) -> dict:
         firebase_admin.auth.RevokedIdTokenError: トークンが失効済みの場合
     """
     get_firebase_app()
-    return auth.verify_id_token(id_token)
+    return cast(dict[str, Any], auth.verify_id_token(id_token))
 
 
 def _build_credentials(emulator_host: str) -> credentials.Base | None:

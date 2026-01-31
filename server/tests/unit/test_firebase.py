@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+from typing import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,7 +12,7 @@ from app.infra import firebase
 
 
 @pytest.fixture(autouse=True)
-def _reset_firebase_state():
+def _reset_firebase_state() -> Generator[None, None, None]:
     """各テスト前に Firebase のグローバル状態をリセット。"""
     firebase._app = None
     with patch.object(firebase.firebase_admin, "_apps", {}):
@@ -80,7 +82,7 @@ class TestInitializeFirebase:
                 options={"projectId": "test-project"},
             )
 
-    def test_credentials_file_path(self, tmp_path) -> None:
+    def test_credentials_file_path(self, tmp_path: Path) -> None:
         key_file = tmp_path / "sa-key.json"
         key_file.write_text("{}")
         mock_cred = MagicMock()
@@ -220,9 +222,7 @@ class TestVerifyIdToken:
                 return_value=MagicMock(),
             ),
             patch.object(firebase.firebase_admin, "_apps", {}),
-            patch.object(
-                firebase.auth, "verify_id_token", return_value=expected
-            ),
+            patch.object(firebase.auth, "verify_id_token", return_value=expected),
         ):
             result = firebase.verify_id_token("valid-token")
             assert result == expected

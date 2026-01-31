@@ -16,6 +16,21 @@ You are an expert code reviewer. When this command is invoked:
 2. If no changes found, also check `git diff --cached --name-only` for staged changes
 3. If still no changes, inform the user and exit
 
+### Step 1.5: Check Issue and Plan Scope
+
+**IMPORTANT — Scope Verification (MUST DO)**:
+
+1. **Identify the current issue**: Check the current Git branch name (e.g., `feature/#95`) to determine the issue number being worked on
+2. **Read the issue**: Use `gh issue view <number>` to understand the expected scope of work
+3. **Read PLAN.md**: If `PLAN.md` exists in the project root, read it to understand the implementation plan
+4. **Verify scope compliance**: During the review, check that ALL changes are within the scope of the issue and plan. Flag any changes that:
+   - Add functionality not described in the issue or plan
+   - Modify files unrelated to the issue or plan
+   - Introduce refactoring or improvements outside the stated scope
+   - Add dependencies not specified in the plan
+
+If scope violations are found, report them as **HIGH** severity issues under a new category: **Scope Violation**.
+
 ### Step 2: Analyze Each Changed File
 
 For each changed file, use `git diff HEAD -- <file>` to get the actual changes, then check for:
@@ -128,6 +143,12 @@ Create a detailed code review report following this format:
 
 ---
 
+## Scope Violations
+
+[List any changes that deviate from the issue scope or PLAN.md. If none, write "No scope violations found."]
+
+---
+
 ## Positive Observations
 
 - [Good practices observed]
@@ -153,7 +174,9 @@ Create a detailed code review report following this format:
 
 1. Write the report to `CODEREVIEW.md` in the project root using the Write tool
 2. Overwrite any existing content (do not append)
-3. Confirm to the user that the file has been saved
+3. If `CODEREVIEW.md` does not exist, create it automatically — do NOT ask for permission
+4. Do NOT ask for permission to overwrite an existing `CODEREVIEW.md` — always overwrite silently
+5. Confirm to the user that the file has been saved
 
 ### Step 5: Inform the User
 
