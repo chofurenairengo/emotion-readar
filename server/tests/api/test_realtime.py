@@ -107,7 +107,9 @@ class TestWebSocketAuthentication:
 class TestWebSocketPing:
     """PING/PONGテスト."""
 
-    def test_ping_returns_pong(self, client: TestClient, mock_auth_and_session: None) -> None:
+    def test_ping_returns_pong(
+        self, client: TestClient, mock_auth_and_session: None
+    ) -> None:
         """PINGメッセージにPONGで応答する."""
         with client.websocket_connect(
             "/api/realtime?session_id=test&token=valid"
@@ -121,7 +123,9 @@ class TestWebSocketPing:
 class TestWebSocketReset:
     """RESETテスト."""
 
-    def test_reset_returns_ack(self, client: TestClient, mock_auth_and_session: None) -> None:
+    def test_reset_returns_ack(
+        self, client: TestClient, mock_auth_and_session: None
+    ) -> None:
         """RESETメッセージにRESET_ACKで応答する."""
         with client.websocket_connect(
             "/api/realtime?session_id=test&token=valid"
