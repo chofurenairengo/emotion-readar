@@ -13,12 +13,12 @@ namespace ERA.Data
         /// 応答文（例: "それは面白いですね"）。
         /// </summary>
         [JsonProperty("text")]
-        public string Text;
+        public string Text = string.Empty;
 
         /// <summary>
         /// 意図（例: "共感を示す", "質問する" 等）。
         /// </summary>
         [JsonProperty("intent")]
-        public string Intent;
+        public string Intent = string.Empty;
     }
 }

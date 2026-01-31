@@ -13,19 +13,19 @@ namespace ERA.Data
         /// 主要な感情 ("happy", "sad", "confused" 等)。
         /// </summary>
         [JsonProperty("primary_emotion")]
-        public string PrimaryEmotion;
+        public string PrimaryEmotion = string.Empty;
 
         /// <summary>
         /// 強度 ("low", "medium", "high")。
         /// </summary>
         [JsonProperty("intensity")]
-        public string Intensity;
+        public string Intensity = string.Empty;
 
         /// <summary>
         /// 自然言語での説明（例: "相手は楽しそうです"）。
         /// </summary>
         [JsonProperty("description")]
-        public string Description;
+        public string Description = string.Empty;
 
         /// <summary>
         /// 行動提案（例: "話題を広げましょう"）。nullableなフィールド。

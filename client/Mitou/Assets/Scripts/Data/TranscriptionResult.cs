@@ -13,7 +13,7 @@ namespace ERA.Data
         /// 認識されたテキスト。
         /// </summary>
         [JsonProperty("text")]
-        public string Text;
+        public string Text = string.Empty;
 
         /// <summary>
         /// 信頼度 (0.0〜1.0)。
@@ -25,7 +25,7 @@ namespace ERA.Data
         /// 検出言語 ("ja", "en")。
         /// </summary>
         [JsonProperty("language")]
-        public string Language;
+        public string Language = string.Empty;
 
         /// <summary>
         /// 音声の長さ（ミリ秒）。
