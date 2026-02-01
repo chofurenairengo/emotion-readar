@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.auth import get_current_user
+from app.api.auth import check_rate_limit
 from app.api.dependencies import get_session_service
 from app.core.exceptions import SessionPermissionError
 from app.dto.session import SessionResponse
@@ -18,7 +18,7 @@ router = APIRouter(tags=["sessions"])
     status_code=status.HTTP_201_CREATED,
 )
 def start_session(
-    current_user: dict[str, Any] = Depends(get_current_user),
+    current_user: dict[str, Any] = Depends(check_rate_limit),
     session_service: SessionService = Depends(get_session_service),
 ) -> SessionResponse:
     session = session_service.create_session(owner_id=current_user["uid"])
@@ -33,7 +33,7 @@ def start_session(
 )
 def finish_session(
     session_id: str,
-    current_user: dict[str, Any] = Depends(get_current_user),
+    current_user: dict[str, Any] = Depends(check_rate_limit),
     session_service: SessionService = Depends(get_session_service),
 ) -> SessionResponse:
     try:
@@ -60,7 +60,7 @@ def finish_session(
 )
 def read_session(
     session_id: str,
-    current_user: dict[str, Any] = Depends(get_current_user),
+    current_user: dict[str, Any] = Depends(check_rate_limit),
     session_service: SessionService = Depends(get_session_service),
 ) -> SessionResponse:
     try:

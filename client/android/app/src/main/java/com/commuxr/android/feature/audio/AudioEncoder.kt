@@ -1,18 +1,10 @@
 package com.commuxr.android.feature.audio
 
 import android.util.Base64
+import com.commuxr.android.core.model.AudioFormat
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-
-/**
- * 音声フォーマット
- */
-enum class AudioFormat(val value: String) {
-    WAV("wav"),
-    OPUS("opus"),
-    PCM("pcm")
-}
 
 /**
  * PCM音声データをBase64エンコードするエンコーダー
