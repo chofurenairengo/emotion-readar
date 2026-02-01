@@ -1,11 +1,11 @@
 package com.commuxr.android
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.commuxr.android.ui.theme.AndroidTheme
+import com.commuxr.android.feature.camera.CameraScreen
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -54,51 +54,32 @@ import java.util.concurrent.Executors
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private val unityMessageSender = UnityMessageSender(UNITY_GAME_OBJECT, UNITY_METHOD)
     private var faceLandmarkerAnalyzer: FaceLandmarkerAnalyzer? = null
-    private var previewView: PreviewView? = null
-    private var statusMessage by mutableStateOf("Awaiting camera permission")
-    private var hasCameraPermission by mutableStateOf(false)
-
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            hasCameraPermission = granted
-            if (granted) {
-                statusMessage = "Starting camera"
-                previewView?.let { startCamera(it) }
-            } else {
-                statusMessage = "Camera permission denied"
-            }
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        hasCameraPermission =
-            ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED
-        if (hasCameraPermission) {
-            statusMessage = "Starting camera"
-        }
+
+        val analyzer = FaceLandmarkerAnalyzer(
+            context = this,
+            unityMessageSender = unityMessageSender,
+            onError = { /* エラーはCameraViewModelで管理 */ },
+        )
+        faceLandmarkerAnalyzer = analyzer
+
         setContent {
             AndroidTheme {
                 val viewModel: MainViewModel = hiltViewModel()
                 val uiState by viewModel.uiState.collectAsState()
 
                 CameraScreen(
-                    hasCameraPermission = hasCameraPermission,
-                    statusMessage = statusMessage,
-                    uiState = uiState,
-                    onRequestPermission = { requestPermissionLauncher.launch(Manifest.permission.CAMERA) },
-                    onPreviewReady = { view ->
-                        previewView = view
-                        if (hasCameraPermission) {
-                            startCamera(view)
-                        }
+                    onFrame = { imageProxy ->
+                        analyzer.analyze(imageProxy)
                     },
-                    onStartSession = { viewModel.startSession() },
-                    onEndSession = { viewModel.endSession() }
+                    onError = { message ->
+                        // FaceLandmarkerAnalyzerからのエラーはCameraViewModelに伝播
+                    }
                 )
             }
         }
@@ -107,32 +88,6 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         faceLandmarkerAnalyzer?.close()
-        cameraExecutor.shutdown()
-    }
-
-    private fun startCamera(view: PreviewView) {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(view.surfaceProvider)
-            }
-            val analyzer = FaceLandmarkerAnalyzer(
-                context = this,
-                unityMessageSender = unityMessageSender,
-                onError = { message -> statusMessage = message },
-            )
-            faceLandmarkerAnalyzer = analyzer
-            val imageAnalysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-                .build()
-                .also { it.setAnalyzer(cameraExecutor, analyzer) }
-            val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
-            cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis)
-            statusMessage = "Streaming face data"
-        }, ContextCompat.getMainExecutor(this))
     }
 
     companion object {
