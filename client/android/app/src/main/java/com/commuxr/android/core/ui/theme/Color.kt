@@ -1,4 +1,4 @@
-package com.commuxr.android.ui.theme
+package com.commuxr.android.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

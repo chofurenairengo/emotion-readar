@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.moshi.kotlin)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
+    implementation(libs.accompanist.permissions)
     // Hilt
     implementation(libs.hilt.android)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
