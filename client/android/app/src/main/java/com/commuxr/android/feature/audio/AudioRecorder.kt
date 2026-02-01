@@ -5,6 +5,7 @@ import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
 import androidx.annotation.RequiresPermission
+import com.commuxr.android.core.model.AudioFormat
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,9 +16,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * 録音状態
  */
 sealed class RecordingState {
-    data object Idle : RecordingState()
-    data object Recording : RecordingState()
-    data object Stopped : RecordingState()
+    object Idle : RecordingState()
+    object Recording : RecordingState()
+    object Stopped : RecordingState()
     data class Error(val message: String) : RecordingState()
 }
 
