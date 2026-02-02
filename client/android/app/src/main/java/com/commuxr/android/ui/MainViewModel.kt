@@ -2,7 +2,6 @@ package com.commuxr.android.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.commuxr.android.data.websocket.WebSocketClient
 import com.commuxr.android.domain.usecase.EndSessionUseCase
 import com.commuxr.android.domain.usecase.SendAnalysisUseCase
 import com.commuxr.android.domain.usecase.StartSessionUseCase
@@ -10,62 +9,45 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * メイン画面のViewModel
+ * メイン画面のViewModel（簡略化版）
  *
- * セッション管理とWebSocket接続状態を管理する
+ * UIはUnity側で管理するため、セッション管理とデータ送信のみを担当する。
  */
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val startSessionUseCase: StartSessionUseCase,
     private val endSessionUseCase: EndSessionUseCase,
-    private val sendAnalysisUseCase: SendAnalysisUseCase,
-    private val webSocketClient: WebSocketClient
+    private val sendAnalysisUseCase: SendAnalysisUseCase
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MainUiState())
-    val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
+    private val _isSessionActive = MutableStateFlow(false)
+    val isSessionActive: StateFlow<Boolean> = _isSessionActive.asStateFlow()
 
-    init {
-        // WebSocket接続状態を監視
-        viewModelScope.launch {
-            webSocketClient.connectionState.collect { state ->
-                _uiState.update { it.copy(connectionState = state) }
-            }
-        }
-    }
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     /**
      * セッションを開始
      */
     fun startSession() {
-        if (_uiState.value.isLoading) return
+        if (_isLoading.value) return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _isLoading.value = true
 
             startSessionUseCase()
-                .onSuccess { session ->
-                    _uiState.update {
-                        it.copy(
-                            session = session,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
+                .onSuccess {
+                    _isSessionActive.value = true
                 }
-                .onFailure { exception ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = exception.message ?: "Failed to start session"
-                        )
-                    }
+                .onFailure {
+                    // エラーはUnity側でハンドリング
                 }
+
+            _isLoading.value = false
         }
     }
 
@@ -73,36 +55,27 @@ class MainViewModel @Inject constructor(
      * セッションを終了
      */
     fun endSession() {
-        if (_uiState.value.isLoading) return
+        if (_isLoading.value) return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            _isLoading.value = true
 
             endSessionUseCase()
-                .onSuccess { session ->
-                    _uiState.update {
-                        it.copy(
-                            session = session,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
+                .onSuccess {
+                    _isSessionActive.value = false
                 }
-                .onFailure { exception ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = exception.message ?: "Failed to end session"
-                        )
-                    }
+                .onFailure {
+                    // エラーはUnity側でハンドリング
                 }
+
+            _isLoading.value = false
         }
     }
 
     /**
      * 感情スコアが更新されたときに呼び出す
      *
-     * セッションがアクティブで接続中の場合、自動的に解析データを送信する
+     * セッションがアクティブな場合、自動的に解析データを送信する
      *
      * @param emotionScores 感情スコアマップ
      * @param audioData Base64エンコードされた音声データ（オプション）
@@ -114,23 +87,16 @@ class MainViewModel @Inject constructor(
         audioFormat: String? = null
     ) {
         // セッションがアクティブでなければ送信しない
-        if (!_uiState.value.isSessionActive) return
+        if (!_isSessionActive.value) return
 
         // 自動送信
         sendAnalysisUseCase(emotionScores, audioData, audioFormat)
     }
 
-    /**
-     * エラーをクリア
-     */
-    fun clearError() {
-        _uiState.update { it.copy(error = null) }
-    }
-
     override fun onCleared() {
         super.onCleared()
         // ViewModel破棄時にセッションが残っていれば終了
-        if (_uiState.value.isSessionActive) {
+        if (_isSessionActive.value) {
             viewModelScope.launch {
                 endSessionUseCase()
             }
