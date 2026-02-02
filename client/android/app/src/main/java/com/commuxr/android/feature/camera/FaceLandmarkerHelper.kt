@@ -52,20 +52,24 @@ class FaceLandmarkerHelper(
      * アクティビティのonCreate等で呼び出す
      */
     fun setup() {
-        val options = FaceLandmarker.FaceLandmarkerOptions.builder()
-            .setBaseOptions(
-                BaseOptions.builder()
-                    .setDelegate(delegate)
-                    .setModelAssetPath(modelAssetPath)
-                    .build()
-            )
-            .setRunningMode(runningMode)
-            .setOutputFaceBlendshapes(true)
-            .setResultListener { result, _ -> handleResult(result) }
-            .setErrorListener { error -> listener.onError(error.message ?: "FaceLandmarker error") }
-            .build()
+        try {
+            val options = FaceLandmarker.FaceLandmarkerOptions.builder()
+                .setBaseOptions(
+                    BaseOptions.builder()
+                        .setDelegate(delegate)
+                        .setModelAssetPath(modelAssetPath)
+                        .build()
+                )
+                .setRunningMode(runningMode)
+                .setOutputFaceBlendshapes(true)
+                .setResultListener { result, _ -> handleResult(result) }
+                .setErrorListener { error -> listener.onError(error.message ?: "FaceLandmarker error") }
+                .build()
 
-        faceLandmarker = FaceLandmarker.createFromOptions(context, options)
+            faceLandmarker = FaceLandmarker.createFromOptions(context, options)
+        } catch (e: Exception) {
+            listener.onError("Failed to initialize FaceLandmarker: ${e.message}")
+        }
     }
 
     /**
@@ -82,13 +86,16 @@ class FaceLandmarkerHelper(
             return
         }
 
+        var bitmap: Bitmap? = null
         try {
-            val bitmap = imageProxy.toBitmap()
+            bitmap = imageProxy.toBitmap()
             val mpImage = BitmapImageBuilder(bitmap).build()
             val timestampMs = SystemClock.uptimeMillis()
             landmarker.detectAsync(mpImage, timestampMs)
         } catch (e: Exception) {
             listener.onError(e.message ?: "Detection error")
+        } finally {
+            bitmap?.recycle()
         }
     }
 
