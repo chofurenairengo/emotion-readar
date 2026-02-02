@@ -1,13 +1,36 @@
 package com.commuxr.android.feature.audio
 
+import android.util.Log
 import com.commuxr.android.core.model.AudioData
 import com.commuxr.android.core.model.AudioFormat
+import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class AudioRecorderTest {
+
+    @Before
+    fun setup() {
+        mockkStatic(Log::class)
+        every { Log.v(any(), any()) } returns 0
+        every { Log.d(any(), any()) } returns 0
+        every { Log.i(any(), any()) } returns 0
+        every { Log.w(any(), any<String>()) } returns 0
+        every { Log.e(any(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
+        every { Log.w(any(), any<String>(), any()) } returns 0
+    }
+
+    @After
+    fun teardown() {
+        unmockkStatic(Log::class)
+    }
 
     @Test
     fun `initial state is Idle`() {

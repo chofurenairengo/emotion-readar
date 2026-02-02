@@ -34,7 +34,7 @@ class AudioDataTest {
 
     @Test
     fun `AudioFormat enum has exactly 3 entries`() {
-        assertEquals(3, AudioFormat.entries.size)
+        assertEquals(3, AudioFormat.values().size)
     }
 
     @Test

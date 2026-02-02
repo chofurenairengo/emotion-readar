@@ -76,8 +76,9 @@ class AnalysisDtoTest {
         val adapter = moshi.adapter(AnalysisRequest::class.java)
         val json = adapter.toJson(request)
 
-        assertTrue(json.contains("\"audio_data\":null"))
-        assertTrue(json.contains("\"audio_format\":null"))
+        // Moshiはデフォルトでnullフィールドを省略する
+        assertFalse(json.contains("\"audio_data\""))
+        assertFalse(json.contains("\"audio_format\""))
 
         val parsed = adapter.fromJson(json)
         assertNull(parsed?.audioData)
