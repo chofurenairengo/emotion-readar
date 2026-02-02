@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.commuxr.android"
-        minSdk = 26 // adaptive-iconの要件
+        minSdk = 26 // MediaPipe + adaptive-icon の要件
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

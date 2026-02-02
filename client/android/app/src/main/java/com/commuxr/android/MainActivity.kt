@@ -37,25 +37,32 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-
-import com.commuxr.android.core.ui.theme.AndroidTheme
-
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.commuxr.android.data.websocket.ConnectionState
-import com.commuxr.android.ui.MainUiState
-import com.commuxr.android.ui.MainViewModel
-
-
+import com.commuxr.android.feature.camera.FaceLandmarkerHelper
+import com.commuxr.android.feature.vision.EmotionScores
+import com.commuxr.android.ui.theme.AndroidTheme
 import com.commuxr.android.unity.UnityMessageSender
-import com.commuxr.android.vision.FaceLandmarkerAnalyzer
-import dagger.hilt.android.AndroidEntryPoint
+import org.json.JSONObject
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-@AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), FaceLandmarkerHelper.Listener {
+    private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private val unityMessageSender = UnityMessageSender(UNITY_GAME_OBJECT, UNITY_METHOD)
-    private var faceLandmarkerAnalyzer: FaceLandmarkerAnalyzer? = null
+    private var faceLandmarkerHelper: FaceLandmarkerHelper? = null
+    private var previewView: PreviewView? = null
+    private var statusMessage by mutableStateOf("Awaiting camera permission")
+    private var hasCameraPermission by mutableStateOf(false)
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            hasCameraPermission = granted
+            if (granted) {
+                statusMessage = "Starting camera"
+                previewView?.let { startCamera(it) }
+            } else {
+                statusMessage = "Camera permission denied"
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,7 +94,51 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        faceLandmarkerAnalyzer?.close()
+        faceLandmarkerHelper?.close()
+        cameraExecutor.shutdown()
+    }
+
+    override fun onResults(emotionScores: EmotionScores, timestampMs: Long) {
+        val payload = JSONObject().apply {
+            put("type", "face")
+            put("timestampMs", timestampMs)
+            emotionScores.toMap().forEach { (key, value) ->
+                put(key, value)
+            }
+        }
+        unityMessageSender.send(payload.toString())
+    }
+
+    override fun onError(error: String) {
+        statusMessage = error
+    }
+
+    private fun startCamera(view: PreviewView) {
+        val helper = FaceLandmarkerHelper(context = this, listener = this)
+        helper.setup()
+        faceLandmarkerHelper = helper
+
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+            val preview = Preview.Builder().build().also {
+                it.setSurfaceProvider(view.surfaceProvider)
+            }
+            val imageAnalysis = ImageAnalysis.Builder()
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                .build()
+                .also { analysis ->
+                    analysis.setAnalyzer(cameraExecutor) { imageProxy ->
+                        helper.detectAsync(imageProxy, isFrontCamera = true)
+                        imageProxy.close()
+                    }
+                }
+            val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis)
+            statusMessage = "Streaming face data"
+        }, ContextCompat.getMainExecutor(this))
     }
 
     companion object {
