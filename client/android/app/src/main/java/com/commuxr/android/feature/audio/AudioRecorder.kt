@@ -60,6 +60,8 @@ class AudioRecorder {
         const val VAD_THRESHOLD = 500
         /** 無音タイムアウト（この時間無音が続いたら録音停止） */
         const val SILENCE_TIMEOUT_MS = 1500L
+        /** スレッド終了待ちタイムアウト */
+        private const val THREAD_JOIN_TIMEOUT_MS = 3000L
     }
 
     private val _state = MutableStateFlow<RecordingState>(RecordingState.Idle)
@@ -73,6 +75,8 @@ class AudioRecorder {
     private val bufferLock = Any()
     private val isMonitoring = AtomicBoolean(false)
     private val isRecording = AtomicBoolean(false)
+    private val threadLock = Any()
+    private var monitoringThread: Thread? = null
     private var recordingStartTime: Long = 0L
     private var lastVoiceTime: Long = 0L
 
@@ -134,9 +138,11 @@ class AudioRecorder {
             isMonitoring.set(true)
             _state.value = RecordingState.Monitoring
 
-            Thread {
-                monitorAudioData(record, bufferSize)
-            }.start()
+            synchronized(threadLock) {
+                monitoringThread = Thread {
+                    monitorAudioData(record, bufferSize)
+                }.also { it.start() }
+            }
 
             Log.i(TAG, "Monitoring started (${SAMPLE_RATE}Hz, mono, PCM16)")
         } catch (e: SecurityException) {
@@ -156,6 +162,22 @@ class AudioRecorder {
         }
 
         isMonitoring.set(false)
+
+        // モニタリングスレッドの終了を待つ（スレッド内で録音停止処理が完了するのを保証）
+        val thread = synchronized(threadLock) {
+            monitoringThread.also { monitoringThread = null }
+        }
+        try {
+            thread?.join(THREAD_JOIN_TIMEOUT_MS)
+            if (thread?.isAlive == true) {
+                Log.e(TAG, "Monitoring thread did not terminate within timeout, interrupting")
+                thread.interrupt()
+            }
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            Log.w(TAG, "Interrupted while waiting for monitoring thread", e)
+        }
+
         isRecording.set(false)
 
         try {
@@ -292,7 +314,11 @@ class AudioRecorder {
                 _state.value = RecordingState.Error("Failed to generate audio data: ${e.message}")
             }
         } else {
-            _state.value = RecordingState.Idle
+            _state.value = if (isMonitoring.get()) {
+                RecordingState.Monitoring
+            } else {
+                RecordingState.Idle
+            }
             Log.i(TAG, "Recording stopped: ${duration}ms")
         }
     }
@@ -351,7 +377,12 @@ class AudioRecorder {
     fun release() {
         stopMonitoring()
         stopRecording()
-        recordingBuffer = null
+        synchronized(bufferLock) {
+            recordingBuffer = null
+        }
+        synchronized(threadLock) {
+            monitoringThread = null
+        }
         _state.value = RecordingState.Idle
     }
 
@@ -426,7 +457,9 @@ class AudioRecorder {
      * 実際の録音を開始（モニタリング中に音声検出時）
      */
     private fun startActualRecording() {
-        recordingBuffer = ByteArrayOutputStream()
+        synchronized(bufferLock) {
+            recordingBuffer = ByteArrayOutputStream()
+        }
         recordingStartTime = System.currentTimeMillis()
         isRecording.set(true)
         _state.value = RecordingState.Recording
@@ -444,16 +477,27 @@ class AudioRecorder {
         _durationMs.value = duration
 
         try {
-            val audioData = generateAudioData(duration)
+            val audioData: AudioData
+            synchronized(bufferLock) {
+                audioData = generateAudioData(duration)
+                recordingBuffer = null
+            }
+            recordingStartTime = 0L
             _state.value = RecordingState.Completed(audioData)
+            // Completed後にMonitoringに戻す（データ消失防止）
+            if (isMonitoring.get()) {
+                _state.value = RecordingState.Monitoring
+                _durationMs.value = 0L
+            }
             Log.i(TAG, "Auto recording completed: ${duration}ms")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to generate audio data", e)
+            synchronized(bufferLock) {
+                recordingBuffer = null
+            }
+            recordingStartTime = 0L
             _state.value = RecordingState.Error("Failed to generate audio data: ${e.message}")
         }
-
-        recordingBuffer = null
-        recordingStartTime = 0L
     }
 
     /**
@@ -483,9 +527,9 @@ class AudioRecorder {
         val sampleCount = length / 2
 
         for (i in 0 until length - 1 step 2) {
-            // リトルエンディアンで16bit PCMを読み取る
-            val sample = (buffer[i + 1].toInt() shl 8) or (buffer[i].toInt() and 0xFF)
-            sum += abs(sample)
+            // リトルエンディアンで16bit PCMを読み取り、符号付き16bit（Short）として解釈する
+            val sample: Short = ((buffer[i + 1].toInt() shl 8) or (buffer[i].toInt() and 0xFF)).toShort()
+            sum += abs(sample.toInt())
         }
 
         return if (sampleCount > 0) (sum / sampleCount).toInt() else 0

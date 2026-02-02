@@ -88,6 +88,7 @@ class AudioViewModel : ViewModel() {
                     is RecordingState.Error -> {
                         _uiState.update {
                             it.copy(
+                                isMonitoring = false,
                                 isRecording = false,
                                 errorMessage = state.message
                             )
