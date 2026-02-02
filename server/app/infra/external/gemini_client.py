@@ -18,6 +18,6 @@ class LLMClientFactory:
             model=settings.FT_MODEL_ID,
             project=settings.GCP_PROJECT_ID,
             location=settings.GCP_LOCATION,
-            temperature=0.5,
+            temperature=settings.LLM_TEMPERATURE,
             max_retries=2,
         )
