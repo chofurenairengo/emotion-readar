@@ -266,7 +266,7 @@ def generate_base_template() -> str:
 **文書バージョン**: 1.0
 **作成日**: 2026-01-29
 **プロジェクト名**: Comm-XR / Emotion ReadAR（E.R.A）
-**リポジトリ**: https://github.com/chofurenairengo/commuxr
+**リポジトリ**: https://github.com/chofurenairengo/emotion-readar
 
 ---
 
