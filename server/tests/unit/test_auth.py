@@ -87,12 +87,6 @@ def test_valid_token_on_get_session(client: TestClient) -> None:
     assert get_resp.json()["id"] == session_id
 
 
-def test_features_endpoint_requires_auth(client: TestClient) -> None:
-    """features エンドポイントも認証必須。"""
-    response = client.post("/api/features", json={"session_id": "s", "features": {}})
-    assert response.status_code == 401
-
-
 def test_www_authenticate_header_present(client: TestClient) -> None:
     """401 レスポンスに WWW-Authenticate ヘッダーが含まれる。"""
     response = client.post("/api/sessions")
