@@ -26,26 +26,44 @@ object AudioEncoder {
      */
     fun encode(pcmData: ByteArray, format: AudioFormat): String {
         val formattedData = when (format) {
-            AudioFormat.WAV -> addWavHeader(pcmData)
+            AudioFormat.WAV -> pcmToWav(pcmData)
             AudioFormat.PCM -> pcmData
             AudioFormat.OPUS -> encodeOpus(pcmData)
         }
-        return Base64.encodeToString(formattedData, Base64.NO_WRAP)
+        return toBase64(formattedData)
     }
 
     /**
-     * PCMデータにWAVヘッダーを付与
+     * バイト配列をBase64エンコード
+     *
+     * @param data エンコードするデータ
+     * @return Base64エンコードされた文字列
+     */
+    fun toBase64(data: ByteArray): String {
+        return Base64.encodeToString(data, Base64.NO_WRAP)
+    }
+
+    /**
+     * PCMデータをWAV形式に変換
      *
      * WAVフォーマット仕様:
      * - RIFF header (44 bytes) + PCM data
-     * - サンプルレート: 16000Hz
-     * - チャンネル: 1 (モノラル)
-     * - ビット深度: 16bit
+     *
+     * @param pcmData PCM生データ
+     * @param sampleRate サンプルレート（デフォルト: 16000Hz）
+     * @param channels チャンネル数（デフォルト: 1 = モノラル）
+     * @param bitsPerSample ビット深度（デフォルト: 16bit）
+     * @return WAV形式のバイト配列
      */
-    internal fun addWavHeader(pcmData: ByteArray): ByteArray {
+    fun pcmToWav(
+        pcmData: ByteArray,
+        sampleRate: Int = SAMPLE_RATE,
+        channels: Int = CHANNELS,
+        bitsPerSample: Int = BITS_PER_SAMPLE
+    ): ByteArray {
         val dataSize = pcmData.size
-        val byteRate = SAMPLE_RATE * CHANNELS * BITS_PER_SAMPLE / 8
-        val blockAlign = CHANNELS * BITS_PER_SAMPLE / 8
+        val byteRate = sampleRate * channels * bitsPerSample / 8
+        val blockAlign = channels * bitsPerSample / 8
 
         val output = ByteArrayOutputStream()
         val buffer = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
@@ -59,11 +77,11 @@ object AudioEncoder {
         buffer.put("fmt ".toByteArray())
         buffer.putInt(16) // SubChunk1Size (PCM)
         buffer.putShort(1) // AudioFormat (1 = PCM)
-        buffer.putShort(CHANNELS.toShort())
-        buffer.putInt(SAMPLE_RATE)
+        buffer.putShort(channels.toShort())
+        buffer.putInt(sampleRate)
         buffer.putInt(byteRate)
         buffer.putShort(blockAlign.toShort())
-        buffer.putShort(BITS_PER_SAMPLE.toShort())
+        buffer.putShort(bitsPerSample.toShort())
 
         // data sub-chunk
         buffer.put("data".toByteArray())
