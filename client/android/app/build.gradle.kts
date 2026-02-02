@@ -6,13 +6,13 @@ plugins {
 }
 
 android {
-    namespace = "com.commuxr.android"
+    namespace = "com.era.android"
     // 安定版の34に変更
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.commuxr.android"
-        minSdk = 26 // adaptive-iconの要件
+        applicationId = "com.era.android"
+        minSdk = 24 // MediaPipeの要件
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

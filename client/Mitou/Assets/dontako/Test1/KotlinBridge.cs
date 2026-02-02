@@ -13,7 +13,7 @@ public class KotlinBridge : MonoBehaviour
     public void CallKotlin()
     {
         Debug.Log("[KotlinBridge] Calling PluginBridge.start()");
-        using var plugin = new AndroidJavaClass("com.commuxr.unityplugin.PluginBridge");
+        using var plugin = new AndroidJavaClass("com.era.unityplugin.PluginBridge");
         plugin.CallStatic("start");
         Debug.Log("[KotlinBridge] PluginBridge.start() invoked");
     }
