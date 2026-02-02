@@ -1,5 +1,7 @@
 # ===== Unity =====
 [Ll]ibrary/
+client/Mitou/Assets/dontako/
+client/Mitou/Assets/dontako.meta
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/
@@ -15,7 +17,7 @@
 !/[Pp]roject[Ss]ettings/**/*.meta
 
 # JetBrains Rider / VS / etc
-.vscode/*
+**/.vscode/
 
 .idea/
 *.csproj
