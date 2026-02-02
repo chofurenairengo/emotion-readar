@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comm-XR クラス関連図</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+    }
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      text-align: center;
+      padding: 30px 0;
+      border-bottom: 1px solid #3a3a5a;
+      margin-bottom: 30px;
+    }
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, #00d9ff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #8888aa;
+      font-size: 1.1rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .tab {
+      padding: 12px 24px;
+      background: #2a2a4a;
+      border: 1px solid #4a4a6a;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 0.95rem;
+    }
+    .tab:hover {
+      background: #3a3a5a;
+      border-color: #00d9ff;
+    }
+    .tab.active {
+      background: linear-gradient(135deg, #00d9ff33, #00ff8833);
+      border-color: #00d9ff;
+      color: #00d9ff;
+    }
+    .diagram-container {
+      background: #0d1117;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      border: 1px solid #30363d;
+      overflow-x: auto;
+    }
+    .diagram-section {
+      display: none;
+    }
+    .diagram-section.active {
+      display: block;
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+    .legend {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+      padding: 20px;
+      background: #1a1a2e;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: #2a2a4a;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      border: 1px solid #3a3a5a;
+    }
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #00d9ff;
+    }
+    .stat-label {
+      color: #8888aa;
+      font-size: 0.85rem;
+      margin-top: 5px;
+    }
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #6a6a8a;
+      border-top: 1px solid #3a3a5a;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Comm-XR クラス関連図</h1>
+      <p class="subtitle">Clean Architecture による Python/FastAPI バックエンド構成</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-number">35+</div>
+        <div class="stat-label">総クラス数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">19</div>
+        <div class="stat-label">DTO</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">9</div>
+        <div class="stat-label">サービス</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">5</div>
+        <div class="stat-label">インターフェース</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">4</div>
+        <div class="stat-label">ルーター</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">3</div>
+        <div class="stat-label">リポジトリ</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: #ff6b6b;"></div>
+        <span>Router (API Layer)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #4ecdc4;"></div>
+        <span>Service (Business Logic)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #45b7d1;"></div>
+        <span>Repository (Data Access)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #96ceb4;"></div>
+        <span>Model / DTO</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #ffeaa7;"></div>
+        <span>Interface / Protocol</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #dfe6e9;"></div>
+        <span>External (GCP)</span>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="overview">全体概要</div>
+      <div class="tab" data-tab="websocket">WebSocket フロー</div>
+      <div class="tab" data-tab="session">セッション管理</div>
+      <div class="tab" data-tab="services">サービス層</div>
+      <div class="tab" data-tab="dto">DTO 構成</div>
+      <div class="tab" data-tab="repository">リポジトリ層</div>
+      <div class="tab" data-tab="domain">ドメインモデル</div>
+      <div class="tab" data-tab="usecase">ユースケース</div>
+      <div class="tab" data-tab="android">Android</div>
+      <div class="tab" data-tab="unity">Unity</div>
+    </div>
+
+    <div class="diagram-container">
+      <!-- 全体概要 -->
+      <div id="overview" class="diagram-section active">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#2a2a4a', 'primaryTextColor': '#fff', 'primaryBorderColor': '#4a4a6a', 'lineColor': '#00d9ff', 'secondaryColor': '#1a1a2e'}}}%%
+flowchart TB
+    subgraph API["🌐 API Layer"]
+        HR["Health Router<br/><small>ヘルスチェック</small>"]
+        SR["Sessions Router<br/><small>セッション開始・終了</small>"]
+        FR["Features Router<br/><small>非言語特徴量受信</small>"]
+        RR["Realtime Router<br/><small>WebSocket通信</small>"]
+    end
+
+    subgraph SERVICES["⚙️ Service Layer"]
+        RGS["ResponseGeneratorService<br/><small>処理全体の統括</small>"]
+        SS["SessionService<br/><small>セッション状態管理</small>"]
+        LLS["LLMService<br/><small>Gemini API呼び出し</small>"]
+        STTS["STTService<br/><small>音声→テキスト変換</small>"]
+        CS["ConversationService<br/><small>会話履歴管理</small>"]
+        EIS["EmotionInterpreterService<br/><small>感情スコア解釈</small>"]
+        CM["ConnectionManager<br/><small>WebSocket接続管理</small>"]
+    end
+
+    subgraph REPOS["💾 Repository Layer"]
+        IMSR["InMemorySessionRepository<br/><small>メモリ内セッション保存</small>"]
+        FSR["FirestoreSessionRepository<br/><small>Firestore永続化</small>"]
+    end
+
+    subgraph MODELS["📦 Domain"]
+        Session["Session<br/><small>セッション情報</small>"]
+        FeatureLog["FeatureLog<br/><small>特徴量ログ</small>"]
+    end
+
+    subgraph EXTERNAL["☁️ External"]
+        VERTEX["Vertex AI / Gemini"]
+        GCS["Google Cloud STT"]
+        FS_DB[("Firestore")]
+    end
+
+    %% Main Flow (Top to Bottom)
+    RR --> RGS
+    RGS --> STTS & CS & EIS & LLS
+    SR --> SS
+    SS --> IMSR & FSR
+
+    %% External connections
+    STTS -.-> GCS
+    LLS -.-> VERTEX
+    FSR -.-> FS_DB
+
+    %% Model usage
+    SS --> Session
+    IMSR --> Session
+
+    classDef router fill:#ff6b6b,stroke:#ff6b6b,color:#fff
+    classDef service fill:#4ecdc4,stroke:#4ecdc4,color:#000
+    classDef repo fill:#45b7d1,stroke:#45b7d1,color:#000
+    classDef model fill:#96ceb4,stroke:#96ceb4,color:#000
+    classDef external fill:#dfe6e9,stroke:#dfe6e9,color:#000
+
+    class HR,SR,FR,RR router
+    class SS,RGS,LLS,STTS,CS,EIS,CM service
+    class FSR,IMSR repo
+    class Session,FeatureLog model
+    class VERTEX,GCS,FS_DB external
+        </pre>
+      </div>
+
+      <!-- WebSocket フロー -->
+      <div id="websocket" class="diagram-section">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+sequenceDiagram
+    participant C as 📱 Client
+    participant R as 🌐 Router
+    participant RGS as ⚙️ ResponseGenerator
+    participant STT as 🎤 STT
+    participant LLM as 🤖 LLM
+
+    C->>R: WebSocket接続
+    R-->>C: 接続確立
+
+    rect rgb(40, 40, 60)
+        Note over C,LLM: 分析リクエスト処理
+        C->>R: ANALYSIS_REQUEST<br/>(感情スコア, 音声)
+        R->>RGS: process()
+        RGS->>STT: 音声認識
+        STT-->>RGS: テキスト
+        RGS->>LLM: 返答生成
+        LLM-->>RGS: 提案2件
+        RGS-->>R: AnalysisResponse
+        R-->>C: 返答候補・感情解釈
+    end
+        </pre>
+      </div>
+
+      <!-- セッション管理 -->
+      <div id="session" class="diagram-section">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart LR
+    subgraph ROUTER["🌐 Router"]
+        SR["SessionsRouter<br/><small>セッションAPI提供</small>"]
+    end
+
+    subgraph SERVICE["⚙️ Service"]
+        SS["SessionService<br/><small>セッション作成・終了・検証</small>"]
+    end
+
+    subgraph REPO["💾 Repository"]
+        SRP["SessionRepository<br/><small>≪Protocol≫ 永続化IF</small>"]
+        IMSR["InMemorySessionRepo<br/><small>メモリ保存（開発用）</small>"]
+        FSR["FirestoreSessionRepo<br/><small>Firestore保存（本番）</small>"]
+    end
+
+    subgraph MODEL["📦 Model"]
+        Session["Session<br/><small>id, owner_id, status, 開始/終了日時</small>"]
+    end
+
+    SR --> SS
+    SS --> SRP
+    SRP -.-> IMSR
+    SRP -.-> FSR
+    IMSR --> Session
+    FSR --> Session
+
+    classDef router fill:#ff6b6b,stroke:#ff6b6b,color:#fff
+    classDef service fill:#4ecdc4,stroke:#4ecdc4,color:#000
+    classDef repo fill:#45b7d1,stroke:#45b7d1,color:#000
+    classDef protocol fill:#ffeaa7,stroke:#ffeaa7,color:#000
+    classDef model fill:#96ceb4,stroke:#96ceb4,color:#000
+
+    class SR router
+    class SS service
+    class SRP protocol
+    class IMSR,FSR repo
+    class Session model
+        </pre>
+      </div>
+
+      <!-- サービス層 -->
+      <div id="services" class="diagram-section">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph ORCHESTRATOR["🎯 Orchestrator"]
+        RGS["ResponseGeneratorService<br/><small>処理全体を統括し、各サービスを呼び出す</small>"]
+    end
+
+    subgraph CORE["⚙️ Core Services"]
+        STT["STTService<br/><small>Google Cloud STTで音声→テキスト</small>"]
+        CS["ConversationService<br/><small>セッションごとの会話履歴を保持</small>"]
+        EIS["EmotionInterpreterService<br/><small>感情スコアを人間向け解釈に変換</small>"]
+        LLM["LLMService<br/><small>Gemini APIで返答候補を生成</small>"]
+    end
+
+    subgraph INFRA["🔧 Infrastructure"]
+        CM["ConnectionManager<br/><small>WebSocket接続をセッション別に管理</small>"]
+        RL["InMemoryRateLimiter<br/><small>APIレート制限を管理</small>"]
+        SS["SessionService<br/><small>セッションのCRUD操作</small>"]
+    end
+
+    RGS --> STT
+    RGS --> CS
+    RGS --> EIS
+    RGS --> LLM
+
+    classDef orchestrator fill:#fd79a8,stroke:#fd79a8,color:#000
+    classDef core fill:#4ecdc4,stroke:#4ecdc4,color:#000
+    classDef infra fill:#74b9ff,stroke:#74b9ff,color:#000
+
+    class RGS orchestrator
+    class STT,CS,EIS,LLM core
+    class CM,RL,SS infra
+        </pre>
+      </div>
+
+      <!-- DTO 構成 -->
+      <div id="dto" class="diagram-section">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph REQUEST["📥 Request DTOs"]
+        AR["AnalysisRequest<br/><small>感情スコア・音声データを送信</small>"]
+        FR["FeatureRequest<br/><small>非言語特徴量（表情・視線・声）</small>"]
+    end
+
+    subgraph RESPONSE["📤 Response DTOs"]
+        ARES["AnalysisResponse<br/><small>返答候補・感情解釈・音声認識結果</small>"]
+        FRES["FeatureResponse<br/><small>特徴量受信確認</small>"]
+    end
+
+    subgraph CONVERSATION["💬 Conversation"]
+        UT["Utterance<br/><small>発話1件（話者・テキスト・感情）</small>"]
+        EC["EmotionContext<br/><small>発話時の感情状態</small>"]
+        SP["Speaker<br/><small>≪Enum≫ USER / PARTNER</small>"]
+    end
+
+    subgraph EMOTION["😊 Emotion"]
+        EI["EmotionInterpretation<br/><small>感情の解釈結果（強度・説明）</small>"]
+        ECH["EmotionChange<br/><small>感情の変化検出</small>"]
+    end
+
+    subgraph LLM["🤖 LLM Output"]
+        LRR["LLMResponseResult<br/><small>LLM応答（提案2件+状況分析）</small>"]
+        RS["ResponseSuggestion<br/><small>返答候補1件（テキスト+意図）</small>"]
+    end
+
+    subgraph AUDIO["🎤 Audio"]
+        TR["TranscriptionResult<br/><small>音声認識結果（テキスト・信頼度）</small>"]
+        AF["AudioFormat<br/><small>≪Enum≫ WAV / OPUS / PCM</small>"]
+    end
+
+    ARES --> EI
+    ARES --> TR
+    ARES --> RS
+    UT --> EC
+    UT --> SP
+    LRR --> RS
+
+    classDef request fill:#ff7675,stroke:#ff7675,color:#fff
+    classDef response fill:#00b894,stroke:#00b894,color:#fff
+    classDef conversation fill:#74b9ff,stroke:#74b9ff,color:#000
+    classDef emotion fill:#fdcb6e,stroke:#fdcb6e,color:#000
+    classDef llm fill:#a29bfe,stroke:#a29bfe,color:#000
+    classDef audio fill:#81ecec,stroke:#81ecec,color:#000
+
+    class AR,FR request
+    class ARES,FRES response
+    class UT,EC,SP conversation
+    class EI,ECH emotion
+    class LRR,RS llm
+    class TR,AF audio
+        </pre>
+      </div>
+
+      <!-- リポジトリ層 -->
+      <div id="repository" class="diagram-section">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart LR
+    subgraph PROTOCOL["📋 Protocol"]
+        SRP["SessionRepository<br/><small>セッション永続化の抽象IF</small>"]
+        CRP["ConversationRepository<br/><small>会話履歴永続化の抽象IF</small>"]
+    end
+
+    subgraph MEMORY["🧪 開発用（In-Memory）"]
+        IMS["InMemorySessionRepo<br/><small>dict でメモリ内保存</small>"]
+    end
+
+    subgraph PROD["🚀 本番用（Firestore）"]
+        FSS["FirestoreSessionRepo<br/><small>sessions コレクション</small>"]
+        FSC["FirestoreConversationRepo<br/><small>sessions/{id}/utterances</small>"]
+    end
+
+    subgraph DB["☁️ GCP"]
+        FS[("Firestore")]
+    end
+
+    SRP -.->|実装| IMS
+    SRP -.->|実装| FSS
+    CRP -.->|実装| FSC
+    FSS --> FS
+    FSC --> FS
+
+    classDef protocol fill:#ffeaa7,stroke:#ffeaa7,color:#000
+    classDef memory fill:#74b9ff,stroke:#74b9ff,color:#000
+    classDef prod fill:#00b894,stroke:#00b894,color:#fff
+    classDef db fill:#dfe6e9,stroke:#dfe6e9,color:#000
+
+    class SRP,CRP protocol
+    class IMS memory
+    class FSS,FSC prod
+    class FS db
+        </pre>
+      </div>
+
+      <!-- ドメインモデル -->
+      <div id="domain" class="diagram-section">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph SESSION_AGG["📦 Session集約"]
+        Session["Session<br/><small>id, owner_id, status<br/>started_at, ended_at</small>"]
+        FeatureLog["FeatureLog<br/><small>facial, gaze, voice<br/>extras, timestamp</small>"]
+        Utterance["Utterance<br/><small>speaker, text<br/>timestamp, emotion_context</small>"]
+    end
+
+    subgraph EMOTION_VO["😊 感情値オブジェクト"]
+        EI["EmotionInterpretation<br/><small>primary_emotion, intensity<br/>description, suggestion</small>"]
+        EC["EmotionContext<br/><small>primary_emotion<br/>emotion_scores</small>"]
+    end
+
+    subgraph LLM_VO["🤖 LLM出力"]
+        LRR["LLMResponseResult<br/><small>responses[2]<br/>situation_analysis</small>"]
+        RS["ResponseSuggestion<br/><small>text, intent</small>"]
+    end
+
+    Session -->|1:N| FeatureLog
+    Session -->|1:N| Utterance
+    Utterance -->|0:1| EC
+    LRR -->|1:2| RS
+
+    classDef aggregate fill:#ff6b6b,stroke:#ff6b6b,color:#fff
+    classDef vo fill:#4ecdc4,stroke:#4ecdc4,color:#000
+    classDef llm fill:#a29bfe,stroke:#a29bfe,color:#000
+
+    class Session,FeatureLog,Utterance aggregate
+    class EI,EC vo
+    class LRR,RS llm
+        </pre>
+      </div>
+
+      <!-- ユースケース -->
+      <div id="usecase" class="diagram-section">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart LR
+    subgraph ACTOR["👤 アクター"]
+        User["ユーザー<br/><small>Android端末を装着</small>"]
+        Partner["会話相手<br/><small>対面の相手</small>"]
+    end
+
+    subgraph USECASE["📋 ユースケース"]
+        subgraph SESSION["セッション管理"]
+            UC1["セッション開始<br/><small>会話支援を開始</small>"]
+            UC2["セッション終了<br/><small>会話支援を終了</small>"]
+        end
+
+        subgraph FEATURE["特徴量収集"]
+            UC3["非言語特徴量送信<br/><small>表情・視線・声を送信</small>"]
+        end
+
+        subgraph ANALYSIS["リアルタイム分析"]
+            UC4["音声認識<br/><small>発話をテキスト化</small>"]
+            UC5["感情解釈<br/><small>相手の感情を解釈</small>"]
+            UC6["返答候補生成<br/><small>LLMで返答を提案</small>"]
+        end
+
+        subgraph DISPLAY["情報表示"]
+            UC7["HUD表示<br/><small>XRグラスに情報表示</small>"]
+        end
+    end
+
+    subgraph SYSTEM["⚙️ システム"]
+        SYS["Comm-XRバックエンド"]
+    end
+
+    User --> UC1
+    User --> UC2
+    User --> UC3
+    Partner -.->|発話| UC4
+
+    UC3 --> SYS
+    UC4 --> SYS
+    SYS --> UC5
+    SYS --> UC6
+    UC5 --> UC7
+    UC6 --> UC7
+    UC7 --> User
+
+    classDef actor fill:#ff6b6b,stroke:#ff6b6b,color:#fff
+    classDef usecase fill:#4ecdc4,stroke:#4ecdc4,color:#000
+    classDef system fill:#45b7d1,stroke:#45b7d1,color:#000
+
+    class User,Partner actor
+    class UC1,UC2,UC3,UC4,UC5,UC6,UC7 usecase
+    class SYS system
+        </pre>
+      </div>
+
+      <!-- Android -->
+      <div id="android" class="diagram-section">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph UI["📱 UI Layer"]
+        MA["MainActivity<br/><small>エントリーポイント</small>"]
+        MVM["MainViewModel<br/><small>UI状態管理</small>"]
+    end
+
+    subgraph DOMAIN["🎯 Domain"]
+        SSU["StartSessionUseCase<br/><small>セッション開始</small>"]
+        ESU["EndSessionUseCase<br/><small>セッション終了</small>"]
+        SAU["SendAnalysisUseCase<br/><small>分析データ送信</small>"]
+    end
+
+    subgraph DATA["💾 Data"]
+        SR["SessionRepository<br/><small>セッションCRUD</small>"]
+        API["CommXRApi<br/><small>REST API</small>"]
+        WS["WebSocketClient<br/><small>リアルタイム通信</small>"]
+    end
+
+    subgraph FEATURE["⚡ Feature"]
+        FLA["FaceLandmarkerAnalyzer<br/><small>MediaPipe顔検出</small>"]
+        ESC["EmotionScoreCalculator<br/><small>感情スコア算出</small>"]
+        AR["AudioRecorder<br/><small>音声録音</small>"]
+    end
+
+    subgraph BRIDGE["🔗 Unity連携"]
+        UMS["UnityMessageSender<br/><small>顔データ送信</small>"]
+    end
+
+    MA --> MVM
+    MVM --> SSU & ESU & SAU
+    SSU & ESU --> SR
+    SAU --> WS
+    SR --> API
+    FLA --> ESC
+    FLA --> UMS
+
+    classDef ui fill:#ff6b6b,stroke:#ff6b6b,color:#fff
+    classDef domain fill:#4ecdc4,stroke:#4ecdc4,color:#000
+    classDef data fill:#45b7d1,stroke:#45b7d1,color:#000
+    classDef feature fill:#fdcb6e,stroke:#fdcb6e,color:#000
+    classDef bridge fill:#a29bfe,stroke:#a29bfe,color:#000
+
+    class MA,MVM ui
+    class SSU,ESU,SAU domain
+    class SR,API,WS data
+    class FLA,ESC,AR feature
+    class UMS bridge
+        </pre>
+      </div>
+
+      <!-- Unity -->
+      <div id="unity" class="diagram-section">
+        <pre class="mermaid">
+%%{init: {'theme': 'dark'}}%%
+flowchart TB
+    subgraph NETWORK["🌐 Network"]
+        WSC["WebSocketClient<br/><small>サーバー通信</small>"]
+    end
+
+    subgraph DATA["📦 Data"]
+        AR["AnalysisResponse<br/><small>分析結果</small>"]
+        EI["EmotionInterpretation<br/><small>感情解釈</small>"]
+        RS["ResponseSuggestion<br/><small>返答候補</small>"]
+    end
+
+    subgraph HUD["🖥️ HUD"]
+        HC["HUDController<br/><small>HUD統括</small>"]
+        ED["EmotionDisplay<br/><small>感情表示</small>"]
+        SD["SuggestionDisplay<br/><small>返答表示</small>"]
+    end
+
+    subgraph FACE["👤 Face"]
+        FWR["FaceWebSocketReceiver<br/><small>Android顔データ受信</small>"]
+    end
+
+    WSC --> AR
+    AR --> EI & RS
+    AR --> HC
+    HC --> ED & SD
+
+    classDef network fill:#45b7d1,stroke:#45b7d1,color:#000
+    classDef data fill:#96ceb4,stroke:#96ceb4,color:#000
+    classDef hud fill:#ff6b6b,stroke:#ff6b6b,color:#fff
+    classDef face fill:#fdcb6e,stroke:#fdcb6e,color:#000
+
+    class WSC network
+    class AR,EI,RS data
+    class HC,ED,SD hud
+    class FWR face
+        </pre>
+      </div>
+    </div>
+
+    <footer>
+      <p>Generated for Comm-XR Project | Clean Architecture Overview</p>
+    </footer>
+  </div>
+
+  <script>
+    // Initialize Mermaid
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      securityLevel: 'loose',
+      flowchart: {
+        useMaxWidth: true,
+        htmlLabels: true,
+        curve: 'basis'
+      }
+    });
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Remove active class from all tabs and sections
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.diagram-section').forEach(s => s.classList.remove('active'));
+
+        // Add active class to clicked tab and corresponding section
+        tab.classList.add('active');
+        const sectionId = tab.getAttribute('data-tab');
+        document.getElementById(sectionId).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>
