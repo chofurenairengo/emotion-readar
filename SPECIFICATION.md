@@ -1510,24 +1510,117 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 ## 19. 更新履歴
 
 <!-- AUTO:UPDATE_HISTORY:START -->
+<details>
+<summary>仕様書更新</summary>
+
+| 日付       | 内容                      | 更新者 |
+| ---------- | ------------------------- | ------ |
+| 2026-02-02 | #132 feat: 仕様書自動作成機能を追加 | @miyabi206 |
+
+</details>
+
+<details>
+<summary>プログラム更新</summary>
+
+| 日付       | 内容                         | 更新者 |
+| ---------- | ---------------------------- | ------ |
+| 2026-02-02 | #132 feat: 仕様書自動作成機能を追加 | @miyabi206 |
+
+</details>
 <!-- AUTO:UPDATE_HISTORY:END -->
 
 ## 20. 開発者
 
 <!-- AUTO:DEVELOPERS:START -->
+| 開発者 |
+| ------ |
+| Daccho |
+| miyabi206 |
+| 93tajam |
+| claude |
 <!-- AUTO:DEVELOPERS:END -->
 
 ## 21. 過去のIssue
 
 <!-- AUTO:CLOSED_ISSUES:START -->
+- #123 [Unity] Quest 3向けXR設定とビルド環境構築
+- #105 claudeのフローにprのmdを作るところまでカスタム指示を追加する
+- #95 copilot と claude code コマンドを修正
+- #86 [Android] feature/audio - 音声録音とエンコード
+- #85 [Android] feature/camera - MediaPipe Face Landmarker統合
+- #84 [Android] feature/camera - CameraX統合とプレビュー
+- #83 [Android] core/ui - 共通UIテーマ・コンポーネント
+- #82 [Android] core/model - 共有データモデル定義
+- #80 [Android] MainViewModel + UseCase - セッション・接続状態管理
+- #79 [Unity] HUD表示 - 感情・返答候補・状況分析
+- #78 [Unity] WebSocketClient - サーバー接続とANALYSIS_RESPONSE受信
+- #77 [Unity] データモデル - ANALYSIS_RESPONSE対応
+- #76 [Android] AudioRecorder - 音声録音とBase64エンコード
+- #75 [Android] WebSocketClient - サーバーリアルタイム通信
+- #74 [Android] REST APIクライアント - セッション管理
+- #73 [Android] EmotionScoreCalculator - 8種類の感情スコア算出
+- #72 [Chore] PR #12 クリーンアップ - 不要ファイル削除・.gitignore整備
+- #59 レート制限の実装
+- #58 Secret Manager連携
+- #57 CORS設定の本番対応
+- #56 セッション所有者検証
+- #55 JWT検証ミドルウェア実装
+- #54 Firebase Admin SDK導入・設定
+- #51 PR #17 をissue仕様に合わせて改善
+- #47 FirestoreSessionRepository実装
+- #46 ConversationRepositoryインターフェース定義
+- #45 SessionRepositoryインターフェース拡張
+- #44 Firestore依存関係・クライアント設定
+- #37 WebSocketハンドラの拡張
+- #36 応答生成サービス（統合）の実装
+- #35 LLMサービスの実装
+- #34 感情解釈サービスの実装
+- #33 会話履歴管理サービスの実装
+- #32 STTサービスの実装
+- #31 DTO定義（型定義）の実装
+- #30 [Epic] サーバーサイドMVP実装 - 感情解析・音声認識・LLM応答生成
+- #25 lint&format自動化
 <!-- AUTO:CLOSED_ISSUES:END -->
 
 ## 22. 現在のIssue
 
 <!-- AUTO:OPEN_ISSUES:START -->
+| #    | タイトル               | 担当 | 概要                                                 |
+| ---- | ---------------------- | ---- | ---------------------------------------------------- |
+| #130 | 仕様書の自動更新機能 | @miyabi206 | ### 概要 |
+| #129 | q | @Daccho | ### 概要 |
+| #127 | [Unity] メイン画面統合 - Android/XR共通 | @Daccho | ## 概要 |
+| #106 | env.exampleの作成 | - | ### 概要 |
+| #98 | claude code skills, rules, age | @miyabi206 | 必要なskills, agentsなどに絞る |
+| #87 | [Android] app - メイン画面統合（カメラ+音声 | @Daccho | ## 概要 |
+| #70 | refactor: Speaker, Utterance,  | @Daccho | ## 概要 |
+| #69 | projectをissueだけ表示してみやすくしたい | @Daccho | ### 概要 |
+| #53 | [Epic] 認証・認可基盤の実装 | @miyabi206 | ## 概要 |
+| #50 | Firestoreリポジトリ単体テスト | @Daccho | ## 概要 |
+| #49 | 依存性注入の環境切り替え対応 | @Daccho | ## 概要 |
+| #48 | FirestoreConversationRepositor | @Daccho | ## 概要 |
+| #42 | [Epic] Firestore永続化層の実装 | @Daccho | ## 概要 |
+| #29 | 会話履歴管理サービスの実装 | @Daccho | ### 概要 |
+| #28 | 音声データをテキストに変換する音声認識（Speech-to- | @Daccho | ### 概要 |
+| #27 | DTO（Data Transfer Object）を定義 | @Daccho | ### 概要 |
+| #23 | rag | @miyabi206 | ### 概要 |
 <!-- AUTO:OPEN_ISSUES:END -->
 
 ## 23. 開発予定
 
 <!-- AUTO:ROADMAP:START -->
+### Epicベースの開発予定
+
+現在オープンなEpicはありません。
+
+### 将来的な拡張
+
+| 拡張 | 説明 |
+|------|------|
+| 話者分離・方向推定の高度化 | DOA精度向上 |
+| マルチユーザー対応 | 複数セッション同時処理 |
+| 成長指標の長期可視化 | コミュニケーション能力の成長追跡 |
+| オフラインモード | 限定機能でのオフライン動作 |
+| ドメイン特化チューニング | LoRAによる恋愛・親睦シーン特化 |
+| 自己解析 | 内カメラによる自分の振る舞いフィードバック |
 <!-- AUTO:ROADMAP:END -->
