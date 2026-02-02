@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import com.era.android.feature.camera.CameraScreen
 import com.era.android.feature.camera.FaceLandmarkerHelper
 import com.era.android.feature.vision.EmotionScores
-import com.era.android.ui.theme.AndroidTheme
+import com.era.android.core.ui.theme.AndroidTheme
 import com.era.android.unity.UnityMessageSender
 import org.json.JSONObject
 

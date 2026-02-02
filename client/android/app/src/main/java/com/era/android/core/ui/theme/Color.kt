@@ -1,4 +1,4 @@
-package com.era.android.ui.theme
+package com.era.android.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
