@@ -1,5 +1,6 @@
 package com.commuxr.android.data.websocket
 
+import android.util.Log
 import com.commuxr.android.data.dto.*
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -33,8 +34,16 @@ class WebSocketClientTest {
         Dispatchers.setMain(testDispatcher)
         testScope = TestScope(testDispatcher)
 
-        // Note: WebSocketClientは実際のOkHttpClientを使用するため、
-        // このテストでは接続状態の管理とメッセージパースのロジックを中心にテストします
+        // android.util.Logをモック
+        mockkStatic(Log::class)
+        every { Log.v(any(), any()) } returns 0
+        every { Log.d(any(), any()) } returns 0
+        every { Log.i(any(), any()) } returns 0
+        every { Log.w(any(), any<String>()) } returns 0
+        every { Log.e(any(), any()) } returns 0
+        every { Log.e(any(), any(), any()) } returns 0
+        every { Log.w(any(), any<String>(), any()) } returns 0
+
         client = WebSocketClient(
             baseUrl = "ws://localhost:8000/",
             scope = testScope
@@ -45,6 +54,7 @@ class WebSocketClientTest {
     fun teardown() {
         client.close()
         Dispatchers.resetMain()
+        unmockkStatic(Log::class)
     }
 
     @Test
@@ -291,8 +301,9 @@ class WebSocketClientTest {
         val adapter = moshi.adapter(AnalysisRequest::class.java)
         val json = adapter.toJson(request)
 
-        assertTrue(json.contains("\"audio_data\":null"))
-        assertTrue(json.contains("\"audio_format\":null"))
+        // Moshiはデフォルトでnullフィールドを省略する
+        assertFalse(json.contains("\"audio_data\""))
+        assertFalse(json.contains("\"audio_format\""))
 
         // パースし直して確認
         val parsed = adapter.fromJson(json)
@@ -450,8 +461,10 @@ class WebSocketClientTest {
     @Test
     fun `WebSocketClient - close()が安全に呼び出される`() {
         // close()が例外を発生させないことを確認
-        assertDoesNotThrow {
+        try {
             client.close()
+        } catch (e: Exception) {
+            fail("close() should not throw exception: ${e.message}")
         }
     }
 

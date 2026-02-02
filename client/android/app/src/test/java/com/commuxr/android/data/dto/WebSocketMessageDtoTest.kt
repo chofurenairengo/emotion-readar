@@ -1,5 +1,6 @@
 package com.commuxr.android.data.dto
 
+import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import org.junit.Assert.*
@@ -297,7 +298,7 @@ class WebSocketMessageDtoTest {
     fun `全メッセージタイプが正しいtype値を持つ`() {
         assertEquals("PING", PingMessage().type)
         assertEquals("RESET", ResetMessage().type)
-        assertEquals("ERROR_REPORT", ErrorReportMessage("test").type)
+        assertEquals("ERROR_REPORT", ErrorReportMessage(message = "test").type)
     }
 
     @Test
@@ -425,9 +426,11 @@ class WebSocketMessageDtoTest {
         val json = """{"type": null}"""
 
         val adapter = moshi.adapter(MessageTypeDto::class.java)
-        val dto = adapter.fromJson(json)
 
-        assertNull(dto)  // 必須フィールドが null なので null が返される
+        // non-nullableフィールドにnullを渡すとJsonDataExceptionが発生
+        assertThrows(JsonDataException::class.java) {
+            adapter.fromJson(json)
+        }
     }
 
     @Test
