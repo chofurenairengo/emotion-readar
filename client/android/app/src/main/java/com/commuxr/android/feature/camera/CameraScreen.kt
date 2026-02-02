@@ -80,8 +80,12 @@ private fun CameraPreviewContent(
 
     // カメラの初期化と解放
     DisposableEffect(cameraManager) {
-        cameraManager.startCamera(previewView, onFrame, onError)
-        onCameraReady()
+        cameraManager.startCamera(
+            previewView = previewView,
+            onFrame = onFrame,
+            onSuccess = onCameraReady,
+            onError = onError
+        )
         onDispose {
             cameraManager.release()
         }
