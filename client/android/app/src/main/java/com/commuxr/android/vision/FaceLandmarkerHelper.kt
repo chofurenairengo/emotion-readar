@@ -45,14 +45,22 @@ class FaceLandmarkerHelper(
     )
 
     fun analyze(imageProxy: ImageProxy) {
+        val now = SystemClock.uptimeMillis()
+        if (now - lastProcessedAtMs < minProcessIntervalMs) {
+            imageProxy.close()
+            return
+        }
+        lastProcessedAtMs = now
+
         try {
             val bitmap = imageProxy.toBitmap()
             val mpImage = BitmapImageBuilder(bitmap).build()
             val options = ImageProcessingOptions.builder()
                 .setRotationDegrees(imageProxy.imageInfo.rotationDegrees)
                 .build()
-            faceLandmarker.detectAsync(mpImage, options, SystemClock.uptimeMillis())
-        } catch (error: IllegalStateException) {
+            faceLandmarker.detectAsync(mpImage, options, now)
+        } catch (error: Exception) {
+            if (error is kotlin.coroutines.cancellation.CancellationException) throw error
             listener.onError(error.message ?: "Analyzer error")
         } finally {
             imageProxy.close()
@@ -65,8 +73,6 @@ class FaceLandmarkerHelper(
 
     private fun handleResult(result: FaceLandmarkerResult) {
         val now = SystemClock.uptimeMillis()
-        if (now - lastProcessedAtMs < minProcessIntervalMs) return
-        lastProcessedAtMs = now
 
         val blendshapes = result.faceBlendshapes().orElse(null)
         if (blendshapes.isNullOrEmpty()) {

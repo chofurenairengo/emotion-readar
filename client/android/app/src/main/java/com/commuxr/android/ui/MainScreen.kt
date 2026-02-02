@@ -27,10 +27,17 @@ fun MainScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val appContext = context.applicationContext
 
-    val cameraManager = remember { CameraManager(context, lifecycleOwner) }
-    val faceLandmarkerHelper = remember { FaceLandmarkerHelper(context, viewModel) }
-    val previewView = remember { PreviewView(context) }
+    val cameraManager = remember(appContext, lifecycleOwner) {
+        CameraManager(appContext, lifecycleOwner)
+    }
+    val faceLandmarkerHelper = remember(appContext) {
+        FaceLandmarkerHelper(appContext, viewModel)
+    }
+    val previewView = remember(context) {
+        PreviewView(context)
+    }
 
     DisposableEffect(cameraManager, faceLandmarkerHelper) {
         cameraManager.startCamera(
@@ -38,11 +45,13 @@ fun MainScreen(
             onFrame = { imageProxy ->
                 faceLandmarkerHelper.analyze(imageProxy)
             },
+            onSuccess = {
+                viewModel.onCameraReady()
+            },
             onError = { error ->
                 viewModel.onError(error)
             }
         )
-        viewModel.onCameraReady()
 
         onDispose {
             cameraManager.release()
