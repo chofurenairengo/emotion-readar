@@ -12,7 +12,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 SPEC_PATH = "SPECIFICATION.md"
-REPO = os.environ.get("REPO", "chofurenairengo/commuxr")
+REPO = os.environ.get("REPO", "chofurenairengo/emotion-readar")
 TOKEN = os.environ.get("GITHUB_TOKEN", "")
 PR_NUMBER = os.environ.get("PR_NUMBER", "")
 PR_TITLE = os.environ.get("PR_TITLE", "")
