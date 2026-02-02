@@ -54,6 +54,10 @@ jobs:
       #     fi
   test:
     runs-on: ubuntu-latest
+    env:
+      # テスト用ダミー環境変数
+      GCP_PROJECT_ID: test-project
+      FT_MODEL_ID: test-model
     steps:
       - uses: actions/checkout@v4
 
