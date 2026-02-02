@@ -2,10 +2,11 @@ package com.commuxr.android.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.commuxr.android.core.model.EmotionScores
 import com.commuxr.android.data.websocket.WebSocketClient
-import com.commuxr.android.domain.usecase.EndSessionUseCase
-import com.commuxr.android.domain.usecase.SendAnalysisUseCase
-import com.commuxr.android.domain.usecase.StartSessionUseCase
+import com.commuxr.android.feature.vision.EmotionScoreCalculator
+import com.commuxr.android.vision.FaceLandmarkerHelper
+import com.google.mediapipe.tasks.components.containers.Category
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,126 +15,52 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * メイン画面のViewModel
- *
- * セッション管理とWebSocket接続状態を管理する
- */
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val startSessionUseCase: StartSessionUseCase,
-    private val endSessionUseCase: EndSessionUseCase,
-    private val sendAnalysisUseCase: SendAnalysisUseCase,
     private val webSocketClient: WebSocketClient
-) : ViewModel() {
+) : ViewModel(), FaceLandmarkerHelper.Listener {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
     init {
-        // WebSocket接続状態を監視
         viewModelScope.launch {
-            webSocketClient.connectionState.collect { state ->
-                _uiState.update { it.copy(connectionState = state) }
+            webSocketClient.analysisResponses.collect { response ->
+                val suggestionTexts = response.suggestions.take(2).map { it.text }
+                _uiState.update { it.copy(suggestions = suggestionTexts) }
             }
         }
     }
 
-    /**
-     * セッションを開始
-     */
-    fun startSession() {
-        if (_uiState.value.isLoading) return
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
-            startSessionUseCase()
-                .onSuccess { session ->
-                    _uiState.update {
-                        it.copy(
-                            session = session,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
-                }
-                .onFailure { exception ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = exception.message ?: "Failed to start session"
-                        )
-                    }
-                }
-        }
+    override fun onResults(blendshapes: List<Category>, timestampMs: Long) {
+        val emotionMap = EmotionScoreCalculator.calculate(blendshapes)
+        val emotions = EmotionScores(
+            happy = emotionMap["happy"] ?: 0f,
+            sad = emotionMap["sad"] ?: 0f,
+            angry = emotionMap["angry"] ?: 0f,
+            confused = emotionMap["confused"] ?: 0f,
+            surprised = emotionMap["surprised"] ?: 0f,
+            neutral = emotionMap["neutral"] ?: 0f,
+            fearful = emotionMap["fearful"] ?: 0f,
+            disgusted = emotionMap["disgusted"] ?: 0f,
+            timestamp = timestampMs
+        )
+        _uiState.update { it.copy(currentEmotions = emotions) }
     }
 
-    /**
-     * セッションを終了
-     */
-    fun endSession() {
-        if (_uiState.value.isLoading) return
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
-            endSessionUseCase()
-                .onSuccess { session ->
-                    _uiState.update {
-                        it.copy(
-                            session = session,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
-                }
-                .onFailure { exception ->
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            error = exception.message ?: "Failed to end session"
-                        )
-                    }
-                }
-        }
+    override fun onNoFaceDetected(timestampMs: Long) {
+        // 顔未検出時は感情アイコンを前回の状態で維持
     }
 
-    /**
-     * 感情スコアが更新されたときに呼び出す
-     *
-     * セッションがアクティブで接続中の場合、自動的に解析データを送信する
-     *
-     * @param emotionScores 感情スコアマップ
-     * @param audioData Base64エンコードされた音声データ（オプション）
-     * @param audioFormat 音声フォーマット（オプション）
-     */
-    fun onEmotionScoresUpdated(
-        emotionScores: Map<String, Float>,
-        audioData: String? = null,
-        audioFormat: String? = null
-    ) {
-        // セッションがアクティブでなければ送信しない
-        if (!_uiState.value.isSessionActive) return
-
-        // 自動送信
-        sendAnalysisUseCase(emotionScores, audioData, audioFormat)
+    override fun onError(error: String) {
+        _uiState.update { it.copy(errorMessage = error) }
     }
 
-    /**
-     * エラーをクリア
-     */
+    fun onCameraReady() {
+        _uiState.update { it.copy(isCameraReady = true, errorMessage = null) }
+    }
+
     fun clearError() {
-        _uiState.update { it.copy(error = null) }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        // ViewModel破棄時にセッションが残っていれば終了
-        if (_uiState.value.isSessionActive) {
-            viewModelScope.launch {
-                endSessionUseCase()
-            }
-        }
+        _uiState.update { it.copy(errorMessage = null) }
     }
 }
