@@ -52,3 +52,18 @@ jobs:
       #       git commit -m "style: auto-format with Ruff and Black"
       #       git push
       #     fi
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies (with dev)
+        working-directory: server
+        run: uv sync --group dev
+
+      - name: Run tests
+        working-directory: server
+        run: uv run pytest
