@@ -1,5 +1,9 @@
 {
   "dependencies": {
+    "com.unity.inputsystem": "1.7.0",
+    "com.unity.xr.management": "4.4.0",
+    "com.unity.xr.oculus": "4.2.0",
+    "com.unity.xr.openxr": "1.9.1",
     "com.endel.nativewebsocket": "https://github.com/endel/NativeWebSocket.git#upm",
     "com.unity.collab-proxy": "2.11.2",
     "com.unity.feature.development": "1.0.1",
