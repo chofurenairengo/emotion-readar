@@ -83,7 +83,6 @@ class Settings(BaseSettings):
         return {
             "/api/sessions": 30,  # セッション作成: 30 req/min
             "/api/sessions/*/end": 30,  # セッション終了: 30 req/min
-            "/api/features": 100,  # 特徴量送信: 100 req/min
             "default": self.RATE_LIMIT_DEFAULT,  # デフォルト: 100 req/min
         }
 
