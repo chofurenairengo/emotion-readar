@@ -15,12 +15,10 @@ class CameraViewModel : ViewModel() {
      * カメラのUI状態
      *
      * @param isCameraReady カメラが準備完了かどうか
-     * @param isFrontCamera フロントカメラを使用中かどうか
      * @param errorMessage エラーメッセージ（nullの場合はエラーなし）
      */
     data class UiState(
         val isCameraReady: Boolean = false,
-        val isFrontCamera: Boolean = true,
         val errorMessage: String? = null
     )
 
@@ -41,13 +39,6 @@ class CameraViewModel : ViewModel() {
      */
     fun onError(message: String) {
         _uiState.update { it.copy(errorMessage = message) }
-    }
-
-    /**
-     * カメラを切り替える
-     */
-    fun switchCamera() {
-        _uiState.update { it.copy(isFrontCamera = !it.isFrontCamera) }
     }
 
     /**

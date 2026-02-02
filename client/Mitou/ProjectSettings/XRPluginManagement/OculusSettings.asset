@@ -1,0 +1,37 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &1
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3945e6ad698d46a48ad17a2b03ab3d15, type: 3}
+  m_Name: Oculus Settings
+  m_EditorClassIdentifier:
+  m_StereoRenderingModeDesktop: 0
+  m_StereoRenderingModeAndroid: 2
+  m_SharedDepthBuffer: 1
+  m_DashSupport: 1
+  m_LowOverheadMode: 0
+  m_OptimizeBufferDiscards: 1
+  m_PhaseSync: 0
+  m_SymmetricProjection: 0
+  m_SubsampledLayout: 0
+  m_LateLatching: 0
+  m_LateLatchingDebug: 0
+  m_EnableTrackingOriginStageMode: 0
+  m_SpaceWarp: 0
+  m_DepthSubmission: 0
+  m_TargetQuest: 0
+  m_TargetQuest2: 0
+  m_TargetQuestPro: 0
+  m_TargetQuest3: 1
+  m_SystemSplashScreen: {fileID: 0}
+  m_FoveatedRenderingMethod: 0
+  m_FoveatedRenderingLevel: 0
+  m_DynamicFoveatedRendering: 0
+  m_ProcessorFavor: 0

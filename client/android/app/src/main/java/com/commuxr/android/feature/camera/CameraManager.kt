@@ -9,9 +9,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -28,8 +25,8 @@ class CameraManager(
     private var cameraProvider: ProcessCameraProvider? = null
     private var cameraExecutor: ExecutorService? = null
 
-    private val _isFrontCamera = MutableStateFlow(true)
-    val isFrontCamera: StateFlow<Boolean> = _isFrontCamera.asStateFlow()
+    /** 外カメラをデフォルトとし、利用不可の場合はフォールバック */
+    private var useFrontCamera = false
 
     private var currentPreviewView: PreviewView? = null
     private var currentOnFrame: ((ImageProxy) -> Unit)? = null
@@ -84,14 +81,6 @@ class CameraManager(
         cameraProvider = null
     }
 
-    /**
-     * フロント/バックカメラを切り替える
-     */
-    fun switchCamera() {
-        _isFrontCamera.value = !_isFrontCamera.value
-        bindCameraUseCases()
-    }
-
     private fun bindCameraUseCases() {
         val provider = cameraProvider ?: return
         val previewView = currentPreviewView ?: return
@@ -113,7 +102,7 @@ class CameraManager(
                     }
                 }
 
-            val cameraSelector = if (_isFrontCamera.value) {
+            val cameraSelector = if (useFrontCamera) {
                 CameraSelector.DEFAULT_FRONT_CAMERA
             } else {
                 CameraSelector.DEFAULT_BACK_CAMERA
@@ -122,12 +111,12 @@ class CameraManager(
             provider.unbindAll()
             provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalysis)
         } catch (e: IllegalArgumentException) {
-            // 選択したカメラが利用できない場合（フロントカメラがないデバイスなど）
+            // 選択したカメラが利用できない場合（外カメラがないデバイスなど）
             onErrorCallback?.invoke("選択したカメラが利用できません")
             // フォールバック: 反対のカメラを試す
-            _isFrontCamera.value = !_isFrontCamera.value
+            useFrontCamera = !useFrontCamera
             try {
-                val fallbackSelector = if (_isFrontCamera.value) {
+                val fallbackSelector = if (useFrontCamera) {
                     CameraSelector.DEFAULT_FRONT_CAMERA
                 } else {
                     CameraSelector.DEFAULT_BACK_CAMERA

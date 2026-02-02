@@ -10,35 +10,32 @@ import org.junit.Test
 class EmotionScoreCalculatorTest {
 
     @Test
-    fun `calculate returns all 8 emotion keys`() {
+    fun `calculate returns EmotionScores with all values in range 0 to 1`() {
         val result = EmotionScoreCalculator.calculate(emptyList())
 
-        assertEquals(8, result.size)
-        assertTrue(result.containsKey("happy"))
-        assertTrue(result.containsKey("sad"))
-        assertTrue(result.containsKey("angry"))
-        assertTrue(result.containsKey("confused"))
-        assertTrue(result.containsKey("surprised"))
-        assertTrue(result.containsKey("neutral"))
-        assertTrue(result.containsKey("fearful"))
-        assertTrue(result.containsKey("disgusted"))
-    }
-
-    @Test
-    fun `calculate returns all values in range 0 to 1`() {
-        val result = EmotionScoreCalculator.calculate(emptyList())
-
-        result.values.forEach { score ->
-            assertTrue("Score $score should be >= 0", score >= 0f)
-            assertTrue("Score $score should be <= 1", score <= 1f)
-        }
+        assertTrue("happy should be >= 0", result.happy >= 0f)
+        assertTrue("happy should be <= 1", result.happy <= 1f)
+        assertTrue("sad should be >= 0", result.sad >= 0f)
+        assertTrue("sad should be <= 1", result.sad <= 1f)
+        assertTrue("angry should be >= 0", result.angry >= 0f)
+        assertTrue("angry should be <= 1", result.angry <= 1f)
+        assertTrue("confused should be >= 0", result.confused >= 0f)
+        assertTrue("confused should be <= 1", result.confused <= 1f)
+        assertTrue("surprised should be >= 0", result.surprised >= 0f)
+        assertTrue("surprised should be <= 1", result.surprised <= 1f)
+        assertTrue("neutral should be >= 0", result.neutral >= 0f)
+        assertTrue("neutral should be <= 1", result.neutral <= 1f)
+        assertTrue("fearful should be >= 0", result.fearful >= 0f)
+        assertTrue("fearful should be <= 1", result.fearful <= 1f)
+        assertTrue("disgusted should be >= 0", result.disgusted >= 0f)
+        assertTrue("disgusted should be <= 1", result.disgusted <= 1f)
     }
 
     @Test
     fun `empty blendshapes returns high neutral score`() {
         val result = EmotionScoreCalculator.calculate(emptyList())
 
-        assertEquals(1.0f, result["neutral"], 0.001f)
+        assertEquals(1.0f, result.neutral, 0.001f)
     }
 
     @Test
@@ -52,8 +49,8 @@ class EmotionScoreCalculatorTest {
 
         val result = EmotionScoreCalculator.calculate(blendshapes)
 
-        assertTrue("Happy score should be > 0.7", result["happy"]!! > 0.7f)
-        assertTrue("Neutral score should be low", result["neutral"]!! < 0.3f)
+        assertTrue("Happy score should be > 0.7", result.happy > 0.7f)
+        assertTrue("Neutral score should be low", result.neutral < 0.3f)
     }
 
     @Test
@@ -66,7 +63,7 @@ class EmotionScoreCalculatorTest {
 
         val result = EmotionScoreCalculator.calculate(blendshapes)
 
-        assertTrue("Sad score should be > 0.7", result["sad"]!! > 0.7f)
+        assertTrue("Sad score should be > 0.7", result.sad > 0.7f)
     }
 
     @Test
@@ -79,7 +76,7 @@ class EmotionScoreCalculatorTest {
 
         val result = EmotionScoreCalculator.calculate(blendshapes)
 
-        assertTrue("Angry score should be > 0.6", result["angry"]!! > 0.6f)
+        assertTrue("Angry score should be > 0.6", result.angry > 0.6f)
     }
 
     @Test
@@ -92,7 +89,7 @@ class EmotionScoreCalculatorTest {
 
         val result = EmotionScoreCalculator.calculate(blendshapes)
 
-        assertTrue("Confused score should be > 0.3", result["confused"]!! > 0.3f)
+        assertTrue("Confused score should be > 0.3", result.confused > 0.3f)
     }
 
     @Test
@@ -106,7 +103,7 @@ class EmotionScoreCalculatorTest {
 
         val result = EmotionScoreCalculator.calculate(blendshapes)
 
-        assertTrue("Surprised score should be > 0.7", result["surprised"]!! > 0.7f)
+        assertTrue("Surprised score should be > 0.7", result.surprised > 0.7f)
     }
 
     @Test
@@ -119,7 +116,7 @@ class EmotionScoreCalculatorTest {
 
         val result = EmotionScoreCalculator.calculate(blendshapes)
 
-        assertTrue("Fearful score should be > 0.6", result["fearful"]!! > 0.6f)
+        assertTrue("Fearful score should be > 0.6", result.fearful > 0.6f)
     }
 
     @Test
@@ -133,7 +130,7 @@ class EmotionScoreCalculatorTest {
 
         val result = EmotionScoreCalculator.calculate(blendshapes)
 
-        assertTrue("Disgusted score should be > 0.6", result["disgusted"]!! > 0.6f)
+        assertTrue("Disgusted score should be > 0.6", result.disgusted > 0.6f)
     }
 
     @Test
@@ -146,9 +143,23 @@ class EmotionScoreCalculatorTest {
         val result = EmotionScoreCalculator.calculate(blendshapes)
 
         // happy が約0.4以上の場合、neutral は約0.6以下になるはず
-        val happy = result["happy"]!!
-        val neutral = result["neutral"]!!
-        assertTrue("Neutral should be approximately 1.0 - max emotion", neutral < 1.0f - happy + 0.1f)
+        assertTrue("Neutral should be approximately 1.0 - max emotion", result.neutral < 1.0f - result.happy + 0.1f)
+    }
+
+    @Test
+    fun `toMap returns all 8 emotion keys`() {
+        val result = EmotionScoreCalculator.calculate(emptyList())
+        val map = result.toMap()
+
+        assertEquals(8, map.size)
+        assertTrue(map.containsKey("happy"))
+        assertTrue(map.containsKey("sad"))
+        assertTrue(map.containsKey("angry"))
+        assertTrue(map.containsKey("confused"))
+        assertTrue(map.containsKey("surprised"))
+        assertTrue(map.containsKey("neutral"))
+        assertTrue(map.containsKey("fearful"))
+        assertTrue(map.containsKey("disgusted"))
     }
 
     /**

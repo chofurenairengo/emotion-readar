@@ -7,10 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -21,12 +17,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.commuxr.android.R
 import com.commuxr.android.core.ui.component.RequirePermission
 
 /**
@@ -52,7 +46,6 @@ fun CameraScreen(
         rationaleMessage = "カメラを使用して表情を解析します"
     ) {
         CameraPreviewContent(
-            viewModel = viewModel,
             uiState = uiState,
             onFrame = onFrame,
             onCameraReady = {
@@ -70,7 +63,6 @@ fun CameraScreen(
 
 @Composable
 private fun CameraPreviewContent(
-    viewModel: CameraViewModel,
     uiState: CameraViewModel.UiState,
     onFrame: (ImageProxy) -> Unit,
     onCameraReady: () -> Unit,
@@ -87,7 +79,6 @@ private fun CameraPreviewContent(
     val previewView = remember { PreviewView(context) }
 
     // カメラの初期化と解放
-    // keyにisFrontCameraを含めない（カメラ切り替えはswitchCamera()で処理）
     DisposableEffect(cameraManager) {
         cameraManager.startCamera(previewView, onFrame, onError)
         onCameraReady()
@@ -101,25 +92,6 @@ private fun CameraPreviewContent(
             factory = { previewView },
             modifier = Modifier.fillMaxSize()
         )
-
-        // カメラ切り替えボタン
-        IconButton(
-            onClick = {
-                viewModel.switchCamera()
-                cameraManager.switchCamera()
-            },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .size(48.dp)
-                .background(Color(0x66000000), CircleShape)
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_camera_switch),
-                contentDescription = "カメラ切り替え",
-                tint = Color.White
-            )
-        }
 
         // ステータスメッセージ
         val statusMessage = when {
