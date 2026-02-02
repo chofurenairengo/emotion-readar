@@ -89,8 +89,12 @@ private fun CameraPreviewContent(
     // カメラの初期化と解放
     // keyにisFrontCameraを含めない（カメラ切り替えはswitchCamera()で処理）
     DisposableEffect(cameraManager) {
-        cameraManager.startCamera(previewView, onFrame, onError)
-        onCameraReady()
+        cameraManager.startCamera(
+            previewView = previewView,
+            onFrame = onFrame,
+            onError = onError,
+            onReady = onCameraReady
+        )
         onDispose {
             cameraManager.release()
         }

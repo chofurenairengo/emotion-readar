@@ -1,6 +1,7 @@
 package com.era.android
 
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -15,6 +16,7 @@ class MainActivity : ComponentActivity(), FaceLandmarkerHelper.Listener {
     private val unityMessageSender = UnityMessageSender(UNITY_GAME_OBJECT, UNITY_METHOD)
     private var faceLandmarkerHelper: FaceLandmarkerHelper? = null
     private var isFrontCamera = true
+    private var lastUnitySendMs = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +45,11 @@ class MainActivity : ComponentActivity(), FaceLandmarkerHelper.Listener {
     }
 
     override fun onResults(emotionScores: EmotionScores, timestampMs: Long) {
+        val nowMs = SystemClock.uptimeMillis()
+        if (nowMs - lastUnitySendMs < UNITY_SEND_INTERVAL_MS) {
+            return
+        }
+        lastUnitySendMs = nowMs
         val payload = JSONObject().apply {
             put("type", "face")
             put("timestampMs", timestampMs)
@@ -60,5 +67,6 @@ class MainActivity : ComponentActivity(), FaceLandmarkerHelper.Listener {
     companion object {
         private const val UNITY_GAME_OBJECT = "FaceReceiver"
         private const val UNITY_METHOD = "OnFaceData"
+        private const val UNITY_SEND_INTERVAL_MS = 200L
     }
 }

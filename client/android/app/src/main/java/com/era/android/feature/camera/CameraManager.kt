@@ -34,6 +34,7 @@ class CameraManager(
     private var currentPreviewView: PreviewView? = null
     private var currentOnFrame: ((ImageProxy) -> Unit)? = null
     private var onErrorCallback: ((String) -> Unit)? = null
+    private var onReadyCallback: (() -> Unit)? = null
 
     /**
      * カメラを開始し、プレビューとフレーム解析を開始する
@@ -45,11 +46,13 @@ class CameraManager(
     fun startCamera(
         previewView: PreviewView,
         onFrame: (ImageProxy) -> Unit,
-        onError: (String) -> Unit = {}
+        onError: (String) -> Unit = {},
+        onReady: () -> Unit = {}
     ) {
         currentPreviewView = previewView
         currentOnFrame = onFrame
         onErrorCallback = onError
+        onReadyCallback = onReady
 
         // Executorが未作成またはshutdown済みの場合は新規作成
         if (cameraExecutor == null || cameraExecutor?.isShutdown == true) {
@@ -121,6 +124,7 @@ class CameraManager(
 
             provider.unbindAll()
             provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalysis)
+            onReadyCallback?.invoke()
         } catch (e: IllegalArgumentException) {
             // 選択したカメラが利用できない場合（フロントカメラがないデバイスなど）
             onErrorCallback?.invoke("選択したカメラが利用できません")
@@ -146,6 +150,7 @@ class CameraManager(
                     }
                 provider.unbindAll()
                 provider.bindToLifecycle(lifecycleOwner, fallbackSelector, preview, imageAnalysis)
+                onReadyCallback?.invoke()
             } catch (e2: Exception) {
                 onErrorCallback?.invoke("カメラの起動に失敗しました: ${e2.message}")
             }
