@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class HealthResponse(BaseModel):
     status: str
+    model_reachable: bool
 
 
 # --- Agent Output (LLMが生成すべきデータ) ---
