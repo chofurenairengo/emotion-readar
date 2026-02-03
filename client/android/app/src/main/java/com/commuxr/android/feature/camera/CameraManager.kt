@@ -32,20 +32,25 @@ class CameraManager(
     private var currentOnFrame: ((ImageProxy) -> Unit)? = null
     private var onErrorCallback: ((String) -> Unit)? = null
 
+    private var onSuccessCallback: (() -> Unit)? = null
+
     /**
      * カメラを開始し、プレビューとフレーム解析を開始する
      *
      * @param previewView プレビューを表示するView
      * @param onFrame フレームごとに呼び出されるコールバック。ImageProxy.close()は呼び出し側の責任
+     * @param onSuccess カメラ起動成功時のコールバック
      * @param onError エラー発生時のコールバック
      */
     fun startCamera(
         previewView: PreviewView,
         onFrame: (ImageProxy) -> Unit,
+        onSuccess: () -> Unit = {},
         onError: (String) -> Unit = {}
     ) {
         currentPreviewView = previewView
         currentOnFrame = onFrame
+        onSuccessCallback = onSuccess
         onErrorCallback = onError
 
         // Executorが未作成またはshutdown済みの場合は新規作成
@@ -110,6 +115,7 @@ class CameraManager(
 
             provider.unbindAll()
             provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview, imageAnalysis)
+            onSuccessCallback?.invoke()
         } catch (e: IllegalArgumentException) {
             // 選択したカメラが利用できない場合（外カメラがないデバイスなど）
             onErrorCallback?.invoke("選択したカメラが利用できません")
@@ -135,6 +141,7 @@ class CameraManager(
                     }
                 provider.unbindAll()
                 provider.bindToLifecycle(lifecycleOwner, fallbackSelector, preview, imageAnalysis)
+                onSuccessCallback?.invoke()
             } catch (e2: Exception) {
                 onErrorCallback?.invoke("カメラの起動に失敗しました: ${e2.message}")
             }

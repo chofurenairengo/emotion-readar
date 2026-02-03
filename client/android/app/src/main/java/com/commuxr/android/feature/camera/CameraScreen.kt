@@ -19,7 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.commuxr.android.core.ui.component.RequirePermission
 
@@ -80,8 +80,12 @@ private fun CameraPreviewContent(
 
     // カメラの初期化と解放
     DisposableEffect(cameraManager) {
-        cameraManager.startCamera(previewView, onFrame, onError)
-        onCameraReady()
+        cameraManager.startCamera(
+            previewView = previewView,
+            onFrame = onFrame,
+            onSuccess = onCameraReady,
+            onError = onError
+        )
         onDispose {
             cameraManager.release()
         }

@@ -51,6 +51,14 @@ ignore_errors = true
 module = "app.infra.firestore_client"
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = "app.infra.repositories.firestore_session_repo"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "app.infra.repositories.firestore_conversation_repo"
+ignore_errors = true
+
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true

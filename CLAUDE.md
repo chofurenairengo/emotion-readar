@@ -189,7 +189,6 @@ app/
 |---|---|
 | `/api/health` | ヘルスチェック |
 | `/api/sessions` | セッション管理（開始・終了・状態取得） |
-| `/api/features` | 非言語特徴量の受信 |
 | `/api/realtime` | WebSocket リアルタイム通信 |
 
 ### WebSocket メッセージタイプ

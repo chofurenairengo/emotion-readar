@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     # モデル設定
     FT_MODEL_ID: str  # Geminiモデル名 (例: gemini-1.5-flash)
+    LLM_TEMPERATURE: float = 0.5  # LLMの温度パラメータ（0.0〜1.0）
 
     # 任意項目
     ENV_STATE: str = "dev"
@@ -83,7 +84,6 @@ class Settings(BaseSettings):
         return {
             "/api/sessions": 30,  # セッション作成: 30 req/min
             "/api/sessions/*/end": 30,  # セッション終了: 30 req/min
-            "/api/features": 100,  # 特徴量送信: 100 req/min
             "default": self.RATE_LIMIT_DEFAULT,  # デフォルト: 100 req/min
         }
 

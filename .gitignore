@@ -82,3 +82,6 @@ __pycache__
 # AI implementation plan
 /PLAN.md
 /CODEREVIEW.md
+
+# Git worktrees (issue directories)
+/[0-9]*/
