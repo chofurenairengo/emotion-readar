@@ -14,7 +14,7 @@ def client() -> TestClient:
 @pytest.fixture
 def mock_check_model_reachable():
     """_check_model_reachable をモック化するフィクスチャ(準備関数).
-    
+
     このフィクスチャを使わないテストでは実際の関数が実行される。
     """
     with patch(
