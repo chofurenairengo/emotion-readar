@@ -30,7 +30,7 @@ _model_reachable_cache: _CacheEntry | None = None
 
 async def _check_model_reachable() -> bool:
     """モデルに軽量リクエストを送り、疎通確認を行う.
-    
+
     キャッシュが有効でTTL内であれば、キャッシュされた結果を返す。
     """
     global _model_reachable_cache
