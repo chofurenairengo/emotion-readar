@@ -28,14 +28,20 @@ class Settings(BaseSettings):
     # レート制限設定
     RATE_LIMIT_DEFAULT: int = 100  # デフォルト: 100 req/min
     RATE_LIMIT_WINDOW_SECONDS: int = 60  # ウィンドウ: 60秒
+
+    # ヘルスチェック設定
+    HEALTH_CHECK_MODEL_ENABLED: bool = True  # モデル疎通確認の有効/無効
+    HEALTH_CHECK_MODEL_CACHE_TTL: int = 30  # モデル疎通確認結果のキャッシュ時間（秒）
+
     # Secret Manager設定
     USE_SECRET_MANAGER: bool = False  # Secret Managerを使用するかどうか
 
     # Pydanticの設定
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file="../.env",
         env_file_encoding="utf-8",
         case_sensitive=True,
+        extra="ignore",  # .envの未定義フィールドを無視
     )
 
     @property

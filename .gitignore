@@ -85,3 +85,6 @@ __pycache__
 
 # Git worktrees (issue directories)
 /[0-9]*/
+
+# GCP environment files
+*.key.json
