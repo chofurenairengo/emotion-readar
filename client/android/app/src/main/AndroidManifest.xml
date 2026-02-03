@@ -18,7 +18,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Android">
+        android:theme="@style/Theme.Android"
+        tools:replace="android:allowBackup,android:icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"
