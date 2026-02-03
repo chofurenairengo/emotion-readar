@@ -1523,6 +1523,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                         | 更新者 |
 | ---------- | ---------------------------- | ------ |
+| 2026-02-03 | #146 Feature/manifestjson bug | @93tajam |
 | 2026-02-02 | #132 feat: 仕様書自動作成機能を追加 | @miyabi206 |
 
 </details>
@@ -1542,7 +1543,9 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 ## 21. 過去のIssue
 
 <!-- AUTO:CLOSED_ISSUES:START -->
-- #127 [Unity] メイン画面統合 - Android/XR共通UI実装
+- #142 docs: .env.example にFTモデル設定例を追記
+- #140 feat: LLM_TEMPERATURE を設定から変更可能にする
+- #130 仕様書の自動更新機能
 - #123 [Unity] Quest 3向けXR設定とビルド環境構築
 - #105 claudeのフローにprのmdを作るところまでカスタム指示を追加する
 - #95 copilot と claude code コマンドを修正
@@ -1588,8 +1591,10 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 <!-- AUTO:OPEN_ISSUES:START -->
 | #    | タイトル               | 担当 | 概要                                                 |
 | ---- | ---------------------- | ---- | ---------------------------------------------------- |
-| #130 | 仕様書の自動更新機能 | @miyabi206 | ### 概要 |
+| #141 | feat: ヘルスチェックにモデル接続状態を追加 | - | ## 概要 |
+| #139 | feat: Vertex AIファインチューニング済みGem | @miyabi206 | ## 概要 |
 | #129 | q | @Daccho | ### 概要 |
+| #127 | [Unity] メイン画面統合 - Android/XR共通 | @Daccho | ## 概要 |
 | #106 | env.exampleの作成 | - | ### 概要 |
 | #98 | claude code skills, rules, age | @miyabi206 | 必要なskills, agentsなどに絞る |
 | #70 | refactor: Speaker, Utterance,  | @Daccho | ## 概要 |

@@ -8,6 +8,19 @@
 
     <!-- VR専用アプリとしてマーク -->
     <application android:requestLegacyExternalStorage="true">
+        <activity
+            android:name="com.unity3d.player.UnityPlayerActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <meta-data android:name="unityplayer.UnityActivity" android:value="true" />
+        </activity>
         <meta-data android:name="com.oculus.supportedDevices" android:value="quest3" />
         <meta-data android:name="com.oculus.vr.focusaware" android:value="true" />
     </application>
