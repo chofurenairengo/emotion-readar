@@ -2,18 +2,16 @@ package com.commuxr.android
 
 import android.content.pm.ActivityInfo
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import com.unity3d.player.UnityPlayerActivity
 
 /**
  * メインActivity
- * UIはUnity側で表示するため、このActivityは空。
- * Unity統合時にUnityPlayerActivityを継承に変更する。
+ * UnityPlayerActivityを継承してUnity描画エンジンを起動する。
  */
-class MainActivity : ComponentActivity() {
+class MainActivity : UnityPlayerActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        // UIはUnity側で表示
     }
 }

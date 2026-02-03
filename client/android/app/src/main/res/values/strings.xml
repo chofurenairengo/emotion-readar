@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">android</string>
+    <string name="app_name">Comm-XR</string>
+    <string name="game_view_content_description">Game view</string>
 </resources>
