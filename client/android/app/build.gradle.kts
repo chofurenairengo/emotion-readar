@@ -47,6 +47,8 @@ android {
 
 dependencies {
     implementation(project(":unity-plugin:unityLibrary"))
+    // Unity classes JAR for kapt compatibility
+    implementation(files("../unity-plugin/unityLibrary/libs/unity-classes.jar"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

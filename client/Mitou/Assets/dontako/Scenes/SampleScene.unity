@@ -259,12 +259,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23944f2f28269427a98df0c5a3779b0a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _emotionOverlay: {fileID: 344174475}
-  _suggestionOverlay: {fileID: 206066244}
-  _cameraPreviewType: 3
-  _cameraPreviewTarget: {fileID: 0}
-  _webSocketClient: {fileID: 205559958}
-  _logResponses: 0
 --- !u!114 &205559958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -336,10 +330,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7b15c30cb3cc4ea3b8f4f0ccc6644bc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _suggestion1Text: {fileID: 2005660630}
-  _suggestion2Text: {fileID: 1225756418}
-  _suggestion1Container: {fileID: 344602317}
-  _suggestion2Container: {fileID: 1075034490}
 --- !u!114 &206066245
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -606,8 +596,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69a2e3b2b7ce14cb0aa57dc9b727502a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _emotionIconText: {fileID: 1420328151}
-  _baseIconSize: 64
 --- !u!114 &344174476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1445,6 +1433,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 750215655}
   m_CullTransparentMesh: 1
+--- !u!1 &782628375
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 782628377}
+  - component: {fileID: 782628376}
+  m_Layer: 0
+  m_Name: CameraPreviewManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &782628376
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 782628375}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b227443ca46ad421c85f19a275d8c18e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _arSession: {fileID: 0}
+  _arCameraManager: {fileID: 0}
+  _arCameraBackground: {fileID: 0}
+  _autoSetupARComponents: 1
+--- !u!4 &782628377
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 782628375}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.0047979355, y: -0.16354787, z: 0.20946425}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &800951735
 GameObject:
   m_ObjectHideFlags: 0
@@ -1763,13 +1799,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 874420625}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0.06613935, y: -0.19920325, z: 0.8244195, w: 0.5256197}
+  m_LocalPosition: {x: -2.16, y: 2.28, z: -0.11}
+  m_LocalScale: {x: 2.0783, y: 20.00146, z: 2.0783}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 15.006, y: -19.251, z: 112.401}
 --- !u!1 &939155035
 GameObject:
   m_ObjectHideFlags: 0
@@ -2335,8 +2371,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69a2e3b2b7ce14cb0aa57dc9b727502a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _emotionIconText: {fileID: 1420328151}
-  _baseIconSize: 64
 --- !u!114 &1420328151
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3133,3 +3167,4 @@ SceneRoots:
   - {fileID: 205559956}
   - {fileID: 800951740}
   - {fileID: 874420628}
+  - {fileID: 782628377}

@@ -7,12 +7,12 @@ namespace ERA.Camera
     /// </summary>
     public enum CameraPreviewType
     {
-        /// <summary>Android端末用（WebCamTexture）</summary>
-        Android,
         /// <summary>Quest用（Passthrough API）</summary>
         QuestPassthrough,
         /// <summary>AR用（透過レンズ）</summary>
         ARTransparent,
+        /// <summary>ARCore用（AR Foundation）</summary>
+        ARCore,
         /// <summary>自動検出</summary>
         Auto
     }
@@ -40,10 +40,10 @@ namespace ERA.Camera
 
             ICameraPreview preview = actualType switch
             {
-                CameraPreviewType.Android => target.AddComponent<AndroidCameraPreview>(),
                 CameraPreviewType.QuestPassthrough => target.AddComponent<QuestPassthroughPreview>(),
                 CameraPreviewType.ARTransparent => target.AddComponent<ARCameraPreview>(),
-                _ => target.AddComponent<AndroidCameraPreview>()
+                CameraPreviewType.ARCore => target.AddComponent<ARCoreCameraPreview>(),
+                _ => target.AddComponent<ARCoreCameraPreview>()
             };
 
             Debug.Log($"[CameraPreviewFactory] Created {actualType} camera preview");
@@ -63,14 +63,14 @@ namespace ERA.Camera
             }
 
             // 各実装タイプを順に検索
-            var android = target.GetComponent<AndroidCameraPreview>();
-            if (android != null) return android;
-
             var quest = target.GetComponent<QuestPassthroughPreview>();
             if (quest != null) return quest;
 
             var ar = target.GetComponent<ARCameraPreview>();
             if (ar != null) return ar;
+
+            var arCore = target.GetComponent<ARCoreCameraPreview>();
+            if (arCore != null) return arCore;
 
             return null;
         }
@@ -82,21 +82,23 @@ namespace ERA.Camera
         public static CameraPreviewType DetectPlatform()
         {
 #if UNITY_EDITOR
-            // エディタ上ではAndroidとして動作
-            return CameraPreviewType.Android;
+            // エディタ上ではARCoreとして動作
+            return CameraPreviewType.ARCore;
 #elif UNITY_ANDROID
             // Quest検出（OVR SDKが存在する場合）
             if (IsQuestDevice())
             {
                 return CameraPreviewType.QuestPassthrough;
             }
-            return CameraPreviewType.Android;
+
+            // 通常AndroidはARCoreを使用
+            return CameraPreviewType.ARCore;
 #elif UNITY_WSA
             // HoloLens等のWindows MRデバイス
             return CameraPreviewType.ARTransparent;
 #else
-            // その他のプラットフォームはデフォルトでAndroid
-            return CameraPreviewType.Android;
+            // その他のプラットフォームはデフォルトでARCore
+            return CameraPreviewType.ARCore;
 #endif
         }
 
@@ -120,5 +122,6 @@ namespace ERA.Camera
 #endif
             return false;
         }
+
     }
 }
