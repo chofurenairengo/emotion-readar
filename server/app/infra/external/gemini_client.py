@@ -2,9 +2,9 @@ from langchain_google_vertexai import ChatVertexAI
 
 from app.core.config import get_settings
 
-
+# 自前のGeminiクライアント工場
 class LLMClientFactory:
-    """Vertex AI経由でGeminiとの接続を生成する工場.
+    """Vertex AI経由でGemini(ft model)との接続を生成する工場.
 
     認証はサービスアカウント方式を使用:
     - ローカル: GOOGLE_APPLICATION_CREDENTIALS環境変数でJSONキーを指定
