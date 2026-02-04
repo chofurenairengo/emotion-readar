@@ -1,0 +1,105 @@
+name: Specification Change Alert
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    branches: [main]
+    paths:
+      # サーバーサイドコードの変更を検知
+      - 'server/app/api/**'
+      - 'server/app/core/**'
+      - 'server/app/dto/**'
+      - 'server/app/models/**'
+      - 'server/app/services/**'
+      - 'server/app/infra/**'
+
+permissions:
+  pull-requests: write
+
+jobs:
+  check-spec-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if spec files were updated
+        id: check-spec
+        run: |
+          # 仕様書ファイルが更新されているか確認
+          SPEC_CHANGED=$(git diff --name-only origin/main...HEAD | grep -E '^(SPECIFICATION\.md|docs/spec/)' || true)
+          if [ -z "$SPEC_CHANGED" ]; then
+            echo "spec_updated=false" >> $GITHUB_OUTPUT
+          else
+            echo "spec_updated=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get changed code files
+        id: changed-files
+        if: steps.check-spec.outputs.spec_updated == 'false'
+        run: |
+          # 変更されたコードファイルを取得
+          CHANGED=$(git diff --name-only origin/main...HEAD | grep -E '^server/app/(api|core|dto|models|services|infra)/' || true)
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Post reminder comment
+        if: steps.check-spec.outputs.spec_updated == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const changedFiles = `${{ steps.changed-files.outputs.files }}`;
+            if (!changedFiles.trim()) return;
+
+            const body = `## 📋 仕様書更新リマインダー
+
+            以下のコードファイルが変更されましたが、仕様書が更新されていません。
+
+            **変更されたファイル:**
+            \`\`\`
+            ${changedFiles}
+            \`\`\`
+
+            **確認事項:**
+            - [ ] API仕様の変更がある場合 → \`docs/spec/api.md\` を更新
+            - [ ] DTO/モデルの変更がある場合 → \`docs/spec/models.md\` を更新
+            - [ ] サービスの変更がある場合 → \`docs/spec/services.md\` を更新
+            - [ ] サーバー構成の変更がある場合 → \`docs/spec/server.md\` を更新
+
+            **仕様書の自動更新コマンド:**
+            - Claude Code: \`/update-spec\`
+            - GitHub Copilot: \`@workspace /update-spec\`
+
+            > このコメントは自動生成されています。仕様に影響のない変更の場合は無視してください。`;
+
+            // 既存のコメントを確認
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+
+            const existingComment = comments.find(c =>
+              c.user.type === 'Bot' &&
+              c.body.includes('仕様書更新リマインダー')
+            );
+
+            if (existingComment) {
+              // 既存のコメントを更新
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: body
+              });
+            } else {
+              // 新規コメントを作成
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }

@@ -38,6 +38,18 @@
 - Local Docker uses `.env` values (Cloud Run, Cloud Functions settings). Do not commit secrets.
 - Python version is pinned via `server/.python-version` (3.14).
 
+## 詳細仕様（必要に応じて参照）
+
+基本情報はこのファイルで十分です。より詳細な仕様が必要な場合のみ、以下を参照してください。
+
+| 仕様 | ファイル | 参照タイミング |
+|------|---------|--------------|
+| 完全仕様書 | [SPECIFICATION.md](SPECIFICATION.md) | アーキテクチャ全体を理解する場合 |
+| サーバー構成 | [docs/spec/server.md](docs/spec/server.md) | ディレクトリ構成、設定管理を確認する場合 |
+| API仕様 | [docs/spec/api.md](docs/spec/api.md) | エンドポイント実装、WebSocket通信を実装する場合 |
+| データモデル | [docs/spec/models.md](docs/spec/models.md) | DTO、ドメインモデルを実装する場合 |
+| サービス層 | [docs/spec/services.md](docs/spec/services.md) | 各サービスの詳細実装を確認する場合 |
+
 ## 仕様書
 アーキテクチャは以下のようにする
 

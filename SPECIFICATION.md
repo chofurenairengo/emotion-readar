@@ -324,815 +324,109 @@ Unityは解析を行わず、サーバーからの `ANALYSIS_RESPONSE` を受信
 
 ## 6. サーバーサイド仕様
 
-### 6.1 ディレクトリ構成
+> **詳細**: [docs/spec/server.md](docs/spec/server.md)
 
-```
-server/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                    # FastAPIファクトリ
-│   ├── api/
-│   │   ├── auth.py                # JWT検証 + レート制限
-│   │   ├── dependencies.py        # 依存性注入
-│   │   └── routers/
-│   │       ├── health.py          # ヘルスチェック
-│   │       ├── sessions.py        # セッション管理
-│   │       ├── features.py        # 特徴量受信
-│   │       └── realtime.py        # WebSocket
-│   ├── core/
-│   │   ├── config.py              # Settings (Pydantic Settings)
-│   │   ├── exceptions.py          # カスタム例外
-│   │   ├── interfaces/            # Protocol定義（5インターフェース）
-│   │   └── prompts/               # LLMプロンプト管理
-│   ├── dto/                       # DTO定義（11ファイル）
-│   │   ├── request.py             # FeatureRequest
-│   │   ├── response.py            # FeatureResponse, SessionResponse
-│   │   ├── audio.py               # AudioFormat, TranscriptionResult
-│   │   ├── conversation.py        # Speaker, Utterance, EmotionContext
-│   │   ├── emotion.py             # EmotionInterpretation, EmotionChange
-│   │   ├── llm.py                 # ResponseSuggestion, LLMResponseResult
-│   │   └── processing.py          # AnalysisRequest, AnalysisResponse
-│   ├── models/
-│   │   ├── session.py             # Session, FeatureLog
-│   │   └── ...
-│   ├── services/
-│   │   ├── session_service.py     # セッション管理
-│   │   ├── feature_service.py     # 特徴量管理
-│   │   ├── rate_limiter.py        # レート制限（Sliding Window）
-│   │   ├── conversation_service.py # 会話履歴管理
-│   │   ├── emotion_interpreter.py # 感情解釈
-│   │   ├── stt_service.py         # 音声認識
-│   │   ├── llm_service.py         # LLM推論
-│   │   ├── response_generator.py  # 応答生成（統合オーケストレーター）
-│   │   ├── health_service.py      # ヘルスチェック
-│   │   ├── connection_manager.py  # WebSocket接続管理
-│   │   └── agents/
-│   │       └── love_coach.py      # AIエージェント
-│   ├── infra/
-│   │   ├── firebase.py            # Firebase Admin SDK初期化
-│   │   ├── external/
-│   │   │   └── gemini_client.py   # LLMクライアントファクトリ
-│   │   └── repositories/
-│   │       └── in_memory_session_repo.py
-│   └── middleware/
-│       ├── cors.py                # CORS設定
-│       └── logging.py             # リクエストロギング
-├── tests/                         # テストコード（20ファイル）
-├── main.py                        # uvicornエントリーポイント
-├── pyproject.toml                 # プロジェクト設定
-├── uv.lock                        # 依存関係ロック
-├── Dockerfile                     # マルチステージビルド
-└── .python-version                # Python 3.14
-```
+FastAPI + Clean Architectureによる3層構成。
 
-### 6.2 設定管理（config.py）
+### 主要コンポーネント
 
-| 環境変数                         | 型  | デフォルト        | 説明                               |
-| -------------------------------- | --- | ----------------- | ---------------------------------- |
-| `GCP_PROJECT_ID`                 | str | （必須）          | GCPプロジェクトID                  |
-| `GCP_LOCATION`                   | str | `asia-northeast1` | Vertex AIリージョン                |
-| `FT_MODEL_ID`                    | str | -                 | Fine-tuned Geminiモデル名          |
-| `ENV_STATE`                      | str | `dev`             | 環境（dev / prod）                 |
-| `ALLOWED_ORIGINS`                | str | -                 | CORS許可オリジン（カンマ区切り）   |
-| `RATE_LIMIT_DEFAULT`             | int | `100`             | デフォルトレート制限（req/min）    |
-| `RATE_LIMIT_WINDOW_SECONDS`      | int | `60`              | レート制限ウィンドウ（秒）         |
-| `FIRESTORE_EMULATOR_HOST`        | str | -                 | ローカル開発時のエミュレータホスト |
-| `GOOGLE_APPLICATION_CREDENTIALS` | str | -                 | サービスアカウントキーパス         |
+| コンポーネント       | 説明                                           |
+| -------------------- | ---------------------------------------------- |
+| `app/core/`          | インターフェース・設定・例外定義               |
+| `app/services/`      | ビジネスロジック（9サービス）                  |
+| `app/api/routers/`   | REST/WebSocketエンドポイント                   |
+| `app/infra/`         | 外部連携（Firestore, Gemini）                  |
 
-### 6.3 例外階層
+### 必須環境変数
 
-```
-ERAException (ベース例外)
-├── STTError              # 音声認識エラー
-├── LLMError              # LLM推論エラー
-│   ├── LLMRateLimitError # レートリミットエラー
-│   └── LLMResponseParseError # レスポンスパースエラー
-├── SessionPermissionError # セッション権限エラー
-└── ...
-```
+| 環境変数         | 説明                |
+| ---------------- | ------------------- |
+| `GCP_PROJECT_ID` | GCPプロジェクトID   |
+| `FT_MODEL_ID`    | Fine-tuned Gemini名 |
 
 ---
 
 ## 7. API仕様
 
-### 7.1 REST API
+> **詳細**: [docs/spec/api.md](docs/spec/api.md)
 
-#### 7.1.1 ヘルスチェック
+REST API と WebSocket API を提供。
 
-```
-GET /api/health
-```
+### エンドポイント一覧
 
-**レスポンス** (200 OK):
-```json
-{
-  "status": "ok"
-}
-```
+| メソッド  | パス                             | 説明             |
+| --------- | -------------------------------- | ---------------- |
+| GET       | `/api/health`                    | ヘルスチェック   |
+| POST      | `/api/sessions`                  | セッション作成   |
+| GET       | `/api/sessions/{id}`             | セッション取得   |
+| POST      | `/api/sessions/{id}/end`         | セッション終了   |
+| POST      | `/api/features`                  | 特徴量送信       |
+| WebSocket | `/api/realtime`                  | リアルタイム通信 |
 
-#### 7.1.2 セッション作成
+### WebSocketメッセージタイプ
 
-```
-POST /api/sessions
-Authorization: Bearer {Firebase ID Token}
-```
+| 方向       | タイプ              | 説明           |
+| ---------- | ------------------- | -------------- |
+| C → S      | `ANALYSIS_REQUEST`  | 解析リクエスト |
+| S → C      | `ANALYSIS_RESPONSE` | 解析結果       |
 
-**レスポンス** (201 Created):
-```json
-{
-  "id": "abc123",
-  "status": "active",
-  "started_at": "2024-01-01T12:00:00Z",
-  "ended_at": null
-}
-```
+### レート制限
 
-**レート制限**: 30 req/min
-
-#### 7.1.3 セッション取得
-
-```
-GET /api/sessions/{session_id}
-Authorization: Bearer {Firebase ID Token}
-```
-
-**レスポンス** (200 OK):
-```json
-{
-  "id": "abc123",
-  "status": "active",
-  "started_at": "2024-01-01T12:00:00Z",
-  "ended_at": null
-}
-```
-
-**エラー** (404 Not Found):
-```json
-{
-  "detail": "Not found"
-}
-```
-
-#### 7.1.4 セッション終了
-
-```
-POST /api/sessions/{session_id}/end
-Authorization: Bearer {Firebase ID Token}
-```
-
-**レスポンス** (200 OK):
-```json
-{
-  "id": "abc123",
-  "status": "ended",
-  "started_at": "2024-01-01T12:00:00Z",
-  "ended_at": "2024-01-01T13:00:00Z"
-}
-```
-
-#### 7.1.5 特徴量受信
-
-```
-POST /api/features
-Authorization: Bearer {Firebase ID Token}
-```
-
-**リクエスト**:
-```json
-{
-  "session_id": "abc123",
-  "timestamp": "2024-01-01T12:00:00Z",
-  "facial": {
-    "smile": 0.85,
-    "anger": 0.1
-  },
-  "gaze": {
-    "direction_x": 0.5,
-    "direction_y": -0.2
-  },
-  "voice": {
-    "energy": 0.7,
-    "pitch": 0.6
-  },
-  "extras": {}
-}
-```
-
-| フィールド   | 型             | 必須 | 説明                                  |
-| ------------ | -------------- | ---- | ------------------------------------- |
-| `session_id` | string \| null | No   | セッションID                          |
-| `timestamp`  | string \| null | No   | ISO 8601 タイムスタンプ               |
-| `facial`     | object \| null | No   | 顔特徴量（キー: 特徴名, 値: 0.0-1.0） |
-| `gaze`       | object \| null | No   | 視線特徴量                            |
-| `voice`      | object \| null | No   | 音声特徴量                            |
-| `extras`     | object \| null | No   | その他の任意データ                    |
-
-**レスポンス** (202 Accepted):
-```json
-{
-  "id": "log123",
-  "session_id": "abc123",
-  "received_at": "2024-01-01T12:00:00Z",
-  "status": "accepted"
-}
-```
-
-**レート制限**: 100 req/min
-
-### 7.2 WebSocket API
-
-#### 7.2.1 接続
-
-```
-WebSocket /api/realtime?session_id={session_id}&token={firebase_id_token}
-```
-
-| パラメータ   | 型     | 必須 | 説明                |
-| ------------ | ------ | ---- | ------------------- |
-| `session_id` | string | Yes  | セッションID        |
-| `token`      | string | Yes  | Firebase IDトークン |
-
-**WebSocket Close Codes**:
-
-| コード | 説明                 |
-| ------ | -------------------- |
-| 4001   | トークン検証失敗     |
-| 4003   | セッション権限エラー |
-| 4004   | セッション未発見     |
-
-#### 7.2.2 メッセージタイプ一覧
-
-**クライアント → サーバー**:
-
-| タイプ             | 説明               |
-| ------------------ | ------------------ |
-| `PING`             | 接続確認           |
-| `RESET`            | セッションリセット |
-| `ERROR_REPORT`     | エラー報告         |
-| `ANALYSIS_REQUEST` | 解析リクエスト     |
-
-**サーバー → クライアント**:
-
-| タイプ              | 説明         |
-| ------------------- | ------------ |
-| `PONG`              | 接続確認応答 |
-| `RESET_ACK`         | リセット確認 |
-| `ERROR_ACK`         | エラー確認   |
-| `ERROR`             | エラー通知   |
-| `ANALYSIS_RESPONSE` | 解析結果     |
-
-#### 7.2.3 PING / PONG
-
-```json
-// クライアント → サーバー
-{ "type": "PING" }
-
-// サーバー → クライアント
-{ "type": "PONG", "timestamp": "2024-01-01T12:00:00Z" }
-```
-
-#### 7.2.4 RESET / RESET_ACK
-
-```json
-// クライアント → サーバー
-{ "type": "RESET" }
-
-// サーバー → クライアント
-{ "type": "RESET_ACK", "timestamp": "2024-01-01T12:00:00Z" }
-```
-
-#### 7.2.5 ERROR_REPORT / ERROR_ACK
-
-```json
-// クライアント → サーバー
-{ "type": "ERROR_REPORT", "message": "エラー詳細" }
-
-// サーバー → クライアント
-{ "type": "ERROR_ACK", "timestamp": "2024-01-01T12:00:00Z" }
-```
-
-#### 7.2.6 ANALYSIS_REQUEST / ANALYSIS_RESPONSE
-
-**リクエスト** (クライアント → サーバー):
-```json
-{
-  "type": "ANALYSIS_REQUEST",
-  "session_id": "abc123",
-  "timestamp": "2024-01-01T12:00:00Z",
-  "emotion_scores": {
-    "happy": 0.8,
-    "sad": 0.1,
-    "angry": 0.05,
-    "confused": 0.05
-  },
-  "audio_data": "Base64エンコードされた音声データ",
-  "audio_format": "opus"
-}
-```
-
-| フィールド       | 型                | 必須 | 説明                                     |
-| ---------------- | ----------------- | ---- | ---------------------------------------- |
-| `type`           | string            | Yes  | `"ANALYSIS_REQUEST"` 固定                |
-| `session_id`     | string            | Yes  | セッションID                             |
-| `timestamp`      | string (ISO 8601) | Yes  | クライアントタイムスタンプ               |
-| `emotion_scores` | object            | Yes  | MediaPipeで算出された感情スコア          |
-| `audio_data`     | string \| null    | No   | Base64エンコードされた音声データ         |
-| `audio_format`   | string \| null    | No   | 音声フォーマット（"opus", "wav", "pcm"） |
-
-**レスポンス** (サーバー → クライアント):
-```json
-{
-  "type": "ANALYSIS_RESPONSE",
-  "timestamp": "2024-01-01T12:00:01Z",
-  "emotion": {
-    "primary_emotion": "happy",
-    "intensity": "high",
-    "description": "相手は楽しそうです",
-    "suggestion": "話題を広げましょう"
-  },
-  "transcription": {
-    "text": "認識されたテキスト",
-    "confidence": 0.95,
-    "language": "ja",
-    "duration_ms": 3000
-  },
-  "suggestions": [
-    {
-      "text": "それは面白いですね",
-      "intent": "共感を示す"
-    },
-    {
-      "text": "もっと詳しく教えて",
-      "intent": "質問する"
-    }
-  ],
-  "situation_analysis": "相手は説明を求めています",
-  "processing_time_ms": 250
-}
-```
-
-| フィールド                  | 型                          | 必須 | 説明                              |
-| --------------------------- | --------------------------- | ---- | --------------------------------- |
-| `type`                      | string                      | Yes  | `"ANALYSIS_RESPONSE"`             |
-| `timestamp`                 | string                      | Yes  | サーバータイムスタンプ (ISO 8601) |
-| `emotion`                   | EmotionInterpretation       | Yes  | 感情解釈結果                      |
-| `emotion.primary_emotion`   | string                      | Yes  | 主要感情                          |
-| `emotion.intensity`         | string                      | Yes  | 強度 ("low" / "medium" / "high")  |
-| `emotion.description`       | string                      | Yes  | 自然言語での説明                  |
-| `emotion.suggestion`        | string \| null              | No   | 行動提案                          |
-| `transcription`             | TranscriptionResult \| null | No   | STT結果（音声がある場合）         |
-| `transcription.text`        | string                      | Yes  | 認識されたテキスト                |
-| `transcription.confidence`  | number                      | Yes  | 信頼度 (0.0-1.0)                  |
-| `transcription.language`    | string                      | Yes  | 検出言語 ("ja", "en" 等)          |
-| `transcription.duration_ms` | number                      | Yes  | 音声の長さ（ミリ秒）              |
-| `suggestions`               | ResponseSuggestion[]        | Yes  | 応答候補（2パターン）             |
-| `suggestions[].text`        | string                      | Yes  | 応答文                            |
-| `suggestions[].intent`      | string                      | Yes  | 意図                              |
-| `situation_analysis`        | string                      | Yes  | 状況分析                          |
-| `processing_time_ms`        | number                      | Yes  | 処理時間（ミリ秒）                |
-
-#### 7.2.7 ERROR
-
-```json
-{
-  "type": "ERROR",
-  "message": "Invalid session",
-  "detail": null,
-  "timestamp": "2024-01-01T12:00:00Z"
-}
-```
-
-#### 7.2.8 WebSocketエラーメッセージ一覧
-
-| エラーメッセージ               | 説明                     |
-| ------------------------------ | ------------------------ |
-| `Invalid JSON`                 | JSONパースエラー         |
-| `Unsupported message type`     | 未対応のメッセージタイプ |
-| `Missing required fields: ...` | 必須フィールド不足       |
-| `Service not available`        | サービス未実装           |
-| `Analysis failed: ...`         | 解析処理エラー           |
-
-#### 7.2.9 接続シーケンス
-
-```
-[Client]                                    [Server]
-    │                                           │
-    │ ──── WebSocket Connect ────────────────▶  │
-    │      ?session_id=xxx&token=yyy            │
-    │                                           │
-    │ ◀─── Connection Established ────────────  │
-    │                                           │
-    │ ──── PING ─────────────────────────────▶  │
-    │ ◀─── PONG ─────────────────────────────   │
-    │                                           │
-    │ ──── ANALYSIS_REQUEST ─────────────────▶  │
-    │      (emotion_scores + audio_data)        │
-    │                                           │
-    │      [STT処理]                            │
-    │      [感情解釈]                            │
-    │      [LLM推論]                            │
-    │                                           │
-    │ ◀─── ANALYSIS_RESPONSE ────────────────   │
-    │      (emotion + suggestions)              │
-    │                                           │
-```
-
-### 7.3 HTTPエラーレスポンス
-
-| ステータス            | 説明                              |
-| --------------------- | --------------------------------- |
-| 404 Not Found         | セッション/リソースが見つからない |
-| 429 Too Many Requests | レート制限超過                    |
-
-### 7.4 レート制限
-
-Sliding Windowアルゴリズムによるインメモリレート制限。
-
-| エンドポイント  | 制限                      |
-| --------------- | ------------------------- |
-| `/api/sessions` | 30 req/min                |
-| `/api/features` | 100 req/min               |
-| その他          | 100 req/min（デフォルト） |
-
-**レスポンスヘッダー**:
-
-| ヘッダー                | 説明             |
-| ----------------------- | ---------------- |
-| `X-RateLimit-Limit`     | 制限値           |
-| `X-RateLimit-Remaining` | 残りリクエスト数 |
-| `X-RateLimit-Reset`     | リセット時刻     |
-
-UUID形式のパスパラメータは正規化され、同一エンドポイントとして制限が適用される。
+| エンドポイント  | 制限       |
+| --------------- | ---------- |
+| `/api/sessions` | 30 req/min |
+| その他          | 100 req/min|
 
 ---
 
 ## 8. データモデル・DTO定義
 
-### 8.1 DTO一覧
+> **詳細**: [docs/spec/models.md](docs/spec/models.md)
 
-#### 8.1.1 AudioFormat (enum)
+Pydantic v2によるDTO定義とドメインモデル。
 
-```python
-class AudioFormat(str, Enum):
-    WAV = "wav"
-    OPUS = "opus"
-    PCM = "pcm"
-```
+### 主要DTO
 
-#### 8.1.2 TranscriptionResult
+| DTO                     | 説明                   |
+| ----------------------- | ---------------------- |
+| `AnalysisRequest`       | WebSocket解析リクエスト|
+| `AnalysisResponse`      | WebSocket解析レスポンス|
+| `EmotionInterpretation` | 感情解釈結果           |
+| `ResponseSuggestion`    | 応答候補               |
 
-| フィールド    | 型    | 説明                     |
-| ------------- | ----- | ------------------------ |
-| `text`        | str   | 認識されたテキスト       |
-| `confidence`  | float | 信頼度 (0.0-1.0)         |
-| `language`    | str   | 検出言語 ("ja", "en" 等) |
-| `duration_ms` | int   | 音声の長さ（ミリ秒）     |
+### ドメインモデル
 
-#### 8.1.3 Speaker (enum)
-
-```python
-class Speaker(str, Enum):
-    USER = "user"       # XRデバイス装着者
-    PARTNER = "partner"  # 会話相手
-```
-
-#### 8.1.4 EmotionContext
-
-| フィールド        | 型               | 説明         |
-| ----------------- | ---------------- | ------------ |
-| `primary_emotion` | str              | 主要な感情   |
-| `emotion_scores`  | dict[str, float] | 全感情スコア |
-
-#### 8.1.5 Utterance
-
-| フィールド        | 型                     | 説明                  |
-| ----------------- | ---------------------- | --------------------- |
-| `speaker`         | Speaker                | 話者 (USER / PARTNER) |
-| `text`            | str                    | 発話内容              |
-| `timestamp`       | datetime               | タイムスタンプ        |
-| `emotion_context` | EmotionContext \| None | 感情コンテキスト      |
-
-#### 8.1.6 EmotionInterpretation
-
-| フィールド        | 型          | 説明                             |
-| ----------------- | ----------- | -------------------------------- |
-| `primary_emotion` | str         | 主要な感情                       |
-| `intensity`       | str         | 強度 ("low" / "medium" / "high") |
-| `description`     | str         | 自然言語での説明                 |
-| `suggestion`      | str \| None | 行動提案                         |
-
-#### 8.1.7 EmotionChange
-
-| フィールド     | 型  | 説明         |
-| -------------- | --- | ------------ |
-| `from_emotion` | str | 変化前の感情 |
-| `to_emotion`   | str | 変化後の感情 |
-| `description`  | str | 変化の説明   |
-
-#### 8.1.8 ResponseSuggestion
-
-| フィールド | 型  | 説明                                |
-| ---------- | --- | ----------------------------------- |
-| `text`     | str | 応答文                              |
-| `intent`   | str | 意図（"共感を示す", "質問する" 等） |
-
-#### 8.1.9 LLMResponseResult
-
-| フィールド           | 型                       | 説明                                    |
-| -------------------- | ------------------------ | --------------------------------------- |
-| `responses`          | list[ResponseSuggestion] | 応答候補（2パターン、異なる意図が必須） |
-| `situation_analysis` | str                      | 状況分析                                |
-
-#### 8.1.10 AnalysisRequest
-
-| フィールド       | 型               | デフォルト         | 説明                       |
-| ---------------- | ---------------- | ------------------ | -------------------------- |
-| `type`           | str              | "ANALYSIS_REQUEST" | メッセージタイプ           |
-| `session_id`     | str              | （必須）           | セッションID               |
-| `timestamp`      | datetime         | （必須）           | クライアントタイムスタンプ |
-| `emotion_scores` | dict[str, float] | （必須）           | 感情スコア                 |
-| `audio_data`     | str \| None      | None               | 音声データ（Base64）       |
-| `audio_format`   | str \| None      | None               | 音声フォーマット           |
-
-#### 8.1.11 AnalysisResponse
-
-| フィールド           | 型                          | デフォルト          | 説明                   |
-| -------------------- | --------------------------- | ------------------- | ---------------------- |
-| `type`               | str                         | "ANALYSIS_RESPONSE" | メッセージタイプ       |
-| `timestamp`          | datetime                    | （必須）            | サーバータイムスタンプ |
-| `emotion`            | EmotionInterpretation       | （必須）            | 感情解釈               |
-| `transcription`      | TranscriptionResult \| None | None                | STT結果                |
-| `suggestions`        | list[ResponseSuggestion]    | （必須）            | 応答候補               |
-| `situation_analysis` | str                         | （必須）            | 状況分析               |
-| `processing_time_ms` | int                         | （必須）            | 処理時間               |
-
-#### 8.1.12 CoachingResponse（内部用）
-
-| フィールド         | 型        | 説明                   |
-| ------------------ | --------- | ---------------------- |
-| `advice`           | str       | 30文字以内のアドバイス |
-| `strategy_tag`     | str       | 戦略タグ (#共感 など)  |
-| `reply_candidates` | list[str] | 返答候補リスト         |
-| `risk_score`       | int       | 危険度 (1-5)           |
-
-### 8.2 ドメインモデル
-
-#### 8.2.1 Session
-
-| フィールド   | 型               | 説明                |
-| ------------ | ---------------- | ------------------- |
-| `id`         | str              | セッションID (UUID) |
-| `user_id`    | str              | 所有者のユーザーID  |
-| `status`     | str              | "active" / "ended"  |
-| `started_at` | datetime         | 開始時刻 (UTC)      |
-| `ended_at`   | datetime \| None | 終了時刻            |
-
-#### 8.2.2 FeatureLog
-
-| フィールド    | 型           | 説明          |
-| ------------- | ------------ | ------------- |
-| `id`          | str          | ログID (UUID) |
-| `session_id`  | str          | セッションID  |
-| `received_at` | datetime     | 受信時刻      |
-| `facial`      | dict \| None | 顔特徴量      |
-| `gaze`        | dict \| None | 視線特徴量    |
-| `voice`       | dict \| None | 音声特徴量    |
+| モデル       | 説明                     |
+| ------------ | ------------------------ |
+| `Session`    | セッション（active/ended）|
+| `FeatureLog` | 特徴量ログ               |
 
 ---
 
 ## 9. サービス層仕様
 
-### 9.1 STTサービス（STTService）
+> **詳細**: [docs/spec/services.md](docs/spec/services.md)
 
-Google Cloud Speech-to-Text APIによる音声認識。
+9つのサービスによるビジネスロジック。
 
-**メソッド**:
+### サービス一覧
 
-```python
-async def transcribe(
-    audio_data: bytes,
-    format: AudioFormat,
-    sample_rate: int = 16000,
-    language: str = "ja",
-) -> TranscriptionResult
-```
+| サービス                  | 説明                      |
+| ------------------------- | ------------------------- |
+| `STTService`              | 音声認識（Cloud Speech）  |
+| `ConversationService`     | 会話履歴管理              |
+| `EmotionInterpreterService` | 感情解釈・行動提案      |
+| `LLMService`              | 応答候補生成（Gemini）    |
+| `ResponseGeneratorService`| 統合オーケストレーター    |
+| `SessionService`          | セッション管理            |
+| `InMemoryRateLimiter`     | レート制限                |
+| `ConnectionManager`       | WebSocket接続管理         |
+| `LoveCoachAgent`          | AIエージェント            |
 
-**音声フォーマット対応**:
-
-| フォーマット | エンコーディング |
-| ------------ | ---------------- |
-| WAV          | LINEAR16         |
-| PCM          | LINEAR16         |
-| OPUS         | OGG_OPUS         |
-
-**言語コードマッピング**:
-
-| 入力 | Google Cloud形式 |
-| ---- | ---------------- |
-| `ja` | `ja-JP`          |
-| `en` | `en-US`          |
-| `ko` | `ko-KR`          |
-| `zh` | `zh-CN`          |
-| `fr` | `fr-FR`          |
-| `de` | `de-DE`          |
-| `es` | `es-ES`          |
-| `it` | `it-IT`          |
-| `pt` | `pt-BR`          |
-
-### 9.2 会話履歴管理サービス（ConversationService）
-
-セッション内の会話コンテキストを管理し、LLM推論に必要な履歴を提供する。
-
-**メソッド**:
-
-| メソッド                                                                 | 説明                                |
-| ------------------------------------------------------------------------ | ----------------------------------- |
-| `add_utterance(session_id, speaker, text, emotion_context?, timestamp?)` | 発話を履歴に追加                    |
-| `get_recent_context(session_id, max_turns=10)`                           | 直近の会話履歴を取得（古い順）      |
-| `get_last_utterance(session_id, speaker?)`                               | 最後の発話を取得                    |
-| `clear(session_id)`                                                      | セッションの履歴をクリア            |
-| `get_conversation_summary(session_id)`                                   | 会話の要約を生成（LLMプロンプト用） |
-
-**制約**:
-- セッションあたり最大100件（デフォルト）
-- 上限超過時はFIFO（古い履歴から削除）
-- スレッドセーフ（`asyncio.Lock` 使用）
-- インメモリストレージ（サーバー再起動で消失）
-
-**会話要約フォーマット**:
-```
-=== 会話履歴 ===
-[USER] こんにちは、今日の会議の件で相談があります。
-[PARTNER] (困惑) はい、どのような相談でしょうか？
-[USER] 明日の会議の時間を変更したいのですが...
-```
-
-### 9.3 感情解釈サービス（EmotionInterpreterService）
-
-感情スコアを人間が理解できる自然言語に変換する。
-
-**メソッド**:
-
-| メソッド                                          | 説明                   |
-| ------------------------------------------------- | ---------------------- |
-| `interpret(emotion_scores)`                       | 感情スコアを解釈       |
-| `detect_change(previous, current, threshold=0.3)` | 感情の急激な変化を検出 |
-
-**強度判定基準**:
-
-| 強度   | スコア範囲          |
-| ------ | ------------------- |
-| low    | 0.0 <= score < 0.4  |
-| medium | 0.4 <= score < 0.7  |
-| high   | 0.7 <= score <= 1.0 |
-
-**感情別の日本語説明**:
-
-| 感情      | low                          | medium                     | high                           |
-| --------- | ---------------------------- | -------------------------- | ------------------------------ |
-| happy     | 相手は少し嬉しそうです       | 相手は嬉しそうにしています | 相手はとても喜んでいます       |
-| sad       | 相手は少し寂しそうです       | 相手は悲しんでいるようです | 相手はとても悲しんでいます     |
-| angry     | 相手は少し不満がありそうです | 相手は怒っているようです   | 相手はとても怒っています       |
-| surprised | 相手は少し驚いています       | 相手は驚いているようです   | 相手はとても驚いています       |
-| confused  | 相手は少し戸惑っています     | 相手は困惑しているようです | 相手はとても困惑しています     |
-| neutral   | 相手は落ち着いています       | 相手は平静な状態です       | 相手は無表情です               |
-| fearful   | 相手は少し不安そうです       | 相手は怖がっているようです | 相手はとても怖がっています     |
-| disgusted | 相手は少し不快そうです       | 相手は嫌悪感を示しています | 相手は強い嫌悪感を示しています |
-
-**感情別の行動提案**:
-
-| 感情      | 提案                                           |
-| --------- | ---------------------------------------------- |
-| happy     | この調子で会話を続けると良いでしょう           |
-| sad       | 共感を示すと良いかもしれません                 |
-| angry     | 一度話を整理して、相手の意見を聞いてみましょう |
-| surprised | 追加の説明をすると良いかもしれません           |
-| confused  | 説明を補足すると良いかもしれません             |
-| neutral   | （提案なし）                                   |
-| fearful   | 安心させる言葉をかけると良いでしょう           |
-| disgusted | 話題を変えることを検討してください             |
-
-**感情変化検出条件**:
-1. 主要感情が変わった
-2. かつ、変化量が閾値（デフォルト0.3）を超えている
-
-### 9.4 LLMサービス（LLMService）
-
-Gemini API（Vertex AI）による応答候補生成。
-
-**メソッド**:
-
-```python
-async def generate_responses(
-    conversation_context: list[Utterance],
-    emotion_interpretation: EmotionInterpretation,
-    partner_last_utterance: str,
-) -> LLMResponseResult
-```
-
-**使用モデル**: Gemini 2.5 Flash (Fine-tuned) via Vertex AI (ChatVertexAI)
-
-**システムプロンプト概要**:
-- 対面コミュニケーション支援アシスタントとして振る舞う
-- 会話履歴、感情状態、最後の発話を入力
-- 2パターンの応答候補（異なる意図）と状況分析をJSON形式で出力
-- 日本語で応答
-
-**応答の意図（intent）例**:
-- 話題を深める
-- 共感を示す
-- 質問する
-- 話題を変える
-- 確認する
-- 提案する
-- 励ます
-
-**リトライ設定**:
-
-| 項目             | 値     |
-| ---------------- | ------ |
-| 最大リトライ回数 | 3      |
-| 初期遅延         | 1.0秒  |
-| 指数ベース       | 2      |
-| 最大遅延         | 10.0秒 |
-
-**出力バリデーション**: Pydantic v2によるJSON構造化出力の検証。
-
-### 9.5 応答生成サービス（ResponseGeneratorService）
-
-全サービスを統合するオーケストレーター。
-
-**処理パイプライン**:
+### 処理パイプライン概要
 
 ```
-1. 処理開始時刻を記録
-       ↓
-2. 音声データがある場合 → STTサービスでテキスト変換
-   （失敗時はNone、処理は継続）
-       ↓
-3. 会話履歴に追加（テキストがある場合）
-   speaker = PARTNER、感情コンテキスト付与
-       ↓
-4. 感情スコアを解釈
-   EmotionInterpreterService.interpret()
-       ↓
-5. LLM推論
-   会話履歴 + 感情解釈 + 最後の発話 → 2パターンの応答候補
-       ↓
-6. 結果統合
-   AnalysisResponseを構築、処理時間を計算
-```
-
-**エラーハンドリング方針**:
-
-| エラー種別       | 対応                                                    |
-| ---------------- | ------------------------------------------------------- |
-| STT失敗          | ログ出力、処理継続（transcription=None）                |
-| 会話履歴更新失敗 | ログ出力、処理継続                                      |
-| 感情解釈失敗     | デフォルト値（neutral）で継続                           |
-| LLM失敗          | 例外を上位に伝播（WebSocketハンドラでエラーレスポンス） |
-
-### 9.6 セッションサービス（SessionService）
-
-セッションのライフサイクルを管理する。
-
-**メソッド**:
-
-| メソッド                            | 説明               |
-| ----------------------------------- | ------------------ |
-| `create(user_id)`                   | 新規セッション作成 |
-| `end(session_id)`                   | セッション終了     |
-| `verify_owner(session_id, user_id)` | 所有者検証         |
-
-### 9.7 レート制限（InMemoryRateLimiter）
-
-Sliding Windowアルゴリズムによるインメモリレート制限。
-
-**特徴**:
-- パスパターン別の制限値設定
-- UUID正規化による統一的なパス処理
-- ウィンドウ期限切れ時の自動クリーンアップ
-- ユーザー分離（ユーザーID単位での制限）
-
-### 9.8 接続管理（ConnectionManager）
-
-WebSocket接続のライフサイクル管理。
-
-**機能**:
-- セッション単位の接続追跡
-- ブロードキャスト送信
-- ターゲット指定送信
-- 切断時のクリーンアップ
-
-### 9.9 AIエージェント（ERAAgent / LoveCoachAgent）
-
-Core層のプロンプトとGemini APIを繋ぐエージェント。
-
-**インターフェース**:
-```python
-class AgentInterface(ABC):
-    @abstractmethod
-    async def run(self, input_data: dict) -> dict: ...
+音声 → STT → 会話履歴追加 → 感情解釈 → LLM推論 → 応答生成
 ```
 
 ---
@@ -1514,6 +808,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                      | 更新者 |
 | ---------- | ------------------------- | ------ |
+| 2026-02-04 | #153 #150 feat: SPECIFICATION.mdの段階的開示とGoogle Drive連携 | @miyabi206 |
 | 2026-02-03 | #145 #141 feat: ヘルスチェックにモデル接続状態を追加 | @miyabi206 |
 | 2026-02-02 | #132 feat: 仕様書自動作成機能を追加 | @miyabi206 |
 
@@ -1524,6 +819,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                         | 更新者 |
 | ---------- | ---------------------------- | ------ |
+| 2026-02-04 | #153 #150 feat: SPECIFICATION.mdの段階的開示とGoogle Drive連携 | @miyabi206 |
 | 2026-02-03 | #145 #141 feat: ヘルスチェックにモデル接続状態を追加 | @miyabi206 |
 | 2026-02-03 | #146 Feature/manifestjson bug | @93tajam |
 | 2026-02-02 | #132 feat: 仕様書自動作成機能を追加 | @miyabi206 |
@@ -1546,6 +842,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 <!-- AUTO:CLOSED_ISSUES:START -->
 - #142 docs: .env.example にFTモデル設定例を追記
+- #141 feat: ヘルスチェックにモデル接続状態を追加
 - #140 feat: LLM_TEMPERATURE を設定から変更可能にする
 - #130 仕様書の自動更新機能
 - #123 [Unity] Quest 3向けXR設定とビルド環境構築
@@ -1593,9 +890,12 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 <!-- AUTO:OPEN_ISSUES:START -->
 | #    | タイトル               | 担当 | 概要                                                 |
 | ---- | ---------------------- | ---- | ---------------------------------------------------- |
-| #148 | [Unity] Quest/Android用ビルド自動化スク | - | ## 概要 |
-| #147 | [Unity] 通常Android端末でXR自動初期化による | - | ## 概要 |
-| #141 | feat: ヘルスチェックにモデル接続状態を追加 | - | ## 概要 |
+| #152 | feat: LLMServiceでFTモデル（LLMClie | @miyabi206 | ## 概要 |
+| #151 | feat: 通常Android端末でのカメラパススルー（AR | @Daccho | ## 概要 |
+| #150 | 仕様書をAGENTS.mdとCLOUD.mdに段階的表示する | @miyabi206 | ### 概要 |
+| #149 | 仕様書をAGENT.mdやClaude.mdに段階的開示させ | @miyabi206 | - |
+| #148 | [Unity] Quest/Android用ビルド自動化スク | @Daccho | ## 概要 |
+| #147 | [Unity] 通常Android端末でXR自動初期化による | @Daccho | ## 概要 |
 | #139 | feat: Vertex AIファインチューニング済みGem | @miyabi206 | ## 概要 |
 | #129 | q | @Daccho | ### 概要 |
 | #127 | [Unity] メイン画面統合 - Android/XR共通 | @Daccho | ## 概要 |
