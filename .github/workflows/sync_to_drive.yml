@@ -1,0 +1,53 @@
+name: Sync Specification to Google Drive
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'SPECIFICATION.md'
+      - 'docs/spec/**'
+
+  # 手動実行も可能
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # フォークからのPRではSecretsにアクセスできないためスキップ
+    if: github.repository == 'chofurenairengo/commuxr'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install google-api-python-client google-auth
+
+      - name: Sync to Google Drive
+        env:
+          GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ vars.GOOGLE_DRIVE_FOLDER_ID }}
+        run: |
+          if [ -z "$GOOGLE_DRIVE_CREDENTIALS" ]; then
+            echo "Warning: GOOGLE_DRIVE_CREDENTIALS not configured, skipping sync"
+            exit 0
+          fi
+          if [ -z "$GOOGLE_DRIVE_FOLDER_ID" ]; then
+            echo "Warning: GOOGLE_DRIVE_FOLDER_ID not configured, skipping sync"
+            exit 0
+          fi
+          python .github/scripts/sync_to_drive.py
+
+      - name: Summary
+        run: |
+          echo "## Google Drive Sync" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "仕様書がGoogle Driveに同期されました。" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 同期対象" >> $GITHUB_STEP_SUMMARY
+          echo "- SPECIFICATION.md" >> $GITHUB_STEP_SUMMARY
+          echo "- docs/spec/*.md" >> $GITHUB_STEP_SUMMARY

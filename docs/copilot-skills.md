@@ -13,6 +13,26 @@
 | `/run-claude-review`               | Claude CLI でレビューを自動実行              |
 | `/execute-plan-code-review-file`   | 実装 → Claude レビュー（統合ワークフロー）   |
 | `/execute-review-code-review-file` | 修正 → Claude 再レビュー（統合ワークフロー） |
+| `/update-spec`                     | コードベースから仕様書を自動更新             |
+
+---
+
+### `/update-spec`
+
+コードベースの変更に基づいて仕様書を自動更新します。
+
+**対象ファイル:**
+- `docs/spec/server.md` - ディレクトリ構成、環境変数
+- `docs/spec/api.md` - REST API / WebSocket API
+- `docs/spec/models.md` - DTO / ドメインモデル
+- `docs/spec/services.md` - サービス層のメソッド
+
+**使い方:**
+```
+@workspace /update-spec
+@workspace /update-spec api      # API仕様のみ更新
+@workspace /update-spec models   # モデル仕様のみ更新
+```
 
 ---
 
