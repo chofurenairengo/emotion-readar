@@ -31,11 +31,11 @@ if env_file.exists():
                 if key == "GOOGLE_APPLICATION_CREDENTIALS" and value:
                     os.environ[key] = value
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage  # noqa: E402
 
-from app.infra.external.gemini_client import LLMClientFactory
+from app.infra.external.gemini_client import LLMClientFactory  # noqa: E402
 
-# Windows用UTF-8出力設定
+# Windowsの場合はUTF-8に出力設定する必要がある(macOS/Linuxは不要)
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
 
