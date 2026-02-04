@@ -1524,6 +1524,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                         | 更新者 |
 | ---------- | ---------------------------- | ------ |
+| 2026-02-04 | #155 feat: #152 LLMServiceでFTモデル（LLMClientFactory）を使用 | @miyabi206 |
 | 2026-02-03 | #145 #141 feat: ヘルスチェックにモデル接続状態を追加 | @miyabi206 |
 | 2026-02-03 | #146 Feature/manifestjson bug | @93tajam |
 | 2026-02-02 | #132 feat: 仕様書自動作成機能を追加 | @miyabi206 |
@@ -1546,6 +1547,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 <!-- AUTO:CLOSED_ISSUES:START -->
 - #142 docs: .env.example にFTモデル設定例を追記
+- #141 feat: ヘルスチェックにモデル接続状態を追加
 - #140 feat: LLM_TEMPERATURE を設定から変更可能にする
 - #130 仕様書の自動更新機能
 - #123 [Unity] Quest 3向けXR設定とビルド環境構築
@@ -1593,9 +1595,13 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 <!-- AUTO:OPEN_ISSUES:START -->
 | #    | タイトル               | 担当 | 概要                                                 |
 | ---- | ---------------------- | ---- | ---------------------------------------------------- |
-| #148 | [Unity] Quest/Android用ビルド自動化スク | - | ## 概要 |
-| #147 | [Unity] 通常Android端末でXR自動初期化による | - | ## 概要 |
-| #141 | feat: ヘルスチェックにモデル接続状態を追加 | - | ## 概要 |
+| #154 | SPECIFICATION.mdのコンフリクト防止 | @miyabi206 | ### 概要 |
+| #152 | feat: LLMServiceでFTモデル（LLMClie | @miyabi206 | ## 概要 |
+| #151 | feat: 通常Android端末でのカメラパススルー（AR | @Daccho | ## 概要 |
+| #150 | 仕様書をAGENTS.mdとCLOUD.mdに段階的表示する | @miyabi206 | ### 概要 |
+| #149 | 仕様書をAGENT.mdやClaude.mdに段階的開示させ | @miyabi206 | - |
+| #148 | [Unity] Quest/Android用ビルド自動化スク | @Daccho | ## 概要 |
+| #147 | [Unity] 通常Android端末でXR自動初期化による | @Daccho | ## 概要 |
 | #139 | feat: Vertex AIファインチューニング済みGem | @miyabi206 | ## 概要 |
 | #129 | q | @Daccho | ### 概要 |
 | #127 | [Unity] メイン画面統合 - Android/XR共通 | @Daccho | ## 概要 |
