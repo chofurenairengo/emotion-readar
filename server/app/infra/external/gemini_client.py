@@ -1,5 +1,7 @@
 from google.oauth2 import service_account
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_google_vertexai import ChatVertexAI
+from langchain_groq import ChatGroq
 
 from app.core.config import get_settings
 
@@ -30,7 +32,7 @@ class LLMClientFactory:
         """Vertex AI用の認証情報を読み込む."""
         settings = get_settings()
         if settings.VERTEX_CREDENTIALS_PATH:
-            return service_account.Credentials.from_service_account_file(
+            return service_account.Credentials.from_service_account_file(  # type: ignore[no-any-return]
                 settings.VERTEX_CREDENTIALS_PATH
             )
         return None
@@ -53,3 +55,26 @@ class LLMClientFactory:
             credentials=credentials,
             response_mime_type="application/json",
         )
+
+    @staticmethod
+    def create_groq_client() -> ChatGroq:
+        """Groq APIクライアントを生成する."""
+        settings = get_settings()
+        return ChatGroq(
+            groq_api_key=settings.GROQ_API_KEY,  # type: ignore[arg-type]
+            model_name=settings.GROQ_MODEL,
+            temperature=settings.LLM_TEMPERATURE,
+        )
+
+    @staticmethod
+    def create_client() -> BaseChatModel:
+        """設定に基づいてLLMクライアントを生成する.
+
+        LLM_PROVIDER設定に基づいて適切なクライアントを返す:
+        - "groq": Groq API (高速)
+        - "gemini": Vertex AI Gemini (FTモデル対応)
+        """
+        settings = get_settings()
+        if settings.LLM_PROVIDER == "groq":
+            return LLMClientFactory.create_groq_client()
+        return LLMClientFactory.create_ft_client()

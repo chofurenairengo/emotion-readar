@@ -16,6 +16,7 @@ dependencies = [
     "firebase-admin>=6.6.0",
     "google-cloud-speech>=2.29.0",
     "google-cloud-secret-manager>=2.21.0",
+    "langchain-groq>=1.1.1",
 ]
 
 [tool.black]

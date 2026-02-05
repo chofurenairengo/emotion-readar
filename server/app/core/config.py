@@ -12,9 +12,14 @@ class Settings(BaseSettings):
     GCP_LOCATION: str = "asia-northeast1"  # Vertex AIのリージョン
 
     # モデル設定
-    FT_MODEL_ID: str  # Geminiモデル名 (例: gemini-1.5-flash)
+    FT_MODEL_ID: str = ""  # Geminiモデル名（LLM_PROVIDER=gemini時に必須）
     LLM_TEMPERATURE: float = 0.7  # LLMの温度パラメータ（0.0〜1.0, デフォルト: 0.7）
     VERTEX_CREDENTIALS_PATH: str = ""  # Vertex AI用サービスアカウントキーのパス
+
+    # LLMプロバイダー設定
+    LLM_PROVIDER: str = ""  # "gemini" or "groq"
+    GROQ_API_KEY: str = ""  # Groq APIキー（LLM_PROVIDER=groq時に必須）
+    GROQ_MODEL: str = ""  # Groqモデル名
 
     # 任意項目
     ENV_STATE: str = "dev"

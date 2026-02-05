@@ -45,7 +45,6 @@ SYSTEM_PROMPT = """あなたは対面コミュニケーションを支援する�
 
 ## 注意事項
 - 応答は必ず2パターン提案してください
-- 2つの応答は異なる意図・アプローチである必要があります
 - 相手の感情状態を考慮した応答を生成してください
 - 日本語で応答してください
 - JSON以外の文字列は含めないでください
@@ -58,14 +57,19 @@ MAX_DELAY = 10.0
 
 
 class LLMService:
-    """LLM推論サービス（Gemini API）."""
+    """LLM推論サービス（Gemini/Groq API）.
+
+    LLM_PROVIDER設定に基づいてAPIを切り替える:
+    - "groq": Groq API (高速、100-300ms)
+    - "gemini": Vertex AI Gemini (FTモデル対応)
+    """
 
     def __init__(self) -> None:
         """初期化.
 
         設定は config.py から LLMClientFactory 経由で取得する。
         """
-        self._model = LLMClientFactory.create_ft_client()
+        self._model = LLMClientFactory.create_client()
 
     async def generate_responses(
         self,
