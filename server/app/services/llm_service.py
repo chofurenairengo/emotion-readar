@@ -8,9 +8,9 @@ import logging
 from typing import Any
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_google_vertexai import ChatVertexAI
 
 from app.core.exceptions import LLMError, LLMRateLimitError, LLMResponseParseError
+from app.infra.external.gemini_client import LLMClientFactory
 from app.dto.conversation import Utterance
 from app.dto.emotion import EmotionInterpretation
 from app.dto.llm import LLMResponseResult, ResponseSuggestion
@@ -60,25 +60,12 @@ MAX_DELAY = 10.0
 class LLMService:
     """LLM推論サービス（Gemini API）."""
 
-    def __init__(
-        self,
-        project: str | None = None,
-        location: str = "asia-northeast1",
-        model: str = "gemini-2.5-flash",
-    ) -> None:
+    def __init__(self) -> None:
         """初期化.
 
-        Args:
-            project: GCPプロジェクトID
-            location: Vertex AIのリージョン
-            model: 使用するモデル名
+        設定は config.py から LLMClientFactory 経由で取得する。
         """
-        self._model = ChatVertexAI(
-            model=model,
-            project=project,
-            location=location,
-            temperature=0.7,
-        )
+        self._model = LLMClientFactory.create_ft_client()
 
     async def generate_responses(
         self,
