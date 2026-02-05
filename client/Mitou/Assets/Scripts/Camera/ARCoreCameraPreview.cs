@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.Management;
@@ -19,10 +20,52 @@ namespace ERA.Camera
         [SerializeField] private bool _autoSetupARComponents = true;
 
         private bool _isInitialized = false;
+        private bool _isInitializing = false;
+        private Coroutine _initCoroutine;
+        private Coroutine _startPreviewCoroutine;
+        private XRGeneralSettings _cachedXRSettings;
 
         public bool IsActive => _arSession != null &&
                                 _arSession.enabled &&
                                 ARSession.state >= ARSessionState.SessionTracking;
+
+        private void OnEnable()
+        {
+            ARSession.stateChanged += OnARSessionStateChanged;
+        }
+
+        private void OnDisable()
+        {
+            ARSession.stateChanged -= OnARSessionStateChanged;
+        }
+
+        private void Start()
+        {
+            Debug.Log("[ARCoreCameraPreview] Start() - Auto initializing...");
+            Initialize();
+            StartPreview();
+        }
+
+        private void OnARSessionStateChanged(ARSessionStateChangedEventArgs args)
+        {
+            Debug.Log($"[ARCoreCameraPreview] ARSession state changed: {args.state}");
+
+            switch (args.state)
+            {
+                case ARSessionState.SessionTracking:
+                    Debug.Log("[ARCoreCameraPreview] AR tracking started successfully");
+                    break;
+                case ARSessionState.SessionInitializing:
+                    Debug.Log("[ARCoreCameraPreview] AR session initializing...");
+                    break;
+                case ARSessionState.Unsupported:
+                    Debug.LogError("[ARCoreCameraPreview] AR is not supported on this device");
+                    break;
+                case ARSessionState.NeedsInstall:
+                    Debug.LogWarning("[ARCoreCameraPreview] ARCore needs to be installed");
+                    break;
+            }
+        }
 
         public void Initialize()
         {
@@ -32,6 +75,24 @@ namespace ERA.Camera
                 return;
             }
 
+            if (_isInitializing)
+            {
+                Debug.LogWarning("[ARCoreCameraPreview] Initialization already in progress");
+                return;
+            }
+
+            _initCoroutine = StartCoroutine(InitializeAsync());
+        }
+
+        private IEnumerator InitializeAsync()
+        {
+            _isInitializing = true;
+            Debug.Log("[ARCoreCameraPreview] Starting async initialization...");
+
+            // XRローダー初期化を先に実行
+            yield return StartCoroutine(InitializeARCoreLoaderAsync());
+
+            // 初期化成功後にARコンポーネントをセットアップ
             if (_autoSetupARComponents)
             {
                 SetupARComponents();
@@ -39,25 +100,64 @@ namespace ERA.Camera
 
             if (_arSession == null)
             {
-                Debug.LogError("[ARCoreCameraPreview] AR Session is not assigned");
-                return;
+                Debug.LogError("[ARCoreCameraPreview] AR Session is not assigned after setup");
+                _isInitializing = false;
+                yield break;
             }
 
-            // XR Loaderの初期化を試みる
-            InitializeARCoreLoader();
-
             _isInitialized = true;
-            Debug.Log("[ARCoreCameraPreview] Initialized");
+            _isInitializing = false;
+            Debug.Log("[ARCoreCameraPreview] Async initialization completed");
         }
 
         public void StartPreview()
         {
-            if (!_isInitialized)
+            if (!_isInitialized && !_isInitializing)
             {
-                Debug.LogWarning("[ARCoreCameraPreview] Not initialized, call Initialize() first");
+                Debug.LogWarning("[ARCoreCameraPreview] Not initialized, starting initialization first");
                 Initialize();
             }
 
+            if (_isInitializing)
+            {
+                if (_startPreviewCoroutine == null)
+                {
+                    Debug.Log("[ARCoreCameraPreview] Waiting for initialization to complete before starting preview");
+                    _startPreviewCoroutine = StartCoroutine(StartPreviewWhenReady());
+                }
+                return;
+            }
+
+            EnablePreviewComponents();
+        }
+
+        private IEnumerator StartPreviewWhenReady()
+        {
+            float timeout = 10f;
+            float elapsed = 0f;
+
+            while (_isInitializing && elapsed < timeout)
+            {
+                yield return null;
+                elapsed += Time.deltaTime;
+            }
+
+            _startPreviewCoroutine = null;
+
+            if (elapsed >= timeout)
+            {
+                Debug.LogError("[ARCoreCameraPreview] Initialization timeout");
+                yield break;
+            }
+
+            if (_isInitialized)
+            {
+                EnablePreviewComponents();
+            }
+        }
+
+        private void EnablePreviewComponents()
+        {
             if (_arSession != null)
             {
                 _arSession.enabled = true;
@@ -98,9 +198,22 @@ namespace ERA.Camera
 
         public void Dispose()
         {
+            if (_initCoroutine != null)
+            {
+                StopCoroutine(_initCoroutine);
+                _initCoroutine = null;
+            }
+
+            if (_startPreviewCoroutine != null)
+            {
+                StopCoroutine(_startPreviewCoroutine);
+                _startPreviewCoroutine = null;
+            }
+
             StopPreview();
             DeinitializeARCoreLoader();
             _isInitialized = false;
+            _isInitializing = false;
             Debug.Log("[ARCoreCameraPreview] Disposed");
         }
 
@@ -147,51 +260,93 @@ namespace ERA.Camera
             }
         }
 
-        private void InitializeARCoreLoader()
+        private IEnumerator InitializeARCoreLoaderAsync()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
+            Debug.Log("[ARCoreCameraPreview] Attempting to initialize XR Loader...");
+
+            // XRGeneralSettingsのロード（Instanceがnullの場合はResourcesから試行）
             var xrSettings = XRGeneralSettings.Instance;
-            if (xrSettings == null || xrSettings.Manager == null)
+            if (xrSettings == null)
             {
-                Debug.LogWarning("[ARCoreCameraPreview] XR General Settings not found");
-                return;
+                Debug.Log("[ARCoreCameraPreview] XRGeneralSettings.Instance is null, attempting to load from Resources...");
+                xrSettings = Resources.Load<XRGeneralSettings>("XR/XRGeneralSettings");
+                if (xrSettings != null)
+                {
+                    Debug.Log("[ARCoreCameraPreview] Loaded XRGeneralSettings from Resources");
+                }
             }
+
+            if (xrSettings == null)
+            {
+                Debug.LogError("[ARCoreCameraPreview] XRGeneralSettings not found (Instance and Resources both failed)");
+                yield break;
+            }
+
+            if (xrSettings.Manager == null)
+            {
+                Debug.LogError("[ARCoreCameraPreview] XRManagerSettings is null");
+                yield break;
+            }
+
+            // XRSettingsをキャッシュ（Deinitialize時に使用）
+            _cachedXRSettings = xrSettings;
 
             var manager = xrSettings.Manager;
+            Debug.Log($"[ARCoreCameraPreview] XR Manager found. Loaders count: {manager.activeLoaders?.Count ?? 0}");
 
-            // 既に初期化済みの場合はスキップ
+            // 既に初期化済みの場合
             if (manager.isInitializationComplete)
             {
-                Debug.Log("[ARCoreCameraPreview] XR Manager already initialized");
-                return;
+                if (manager.activeLoader != null)
+                {
+                    Debug.Log($"[ARCoreCameraPreview] XR Manager already initialized with: {manager.activeLoader.name}");
+                }
+                else
+                {
+                    Debug.LogWarning("[ARCoreCameraPreview] XR Manager initialized but no active loader");
+                }
+                yield break;
             }
 
-            // XRLoaderを初期化（ARCoreを含む利用可能なローダーを自動検出）
-            Debug.Log("[ARCoreCameraPreview] Initializing XR Loader...");
-            manager.InitializeLoaderSync();
+            // 非同期初期化を開始
+            Debug.Log("[ARCoreCameraPreview] Starting XR Loader initialization...");
+            yield return manager.InitializeLoader();
 
+            // 初期化結果を確認
             if (manager.isInitializationComplete)
             {
-                manager.StartSubsystems();
-                Debug.Log($"[ARCoreCameraPreview] XR Loader initialized: {manager.activeLoader?.name}");
+                if (manager.activeLoader != null)
+                {
+                    manager.StartSubsystems();
+                    Debug.Log($"[ARCoreCameraPreview] XR Loader initialized successfully: {manager.activeLoader.name}");
+                }
+                else
+                {
+                    Debug.LogWarning("[ARCoreCameraPreview] XR initialization complete but no active loader found");
+                }
             }
             else
             {
                 Debug.LogError("[ARCoreCameraPreview] Failed to initialize XR Loader");
             }
+#else
+            Debug.Log("[ARCoreCameraPreview] Skipping XR Loader initialization (not Android runtime)");
+            yield return null;
 #endif
         }
 
         private void DeinitializeARCoreLoader()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            var xrSettings = XRGeneralSettings.Instance;
+            var xrSettings = _cachedXRSettings ?? XRGeneralSettings.Instance;
             if (xrSettings?.Manager != null && xrSettings.Manager.isInitializationComplete)
             {
                 xrSettings.Manager.StopSubsystems();
                 xrSettings.Manager.DeinitializeLoader();
                 Debug.Log("[ARCoreCameraPreview] ARCore Loader deinitialized");
             }
+            _cachedXRSettings = null;
 #endif
         }
 

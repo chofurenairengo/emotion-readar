@@ -105,6 +105,23 @@ namespace ERA.Camera
         private static bool IsQuestDevice()
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
+            // 実際のデバイスモデルでQuest端末かどうか判定
+            var deviceModel = SystemInfo.deviceModel.ToLower();
+            var deviceName = SystemInfo.deviceName.ToLower();
+
+            // Questデバイスのモデル名をチェック
+            bool isQuestHardware = deviceModel.Contains("quest") ||
+                                   deviceModel.Contains("oculus") ||
+                                   deviceName.Contains("quest");
+
+            if (!isQuestHardware)
+            {
+                Debug.Log($"[CameraPreviewFactory] Not a Quest device: {SystemInfo.deviceModel}");
+                return false;
+            }
+
+            Debug.Log($"[CameraPreviewFactory] Quest hardware detected: {SystemInfo.deviceModel}");
+
             // OVRPluginが存在するかチェック
             try
             {
