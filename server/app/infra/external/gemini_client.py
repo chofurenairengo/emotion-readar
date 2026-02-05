@@ -1,12 +1,14 @@
+from google.oauth2 import service_account
 from langchain_google_vertexai import ChatVertexAI
 
 from app.core.config import get_settings
 
-# 自前のGeminiクライアント工場
+
 class LLMClientFactory:
     """Vertex AI経由でGemini(ft model)との接続を生成する工場.
 
     認証はサービスアカウント方式を使用:
+    - VERTEX_CREDENTIALS_PATH: 指定されている場合はそのキーファイルを使用
     - ローカル: GOOGLE_APPLICATION_CREDENTIALS環境変数でJSONキーを指定
     - Cloud Run: 自動でサービスアカウントから認証情報を取得
     """
@@ -24,6 +26,16 @@ class LLMClientFactory:
         return model_id
 
     @staticmethod
+    def _load_credentials() -> service_account.Credentials | None:
+        """Vertex AI用の認証情報を読み込む."""
+        settings = get_settings()
+        if settings.VERTEX_CREDENTIALS_PATH:
+            return service_account.Credentials.from_service_account_file(
+                settings.VERTEX_CREDENTIALS_PATH
+            )
+        return None
+
+    @staticmethod
     def create_ft_client() -> ChatVertexAI:
         settings = get_settings()
         model = LLMClientFactory._resolve_model_id(
@@ -31,10 +43,13 @@ class LLMClientFactory:
             settings.GCP_PROJECT_ID,
             settings.GCP_LOCATION,
         )
+        credentials = LLMClientFactory._load_credentials()
         return ChatVertexAI(
             model=model,
             project=settings.GCP_PROJECT_ID,
             location=settings.GCP_LOCATION,
             temperature=settings.LLM_TEMPERATURE,
             max_retries=2,
+            credentials=credentials,
+            response_mime_type="application/json",
         )

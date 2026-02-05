@@ -134,6 +134,52 @@ class LLMService:
 
 上記の情報を踏まえて、ユーザーが相手に返すべき応答候補を2パターン提案してください。"""
 
+    def _normalize_response_data(self, data: dict[str, Any]) -> dict[str, Any]:
+        """FTモデルの応答形式を標準形式に正規化.
+
+        FTモデルは複数の形式で応答を返すため、統一的に処理する:
+        - 標準形式: situation_analysis + responses
+        - FT形式A: advice + options
+        - FT形式B: situation_analysis + advices
+
+        Args:
+            data: パース済みJSONデータ
+
+        Returns:
+            正規化されたデータ（situation_analysis + responsesの形式）
+
+        Raises:
+            KeyError: 必要なキーが見つからない場合
+        """
+        # 1. suggestions配列のキーを検出（優先順位順）
+        suggestions = None
+        for key in ["responses", "options", "advices"]:
+            if key in data:
+                suggestions = data[key]
+                break
+
+        if suggestions is None:
+            raise KeyError("responses/options/advices")
+
+        # 2. situation_analysisのキーを検出
+        analysis = data.get("situation_analysis") or data.get("advice") or ""
+
+        # 3. 配列要素を正規化（文字列→オブジェクト変換）
+        normalized_responses = []
+        for item in suggestions:
+            if isinstance(item, str):
+                text = item.strip("「」")
+                normalized_responses.append({"text": text, "intent": ""})
+            else:
+                text = item.get("text", str(item)).strip("「」")
+                intent = item.get("intent", "")
+                normalized_responses.append({"text": text, "intent": intent})
+
+        return {
+            "situation_analysis": analysis,
+            "responses": normalized_responses,
+        }
+
     def _parse_response(self, raw_response: str) -> LLMResponseResult:
         """LLMのレスポンスをパース.
 
@@ -147,6 +193,7 @@ class LLMService:
             LLMResponseParseError: パースに失敗した場合
         """
         try:
+            # Markdownコードブロックを除去
             cleaned = raw_response.strip()
             if cleaned.startswith("```json"):
                 cleaned = cleaned[7:]
@@ -158,17 +205,15 @@ class LLMService:
 
             data: dict[str, Any] = json.loads(cleaned)
 
-            responses = [
-                ResponseSuggestion(
-                    text=r["text"],
-                    intent=r["intent"],
-                )
-                for r in data["responses"]
-            ]
+            # FTモデルの応答形式を正規化
+            normalized = self._normalize_response_data(data)
 
             return LLMResponseResult(
-                situation_analysis=data["situation_analysis"],
-                responses=responses,
+                situation_analysis=normalized["situation_analysis"],
+                responses=[
+                    ResponseSuggestion(text=r["text"], intent=r["intent"])
+                    for r in normalized["responses"]
+                ],
             )
         except json.JSONDecodeError as e:
             logger.error(f"JSON parse error: {e}, response: {raw_response[:200]}")

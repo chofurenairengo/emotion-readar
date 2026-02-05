@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # モデル設定
     FT_MODEL_ID: str  # Geminiモデル名 (例: gemini-1.5-flash)
     LLM_TEMPERATURE: float = 0.7  # LLMの温度パラメータ（0.0〜1.0, デフォルト: 0.7）
+    VERTEX_CREDENTIALS_PATH: str = ""  # Vertex AI用サービスアカウントキーのパス
 
     # 任意項目
     ENV_STATE: str = "dev"
