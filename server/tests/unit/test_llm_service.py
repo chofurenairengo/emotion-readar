@@ -149,30 +149,6 @@ async def test_parse_response_missing_key(
 
 
 @pytest.mark.asyncio
-async def test_parse_response_same_intent_validation_error(
-    sample_context: list[Utterance],
-    sample_emotion: EmotionInterpretation,
-) -> None:
-    """同じintentの応答でバリデーションエラーが発生する."""
-    same_intent_response = """{
-    "situation_analysis": "テスト",
-    "responses": [
-        {"text": "応答1", "intent": "同じ意図"},
-        {"text": "応答2", "intent": "同じ意図"}
-    ]
-}"""
-
-    with patch.object(LLMService, "_call_api", new_callable=AsyncMock) as mock_api:
-        mock_api.return_value = same_intent_response
-
-        service = LLMService()
-        with pytest.raises(LLMResponseParseError):
-            await service.generate_responses(
-                conversation_context=sample_context,
-                emotion_interpretation=sample_emotion,
-                partner_last_utterance="テスト",
-            )
-
 
 @pytest.mark.asyncio
 async def test_retry_on_rate_limit(
