@@ -1514,6 +1514,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                      | 更新者 |
 | ---------- | ------------------------- | ------ |
+| 2026-02-07 | #165 docs: 機能追加・修正用のIssueテンプレートを追加 | @miyabi206 |
 | 2026-02-04 | #155 feat: #152 LLMServiceでFTモデル（LLMClientFactory）を使用 | @miyabi206 |
 | 2026-02-03 | #145 #141 feat: ヘルスチェックにモデル接続状態を追加 | @miyabi206 |
 | 2026-02-02 | #132 feat: 仕様書自動作成機能を追加 | @miyabi206 |
@@ -1525,6 +1526,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                         | 更新者 |
 | ---------- | ---------------------------- | ------ |
+| 2026-02-07 | #165 docs: 機能追加・修正用のIssueテンプレートを追加 | @miyabi206 |
 | 2026-02-04 | #155 feat: #152 LLMServiceでFTモデル（LLMClientFactory）を使用 | @miyabi206 |
 | 2026-02-03 | #145 #141 feat: ヘルスチェックにモデル接続状態を追加 | @miyabi206 |
 | 2026-02-03 | #146 Feature/manifestjson bug | @93tajam |
@@ -1547,6 +1549,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 ## 21. 過去のIssue
 
 <!-- AUTO:CLOSED_ISSUES:START -->
+- #152 feat: LLMServiceでFTモデル（LLMClientFactory）を使用する
 - #142 docs: .env.example にFTモデル設定例を追記
 - #141 feat: ヘルスチェックにモデル接続状態を追加
 - #140 feat: LLM_TEMPERATURE を設定から変更可能にする
@@ -1596,8 +1599,15 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 <!-- AUTO:OPEN_ISSUES:START -->
 | #    | タイトル               | 担当 | 概要                                                 |
 | ---- | ---------------------- | ---- | ---------------------------------------------------- |
+| #164 | [chore]<summy>のコメントが邪魔 | @Daccho | ### 概要 |
+| #163 | gcp認証を統一 | @Daccho | ### 概要 |
+| #162 | feat(server): GCP認証のADC統一化 | - | ## 概要 |
+| #161 | fix(server): STTの脆弱性修正と仕様書更新 | - | ## 概要 |
+| #160 | rules とか Cloude Opus 4.6対応 | @miyabi206 | ### 概要 |
+| #159 | perf: STTと感情解釈の並列化によるレスポンス時間短縮 | - | ## 概要 |
+| #157 | feat(server): emotion_scoresバリ | - | ## 概要 |
+| #156 | LoRAのやり直し | @miyabi206 | ### 概要 |
 | #154 | SPECIFICATION.mdのコンフリクト防止 | @miyabi206 | ### 概要 |
-| #152 | feat: LLMServiceでFTモデル（LLMClie | @miyabi206 | ## 概要 |
 | #151 | feat: 通常Android端末でのカメラパススルー（AR | @Daccho | ## 概要 |
 | #150 | 仕様書をAGENTS.mdとCLOUD.mdに段階的表示する | @miyabi206 | ### 概要 |
 | #149 | 仕様書をAGENT.mdやClaude.mdに段階的開示させ | @miyabi206 | - |
