@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from datetime import datetime, timezone
@@ -71,23 +72,33 @@ class ResponseGeneratorService:
         start_time = time.perf_counter()
         logger.info(f"Processing request for session {session_id}")
 
+        # 1. STTタスクを非同期で開始（待機しない）
+        stt_task: asyncio.Task[TranscriptionResult | None] | None = None
+        if audio_data and audio_format:
+            stt_task = asyncio.create_task(
+                self._transcribe_audio(audio_data, audio_format)
+            )
+
+        # 2. STTと並列で実行（即座に完了）
+        try:
+            emotion_interpretation = self._interpret_emotion(emotion_scores)
+            conversation_context = self._conversation.get_recent_context(
+                session_id, max_turns=10
+            )
+        except Exception:
+            if stt_task:
+                stt_task.cancel()
+            raise
+
+        # 3. STT完了を待機
         transcription: TranscriptionResult | None = None
         partner_utterance: str = ""
-
-        if audio_data and audio_format:
-            transcription = await self._transcribe_audio(audio_data, audio_format)
+        if stt_task:
+            transcription = await stt_task
             if transcription:
                 partner_utterance = transcription.text
                 logger.debug(f"STT result: {transcription.text[:50]}...")
-
-        if partner_utterance:
-            self._update_conversation(session_id, partner_utterance, emotion_scores)
-
-        emotion_interpretation = self._interpret_emotion(emotion_scores)
-
-        conversation_context = self._conversation.get_recent_context(
-            session_id, max_turns=10
-        )
+                self._update_conversation(session_id, partner_utterance, emotion_scores)
 
         logger.info(f"Calling LLM with {len(conversation_context)} context turns")
 

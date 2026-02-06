@@ -45,7 +45,6 @@ SYSTEM_PROMPT = """あなたは対面コミュニケーションを支援する�
 
 ## 注意事項
 - 応答は必ず2パターン提案してください
-- 2つの応答は異なる意図・アプローチである必要があります
 - 相手の感情状態を考慮した応答を生成してください
 - 日本語で応答してください
 - JSON以外の文字列は含めないでください
@@ -58,14 +57,19 @@ MAX_DELAY = 10.0
 
 
 class LLMService:
-    """LLM推論サービス（Gemini API）."""
+    """LLM推論サービス（Gemini/Groq API）.
+
+    LLM_PROVIDER設定に基づいてAPIを切り替える:
+    - "groq": Groq API (高速、100-300ms)
+    - "gemini": Vertex AI Gemini (FTモデル対応)
+    """
 
     def __init__(self) -> None:
         """初期化.
 
         設定は config.py から LLMClientFactory 経由で取得する。
         """
-        self._model = LLMClientFactory.create_ft_client()
+        self._model = LLMClientFactory.create_client()
 
     async def generate_responses(
         self,
@@ -134,6 +138,52 @@ class LLMService:
 
 上記の情報を踏まえて、ユーザーが相手に返すべき応答候補を2パターン提案してください。"""
 
+    def _normalize_response_data(self, data: dict[str, Any]) -> dict[str, Any]:
+        """FTモデルの応答形式を標準形式に正規化.
+
+        FTモデルは複数の形式で応答を返すため、統一的に処理する:
+        - 標準形式: situation_analysis + responses
+        - FT形式A: advice + options
+        - FT形式B: situation_analysis + advices
+
+        Args:
+            data: パース済みJSONデータ
+
+        Returns:
+            正規化されたデータ（situation_analysis + responsesの形式）
+
+        Raises:
+            KeyError: 必要なキーが見つからない場合
+        """
+        # 1. suggestions配列のキーを検出（優先順位順）
+        suggestions = None
+        for key in ["responses", "options", "advices"]:
+            if key in data:
+                suggestions = data[key]
+                break
+
+        if suggestions is None:
+            raise KeyError("responses/options/advices")
+
+        # 2. situation_analysisのキーを検出
+        analysis = data.get("situation_analysis") or data.get("advice") or ""
+
+        # 3. 配列要素を正規化（文字列→オブジェクト変換）
+        normalized_responses = []
+        for item in suggestions:
+            if isinstance(item, str):
+                text = item.strip("「」")
+                normalized_responses.append({"text": text, "intent": ""})
+            else:
+                text = item.get("text", str(item)).strip("「」")
+                intent = item.get("intent", "")
+                normalized_responses.append({"text": text, "intent": intent})
+
+        return {
+            "situation_analysis": analysis,
+            "responses": normalized_responses,
+        }
+
     def _parse_response(self, raw_response: str) -> LLMResponseResult:
         """LLMのレスポンスをパース.
 
@@ -147,6 +197,7 @@ class LLMService:
             LLMResponseParseError: パースに失敗した場合
         """
         try:
+            # Markdownコードブロックを除去
             cleaned = raw_response.strip()
             if cleaned.startswith("```json"):
                 cleaned = cleaned[7:]
@@ -158,17 +209,15 @@ class LLMService:
 
             data: dict[str, Any] = json.loads(cleaned)
 
-            responses = [
-                ResponseSuggestion(
-                    text=r["text"],
-                    intent=r["intent"],
-                )
-                for r in data["responses"]
-            ]
+            # FTモデルの応答形式を正規化
+            normalized = self._normalize_response_data(data)
 
             return LLMResponseResult(
-                situation_analysis=data["situation_analysis"],
-                responses=responses,
+                situation_analysis=normalized["situation_analysis"],
+                responses=[
+                    ResponseSuggestion(text=r["text"], intent=r["intent"])
+                    for r in normalized["responses"]
+                ],
             )
         except json.JSONDecodeError as e:
             logger.error(f"JSON parse error: {e}, response: {raw_response[:200]}")

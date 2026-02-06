@@ -24,12 +24,10 @@ class LLMResponseResult(BaseModel):
 
     @field_validator("responses")
     @classmethod
-    def validate_different_intents(
+    def validate_response_count(
         cls, v: list[ResponseSuggestion]
     ) -> list[ResponseSuggestion]:
-        """2つの応答が異なる意図であることを検証."""
+        """応答が2パターンであることを検証."""
         if len(v) != 2:
             raise ValueError("応答は必ず2パターン必要です")
-        if v[0].intent == v[1].intent:
-            raise ValueError("2つの応答は異なる意図である必要があります")
         return v
