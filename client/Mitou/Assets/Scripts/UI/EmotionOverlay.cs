@@ -58,11 +58,20 @@ namespace ERA.UI
             gameObject.SetActive(visible);
         }
 
-        private void Awake()
+        /// <summary>
+        /// ランタイムでUI参照を設定する（UIAutoBuilderから呼び出し）。
+        /// </summary>
+        public void Setup(TextMeshProUGUI emotionIconText, float baseIconSize)
+        {
+            _emotionIconText = emotionIconText;
+            _baseIconSize = baseIconSize;
+        }
+
+        private void Start()
         {
             if (_emotionIconText == null)
             {
-                Debug.LogError("[EmotionOverlay] emotionIconText is not assigned in Inspector");
+                Debug.LogError("[EmotionOverlay] emotionIconText is not assigned");
             }
         }
     }

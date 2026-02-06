@@ -39,13 +39,6 @@ namespace ERA.Camera
             ARSession.stateChanged -= OnARSessionStateChanged;
         }
 
-        private void Start()
-        {
-            Debug.Log("[ARCoreCameraPreview] Start() - Auto initializing...");
-            Initialize();
-            StartPreview();
-        }
-
         private void OnARSessionStateChanged(ARSessionStateChangedEventArgs args)
         {
             Debug.Log($"[ARCoreCameraPreview] ARSession state changed: {args.state}");
@@ -96,6 +89,15 @@ namespace ERA.Camera
             if (_autoSetupARComponents)
             {
                 SetupARComponents();
+            }
+
+            // カメラのクリアフラグを透明に設定（AR背景が正しく描画されるようにする）
+            var mainCamera = UnityEngine.Camera.main;
+            if (mainCamera != null)
+            {
+                mainCamera.clearFlags = CameraClearFlags.SolidColor;
+                mainCamera.backgroundColor = new Color(0f, 0f, 0f, 0f);
+                Debug.Log("[ARCoreCameraPreview] Camera clear flags set for AR background");
             }
 
             if (_arSession == null)

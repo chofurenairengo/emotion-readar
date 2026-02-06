@@ -130,16 +130,28 @@ namespace ERA.UI
             }
         }
 
-        private void Awake()
+        /// <summary>
+        /// ランタイムでUI参照を設定する（UIAutoBuilderから呼び出し）。
+        /// </summary>
+        public void Setup(TextMeshProUGUI s1Text, TextMeshProUGUI s2Text,
+                          GameObject s1Container, GameObject s2Container)
+        {
+            _suggestion1Text = s1Text;
+            _suggestion2Text = s2Text;
+            _suggestion1Container = s1Container;
+            _suggestion2Container = s2Container;
+        }
+
+        private void Start()
         {
             if (_suggestion1Text == null)
             {
-                Debug.LogWarning("[SuggestionOverlay] suggestion1Text is not assigned in Inspector");
+                Debug.LogWarning("[SuggestionOverlay] suggestion1Text is not assigned");
             }
 
             if (_suggestion2Text == null)
             {
-                Debug.LogWarning("[SuggestionOverlay] suggestion2Text is not assigned in Inspector");
+                Debug.LogWarning("[SuggestionOverlay] suggestion2Text is not assigned");
             }
         }
     }
