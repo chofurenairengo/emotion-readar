@@ -149,8 +149,6 @@ async def test_parse_response_missing_key(
 
 
 @pytest.mark.asyncio
-
-@pytest.mark.asyncio
 async def test_retry_on_rate_limit(
     sample_context: list[Utterance],
     sample_emotion: EmotionInterpretation,
