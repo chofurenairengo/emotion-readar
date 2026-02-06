@@ -80,10 +80,15 @@ class ResponseGeneratorService:
             )
 
         # 2. STTと並列で実行（即座に完了）
-        emotion_interpretation = self._interpret_emotion(emotion_scores)
-        conversation_context = self._conversation.get_recent_context(
-            session_id, max_turns=10
-        )
+        try:
+            emotion_interpretation = self._interpret_emotion(emotion_scores)
+            conversation_context = self._conversation.get_recent_context(
+                session_id, max_turns=10
+            )
+        except Exception:
+            if stt_task:
+                stt_task.cancel()
+            raise
 
         # 3. STT完了を待機
         transcription: TranscriptionResult | None = None
