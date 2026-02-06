@@ -73,6 +73,15 @@ namespace ERA.Camera
                 // Passthroughを有効化
                 ovrManager.isInsightPassthroughEnabled = true;
                 Debug.Log("[QuestPassthroughPreview] OVRManager Passthrough enabled");
+
+                // カメラの背景を透明に設定（Passthroughが見えるようにする）
+                var mainCamera = UnityEngine.Camera.main;
+                if (mainCamera != null)
+                {
+                    mainCamera.clearFlags = CameraClearFlags.SolidColor;
+                    mainCamera.backgroundColor = new Color(0f, 0f, 0f, 0f);
+                    Debug.Log("[QuestPassthroughPreview] Camera clear flags set for passthrough");
+                }
             }
             else
             {

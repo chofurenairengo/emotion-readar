@@ -12,13 +12,17 @@ pluginManagement {
     }
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
         google()
         mavenCentral()
+        flatDir {
+            dirs("unity-plugin/unityLibrary/libs")
+        }
     }
 }
 
 rootProject.name = "android"
 include(":app")
-include(":unity-plugin")
+include(":unity-plugin:unityLibrary")
+include(":unity-plugin:unityLibrary:xrmanifest.androidlib")

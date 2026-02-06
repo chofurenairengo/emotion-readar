@@ -28,16 +28,12 @@ namespace ERA.UI
 
         private ICameraPreview _cameraPreview;
 
-        private void Awake()
-        {
-            InitializeCamera();
-        }
-
         private void Start()
         {
             ValidateComponents();
             SubscribeToEvents();
             InitializeUI();
+            InitializeCamera();
             StartCamera();
         }
 
@@ -48,9 +44,19 @@ namespace ERA.UI
         }
 
         /// <summary>
-        /// WebSocketClientを設定する（外部から注入する場合）。
+        /// ランタイムでUI参照とカメラターゲットを設定する（UIAutoBuilderから呼び出し）。
         /// </summary>
-        /// <param name="client">WebSocketClientインスタンス</param>
+        public void SetupOverlays(EmotionOverlay emotionOverlay, SuggestionOverlay suggestionOverlay,
+                                   GameObject cameraPreviewTarget = null)
+        {
+            _emotionOverlay = emotionOverlay;
+            _suggestionOverlay = suggestionOverlay;
+            if (cameraPreviewTarget != null)
+            {
+                _cameraPreviewTarget = cameraPreviewTarget;
+            }
+        }
+
         public void SetWebSocketClient(WebSocketClient client)
         {
             UnsubscribeFromEvents();

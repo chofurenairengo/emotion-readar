@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.commuxr.android"
-        minSdk = 26 // MediaPipe + adaptive-icon の要件
+        minSdk = 29 // Unity統合の要件（MediaPipeは26だが、Unityが29を要求）
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -46,6 +46,9 @@ android {
 }
 
 dependencies {
+    implementation(project(":unity-plugin:unityLibrary"))
+    // Unity classes JAR for kapt compatibility
+    implementation(files("../unity-plugin/unityLibrary/libs/unity-classes.jar"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)

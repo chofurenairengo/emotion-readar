@@ -2,9 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.era.mitou">
 
-    <!-- Quest 3必須機能 -->
-    <uses-feature android:name="android.hardware.vr.headtracking" android:required="true" />
+    <!-- カメラパーミッション（ARCore必須） -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Quest 3機能（オプション） -->
+    <uses-feature android:name="android.hardware.vr.headtracking" android:required="false" />
     <uses-feature android:name="com.oculus.feature.PASSTHROUGH" android:required="false" />
+
+    <!-- ARCore機能（オプション） -->
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false" />
 
     <!-- VR専用アプリとしてマーク -->
     <application android:requestLegacyExternalStorage="true">
@@ -23,5 +29,8 @@
         </activity>
         <meta-data android:name="com.oculus.supportedDevices" android:value="quest3" />
         <meta-data android:name="com.oculus.vr.focusaware" android:value="true" />
+
+        <!-- ARCore メタデータ（optional = 非対応端末でも動作可） -->
+        <meta-data android:name="com.google.ar.core" android:value="optional" />
     </application>
 </manifest>

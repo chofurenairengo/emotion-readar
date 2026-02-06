@@ -17,3 +17,6 @@ local.properties
 # 追加分
 .DS_Store
 *.apk
+
+# Unity export output (regenerated on each export)
+unity-plugin/
