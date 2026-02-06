@@ -72,9 +72,17 @@ class LLMClientFactory:
 
         LLM_PROVIDER設定に基づいて適切なクライアントを返す:
         - "groq": Groq API (高速)
-        - "gemini": Vertex AI Gemini (FTモデル対応)
+        - "gemini" or "": Vertex AI Gemini (FTモデル対応)
+
+        Raises:
+            ValueError: 未知のLLM_PROVIDERが指定された場合
         """
         settings = get_settings()
         if settings.LLM_PROVIDER == "groq":
             return LLMClientFactory.create_groq_client()
-        return LLMClientFactory.create_ft_client()
+        if settings.LLM_PROVIDER in ("", "gemini"):
+            return LLMClientFactory.create_ft_client()
+        raise ValueError(
+            f"Unknown LLM_PROVIDER: '{settings.LLM_PROVIDER}'. "
+            "Must be 'gemini' or 'groq'."
+        )

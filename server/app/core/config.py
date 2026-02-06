@@ -1,3 +1,4 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +21,33 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = ""  # "gemini" or "groq"
     GROQ_API_KEY: str = ""  # Groq APIキー（LLM_PROVIDER=groq時に必須）
     GROQ_MODEL: str = ""  # Groqモデル名
+
+    @model_validator(mode="after")
+    def validate_ft_model_id(self) -> "Settings":
+        """LLM_PROVIDERがgeminiまたは未設定の場合、FT_MODEL_IDが必須."""
+        if self.LLM_PROVIDER in ("", "gemini") and not self.FT_MODEL_ID:
+            raise ValueError(
+                "FT_MODEL_ID must be set when LLM_PROVIDER is "
+                f"'{self.LLM_PROVIDER}' (gemini). "
+                "Set FT_MODEL_ID in .env or set LLM_PROVIDER='groq' "
+                "to use Groq instead."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_groq_settings(self) -> "Settings":
+        """LLM_PROVIDER='groq'の場合、GROQ_API_KEYとGROQ_MODELが必須."""
+        if self.LLM_PROVIDER == "groq":
+            missing: list[str] = []
+            if not self.GROQ_API_KEY.strip():
+                missing.append("GROQ_API_KEY")
+            if not self.GROQ_MODEL.strip():
+                missing.append("GROQ_MODEL")
+            if missing:
+                raise ValueError(
+                    f"LLM_PROVIDER='groq' requires: {', '.join(missing)}"
+                )
+        return self
 
     # 任意項目
     ENV_STATE: str = "dev"

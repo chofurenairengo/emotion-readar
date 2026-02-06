@@ -53,7 +53,7 @@ async def _check_model_reachable() -> bool:
 
     # キャッシュがないか期限切れの場合、実際にチェック
     try:
-        client = LLMClientFactory.create_ft_client()
+        client = LLMClientFactory.create_client()
         response = await asyncio.wait_for(
             client.ainvoke([HumanMessage(content="ping")]),
             timeout=_REACHABILITY_TIMEOUT_SECONDS,
