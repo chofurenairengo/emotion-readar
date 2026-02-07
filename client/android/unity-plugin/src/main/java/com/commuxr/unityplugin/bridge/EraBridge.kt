@@ -59,16 +59,23 @@ object EraBridge {
 
     @JvmStatic
     fun start(sessionId: String, wsHost: String) {
-        start(sessionId, wsHost, CAMERA_MODE_INTERNAL)
+        start(sessionId, wsHost, CAMERA_MODE_INTERNAL, "")
+    }
+
+    @JvmStatic
+    fun start(sessionId: String, wsHost: String, cameraMode: String) {
+        start(sessionId, wsHost, cameraMode, "")
     }
 
     /**
      * cameraMode:
      * - "internal": 端末内蔵CameraXを利用
      * - "external": 内蔵カメラを使わず、submitExternalEmotionScores()からの入力のみ利用
+     * token:
+     * - Firebase ID Token（DEV_AUTH_BYPASS=false環境で必須）
      */
     @JvmStatic
-    fun start(sessionId: String, wsHost: String, cameraMode: String) {
+    fun start(sessionId: String, wsHost: String, cameraMode: String, token: String) {
         synchronized(lock) {
             if (running.get()) {
                 Log.w(TAG, "Already running")
@@ -95,6 +102,10 @@ object EraBridge {
                 if (!hasCameraPermission(activity)) {
                     Log.e(TAG, "CAMERA permission is missing")
                     sendBridgeMessage("ERROR", "CAMERA permission missing")
+                    try { wsClient.close() } catch (t: Throwable) { Log.w(TAG, "cleanup error", t) }
+                    bridgeScope.cancel()
+                    webSocketClient = null
+                    scope = null
                     return
                 }
 
@@ -142,7 +153,7 @@ object EraBridge {
                 }
             }
 
-            wsClient.connect(sessionId)
+            wsClient.connect(sessionId, token)
             running.set(true)
             sendBridgeMessage("INFO", "EraBridge started")
             Log.i(TAG, "Started. sessionId=$sessionId host=$normalizedHost cameraMode=$normalizedCameraMode")
@@ -271,6 +282,9 @@ object EraBridge {
 
     private fun sendBridgeMessage(type: String, message: String) {
         val sender = callbackSender ?: UnityMessageSender(DEFAULT_UNITY_OBJECT, DEFAULT_UNITY_METHOD)
-        sender.send("{\"type\":\"$type\",\"message\":\"$message\"}")
+        val payload = JSONObject()
+            .put("type", type)
+            .put("message", message)
+        sender.send(payload.toString())
     }
 }

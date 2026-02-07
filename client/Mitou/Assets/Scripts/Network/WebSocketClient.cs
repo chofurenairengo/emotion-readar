@@ -40,6 +40,9 @@ namespace ERA.Network
         /// <summary>現在のセッションID。</summary>
         public string SessionId { get; private set; } = string.Empty;
 
+        /// <summary>認証トークン。</summary>
+        public string Token { get; private set; } = string.Empty;
+
         /// <summary>接続先WebSocketホスト。</summary>
         public string ServerHost => _serverHost;
 
@@ -114,7 +117,8 @@ namespace ERA.Network
         /// WebSocket接続を開始する。
         /// </summary>
         /// <param name="sessionId">セッションID。</param>
-        public async Task Connect(string sessionId)
+        /// <param name="token">Firebase ID Token（DEV_AUTH_BYPASS=false環境で必須）。</param>
+        public async Task Connect(string sessionId, string token = "")
         {
             if (_state == ConnectionState.Connected || _state == ConnectionState.Connecting)
             {
@@ -123,6 +127,7 @@ namespace ERA.Network
             }
 
             SessionId = sessionId;
+            Token = token;
             _currentRetryCount = 0;
             _currentRetryDelay = _initialRetryDelaySeconds;
 
@@ -213,7 +218,7 @@ namespace ERA.Network
                 SetState(ConnectionState.Connecting);
             }
 
-            string url = $"{_serverHost}/api/realtime?session_id={SessionId}";
+            string url = $"{_serverHost}/api/realtime?session_id={SessionId}&token={Token}";
             _ws = new WebSocket(url);
 
             _ws.OnOpen += HandleOpen;

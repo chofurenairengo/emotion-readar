@@ -16,6 +16,8 @@ namespace ERA.Test
     {
         [SerializeField] private WebSocketClient _webSocketClient;
         [SerializeField] private string _testSessionId = "test-session-001";
+        [Header("認証")]
+        [SerializeField] private string _token = "";
         [Header("Native Bridge (Android)")]
         [SerializeField] private bool _useNativeBridge = true;
         [SerializeField] private bool _useExternalCameraOnly = true;
@@ -45,7 +47,7 @@ namespace ERA.Test
             _webSocketClient.OnError += OnError;
 
             StartNativeBridge();
-            await _webSocketClient.Connect(_testSessionId);
+            await _webSocketClient.Connect(_testSessionId, _token);
         }
 
         private void OnDestroy()
@@ -164,7 +166,7 @@ namespace ERA.Test
                 {
                     bridge.CallStatic("setUnityReceiver", gameObject.name, nameof(OnBridgeMessage));
                     var cameraMode = _useExternalCameraOnly ? "external" : "internal";
-                    bridge.CallStatic("start", _testSessionId, host, cameraMode);
+                    bridge.CallStatic("start", _testSessionId, host, cameraMode, _token);
                 }
                 Debug.Log($"[WebSocketConnectionTest] EraBridge started: session={_testSessionId}, host={host}, externalOnly={_useExternalCameraOnly}");
             }

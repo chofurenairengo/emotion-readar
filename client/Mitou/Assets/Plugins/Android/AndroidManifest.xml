@@ -13,9 +13,7 @@
     <!-- VR専用アプリとしてマーク -->
     <application
         android:requestLegacyExternalStorage="true"
-        android:usesCleartextTraffic="true"
-        android:networkSecurityConfig="@xml/unity_plugin_network_security_config"
-        tools:replace="android:networkSecurityConfig,android:usesCleartextTraffic">
+        android:networkSecurityConfig="@xml/network_security_config">
         <activity
             android:name="com.unity3d.player.UnityPlayerActivity"
             android:exported="true"

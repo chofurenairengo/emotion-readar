@@ -44,11 +44,15 @@ class WebSocketClient(
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
 ) : Closeable {
 
+    @Volatile
     private var webSocket: WebSocket? = null
     private var currentSessionId: String? = null
+    private var currentToken: String? = null
     private var heartbeatJob: Job? = null
     private var reconnectJob: Job? = null
+    @Volatile
     private var lastPongReceivedAt: Long = 0
+    @Volatile
     private var reconnectAttempt = 0
 
     private val _connectionState = MutableStateFlow<ConnectionState>(ConnectionState.Disconnected)
@@ -67,7 +71,7 @@ class WebSocketClient(
             .build()
     }
 
-    fun connect(sessionId: String) {
+    fun connect(sessionId: String, token: String = "") {
         if (_connectionState.value is ConnectionState.Connected ||
             _connectionState.value is ConnectionState.Connecting) {
             Log.w(TAG, "Already connected or connecting")
@@ -75,6 +79,7 @@ class WebSocketClient(
         }
 
         currentSessionId = sessionId
+        currentToken = token
         reconnectAttempt = 0
         attemptConnect()
     }
@@ -133,7 +138,8 @@ class WebSocketClient(
         _connectionState.value = ConnectionState.Connecting
 
         val normalized = normalizeBaseUrl(baseUrl)
-        val url = "${normalized}api/realtime?session_id=$sessionId"
+        val token = currentToken.orEmpty()
+        val url = "${normalized}api/realtime?session_id=$sessionId&token=$token"
         Log.d(TAG, "Attempting WebSocket connection: $url")
 
         val request = Request.Builder().url(url).build()
