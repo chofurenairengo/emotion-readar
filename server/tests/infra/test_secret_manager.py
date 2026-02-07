@@ -86,7 +86,7 @@ class TestGetSecret:
             {"USE_SECRET_MANAGER": "false", "ENV_STATE": "prod"},
             clear=True,
         ):
-            with pytest.raises(ValueError, match="Secret 'MISSING_SECRET' not found"):
+            with pytest.raises(ValueError, match=r"Secret 'MISS\*\*\*\*' not found"):
                 get_secret("MISSING_SECRET")
 
     @patch("app.infra.secret_manager._fetch_from_secret_manager")

@@ -36,7 +36,7 @@ async def test_check_model_reachable_cache() -> None:
     health_service._model_reachable_cache = None
 
     with patch(
-        "app.infra.external.gemini_client.LLMClientFactory.create_ft_client"
+        "app.infra.external.gemini_client.LLMClientFactory.create_client"
     ) as mock_factory:
         mock_client = AsyncMock()
         mock_client.ainvoke = AsyncMock(return_value=AsyncMock(content="pong"))
@@ -68,7 +68,7 @@ async def test_check_model_reachable_cache_expiry() -> None:
         return mock_response
 
     with patch(
-        "app.infra.external.gemini_client.LLMClientFactory.create_ft_client"
+        "app.infra.external.gemini_client.LLMClientFactory.create_client"
     ) as mock_factory:
         mock_client = AsyncMock()
         mock_client.ainvoke = mock_ainvoke
@@ -97,7 +97,7 @@ async def test_check_model_reachable_disabled() -> None:
     # キャッシュをクリア
     health_service._model_reachable_cache = None
 
-    with patch("app.core.config.get_settings") as mock_settings:
+    with patch("app.services.health_service.get_settings") as mock_settings:
         mock_config = Mock()
         mock_config.HEALTH_CHECK_MODEL_ENABLED = False
         mock_settings.return_value = mock_config
@@ -114,7 +114,7 @@ async def test_check_model_reachable_failure_cached() -> None:
     health_service._model_reachable_cache = None
 
     with patch(
-        "app.infra.external.gemini_client.LLMClientFactory.create_ft_client"
+        "app.infra.external.gemini_client.LLMClientFactory.create_client"
     ) as mock_factory:
         # 例外を発生させる
         mock_factory.side_effect = Exception("Connection failed")

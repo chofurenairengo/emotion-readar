@@ -66,4 +66,27 @@ namespace ERA.Network
         [JsonProperty("type")]
         public string Type = "RESET";
     }
+
+    /// <summary>
+    /// ANALYSIS_REQUESTメッセージ（クライアント → サーバー）。
+    /// </summary>
+    [Serializable]
+    public class AnalysisRequestMessage
+    {
+        [JsonProperty("type")]
+        public string Type = "ANALYSIS_REQUEST";
+
+        [JsonProperty("session_id")]
+        public string SessionId = string.Empty;
+
+        [JsonProperty("emotion_scores")]
+        public System.Collections.Generic.Dictionary<string, float> EmotionScores =
+            new System.Collections.Generic.Dictionary<string, float>();
+
+        [JsonProperty("audio_data", NullValueHandling = NullValueHandling.Ignore)]
+        public string AudioData = null;
+
+        [JsonProperty("audio_format", NullValueHandling = NullValueHandling.Ignore)]
+        public string AudioFormat = null;
+    }
 }

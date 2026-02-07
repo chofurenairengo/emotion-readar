@@ -166,6 +166,39 @@ namespace ERA.Network
             await SendMessage(message);
         }
 
+        /// <summary>
+        /// ANALYSIS_REQUESTメッセージを送信する。
+        /// </summary>
+        /// <param name="emotionScores">感情スコア（例: {"happy": 0.8, "neutral": 0.2}）</param>
+        /// <param name="audioData">Base64エンコード済み音声データ（オプション）</param>
+        /// <param name="audioFormat">音声フォーマット（オプション、例: "wav"）</param>
+        public async Task SendAnalysisRequest(
+            Dictionary<string, float> emotionScores,
+            string audioData = null,
+            string audioFormat = null)
+        {
+            if (_state != ConnectionState.Connected)
+            {
+                Debug.LogWarning("[WebSocketClient] Not connected, cannot send ANALYSIS_REQUEST");
+                return;
+            }
+
+            if (emotionScores == null || emotionScores.Count == 0)
+            {
+                Debug.LogWarning("[WebSocketClient] emotionScores is null or empty, skip ANALYSIS_REQUEST");
+                return;
+            }
+
+            var message = new AnalysisRequestMessage
+            {
+                SessionId = SessionId,
+                EmotionScores = emotionScores,
+                AudioData = audioData,
+                AudioFormat = audioFormat,
+            };
+            await SendMessage(message);
+        }
+
         #endregion
 
         #region Private Methods - Connection
