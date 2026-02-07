@@ -6,6 +6,7 @@ namespace ERA.Test
     /// <summary>
     /// WebSocket接続のテスト用スクリプト。
     /// GameObjectにアタッチしてPlay時に自動接続する。
+    /// ANALYSIS_RESPONSEの受信ログも出力する。
     /// </summary>
     public class WebSocketConnectionTest : MonoBehaviour
     {
@@ -22,12 +23,10 @@ namespace ERA.Test
 
             Debug.Log($"[WebSocketConnectionTest] Connecting with session: {_testSessionId}");
 
-            // 接続状態変更のイベント購読
             _webSocketClient.OnStateChanged += OnStateChanged;
             _webSocketClient.OnAnalysisResponse += OnAnalysisResponse;
             _webSocketClient.OnError += OnError;
 
-            // 接続開始
             await _webSocketClient.Connect(_testSessionId);
         }
 
@@ -51,6 +50,14 @@ namespace ERA.Test
             Debug.Log($"[WebSocketConnectionTest] Received AnalysisResponse: " +
                 $"emotion={response?.Emotion?.PrimaryEmotion}, " +
                 $"suggestions={response?.Suggestions?.Length ?? 0}");
+
+            if (response?.Suggestions != null)
+            {
+                for (int i = 0; i < response.Suggestions.Length; i++)
+                {
+                    Debug.Log($"  Suggestion[{i}]: {response.Suggestions[i]?.Text}");
+                }
+            }
         }
 
         private void OnError(ErrorMessage error)

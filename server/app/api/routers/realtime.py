@@ -13,6 +13,7 @@ from app.api.dependencies import (
     get_response_generator,
     get_session_service,
 )
+from app.core.config import get_settings
 from app.dto.audio import AudioFormat
 from app.services.connection_manager import ConnectionManager
 
@@ -39,11 +40,13 @@ def _error_payload(message: str, detail: Any | None = None) -> dict[str, Any]:
 async def realtime(
     websocket: WebSocket,
     session_id: str = Query(...),
-    token: str = Query(...),
+    token: str = Query(""),
     connection_manager: ConnectionManager = Depends(get_connection_manager),
 ) -> None:
     # 先に accept() を実行
     await websocket.accept()
+
+    settings = get_settings()
 
     # トークン検証
     try:
@@ -52,17 +55,19 @@ async def realtime(
         await websocket.close(code=4001, reason=str(exc))
         return
 
-    # セッション所有者検証
-    session_service = get_session_service()
-    session = session_service.get_session(session_id)
-    if session is None:
-        await websocket.close(code=4004, reason="Session not found")
-        return
-    if session.owner_id != user_info["uid"]:
-        await websocket.close(
-            code=4003, reason="You don't have permission to access this session"
-        )
-        return
+    # セッション所有者検証（DEV_AUTH_BYPASS時はスキップ）
+    if not settings.DEV_AUTH_BYPASS:
+        session_service = get_session_service()
+        session = session_service.get_session(session_id)
+        if session is None:
+            await websocket.close(code=4004, reason="Session not found")
+            return
+        if session.owner_id != user_info["uid"]:
+            await websocket.close(
+                code=4003,
+                reason="You don't have permission to access this session",
+            )
+            return
 
     await connection_manager.register(websocket, session_id)
     try:
@@ -101,7 +106,9 @@ async def realtime(
                 continue
 
             if message_type == "ANALYSIS_REQUEST":
-                await _handle_analysis_request(websocket, data)
+                await _handle_analysis_request(
+                    websocket, data, connection_manager, session_id
+                )
     except WebSocketDisconnect:
         await connection_manager.disconnect(websocket)
 
@@ -109,12 +116,18 @@ async def realtime(
 async def _handle_analysis_request(
     websocket: WebSocket,
     message: dict[str, Any],
+    connection_manager: ConnectionManager,
+    ws_session_id: str,
 ) -> None:
     """ANALYSIS_REQUESTの処理.
 
+    同じセッションの全WebSocket接続（Android/Unity両方）にレスポンスを配信する。
+
     Args:
-        websocket: WebSocket接続
+        websocket: WebSocket接続（リクエスト元）
         message: 受信したメッセージ
+        connection_manager: セッション内の全接続を管理
+        ws_session_id: WebSocket接続時のセッションID
     """
     # 必須フィールドのバリデーション
     session_id = message.get("session_id")
@@ -156,8 +169,10 @@ async def _handle_analysis_request(
             audio_format=audio_format,
         )
 
-        # レスポンス送信
-        await websocket.send_json(result.model_dump(mode="json"))
+        # セッション内の全接続にレスポンスを配信
+        await connection_manager.send_to_session(
+            ws_session_id, result.model_dump(mode="json")
+        )
 
     except NotImplementedError as e:
         logger.error("ResponseGeneratorService not implemented: %s", e)
