@@ -43,6 +43,14 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.8"
     }
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/LICENSE.md",
+                "META-INF/LICENSE-notice.md",
+            )
+        }
+    }
 }
 
 dependencies {

@@ -66,14 +66,15 @@ class EmotionToServerIntegrationTest {
 
     @Test
     fun cameraEmotionScoresAreSentAsValidAnalysisRequest() {
-        // 1. テスト画像をassetsから読み込み
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val bitmap = context.assets.open(TEST_IMAGE).use { inputStream ->
+        // 1. テスト画像をandroidTest/assetsから読み込み（テストAPKのコンテキストを使用）
+        val testContext = InstrumentationRegistry.getInstrumentation().context
+        val appContext = InstrumentationRegistry.getInstrumentation().targetContext
+        val bitmap = testContext.assets.open(TEST_IMAGE).use { inputStream ->
             BitmapFactory.decodeStream(inputStream)
         }
         assertNotNull("テスト画像の読み込みに失敗", bitmap)
 
-        // 2. MediaPipe FaceLandmarkerをIMAGEモードで初期化
+        // 2. MediaPipe FaceLandmarkerをIMAGEモードで初期化（モデルはアプリのassetsから）
         val options = FaceLandmarker.FaceLandmarkerOptions.builder()
             .setBaseOptions(
                 BaseOptions.builder()
@@ -85,7 +86,7 @@ class EmotionToServerIntegrationTest {
             .setOutputFaceBlendshapes(true)
             .build()
 
-        faceLandmarker = FaceLandmarker.createFromOptions(context, options)
+        faceLandmarker = FaceLandmarker.createFromOptions(appContext, options)
 
         // 3. 画像から顔検出 → blendshapes取得
         val mpImage = BitmapImageBuilder(bitmap).build()
