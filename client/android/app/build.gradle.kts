@@ -1,9 +1,19 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt.android.gradle)
 }
+
+// local.properties から SERVER_URL を読み込み
+val localProps = Properties()
+val localPropsFile = rootProject.file("local.properties")
+if (localPropsFile.exists()) {
+    localProps.load(localPropsFile.inputStream())
+}
+val serverUrl: String = localProps.getProperty("server.url", "http://10.0.2.2:8000/")
 
 android {
     namespace = "com.commuxr.android"
@@ -18,6 +28,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SERVER_URL", "\"$serverUrl\"")
     }
 
     buildTypes {

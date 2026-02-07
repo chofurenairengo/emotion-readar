@@ -1,5 +1,6 @@
 package com.commuxr.android.data.api
 
+import com.commuxr.android.BuildConfig
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import okhttp3.OkHttpClient
@@ -12,7 +13,7 @@ import java.util.concurrent.TimeUnit
  * API クライアントの設定と提供を行うシングルトンオブジェクト
  */
 object ApiClient {
-    private const val DEFAULT_BASE_URL = "http://10.0.2.2:8000/"  // Android Emulator localhost
+    private val DEFAULT_BASE_URL: String = BuildConfig.SERVER_URL
     private const val CONNECT_TIMEOUT_SECONDS = 30L
     private const val READ_TIMEOUT_SECONDS = 30L
     private const val WRITE_TIMEOUT_SECONDS = 30L

@@ -1,6 +1,7 @@
 package com.commuxr.android.data.websocket
 
 import android.util.Log
+import com.commuxr.android.BuildConfig
 import com.commuxr.android.data.api.ApiClient
 import com.commuxr.android.data.dto.*
 import com.squareup.moshi.JsonAdapter
@@ -66,7 +67,9 @@ class WebSocketClient(
         private const val PING_INTERVAL_MS = 30_000L
 
         private fun getWsBaseUrl(): String {
-            return "ws://server/"
+            return BuildConfig.SERVER_URL
+                .replace("https://", "wss://")
+                .replace("http://", "ws://")
         }
     }
 
