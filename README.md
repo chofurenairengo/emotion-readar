@@ -143,11 +143,12 @@ GCP_PROJECT_ID=your-project-id
 # Firebase/Firestore
 FIRESTORE_EMULATOR_HOST=localhost:8080  # ローカル開発時
 
-# 認証
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+# GCP認証（ADC: Application Default Credentials）
+# ローカル: gcloud auth application-default login
+# Cloud Run: サービスアカウントから自動取得（設定不要）
 
-# Gemini API (Vertex AI) - JSON keyで認証
-GEMINI_MODEL=tunedModels/your-finetuned-model-id
+# Gemini API (Vertex AI)
+FT_MODEL_ID=your-finetuned-model-id
 ```
 
 ## データ・プライバシー方針

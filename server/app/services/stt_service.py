@@ -1,9 +1,12 @@
 """音声認識（STT）サービス - Google Cloud Speech-to-Text."""
 
+from __future__ import annotations
+
 import io
 import logging
 import wave
 
+from google.auth.credentials import Credentials
 from google.cloud import speech
 
 from app.core.exceptions import STTError
@@ -15,15 +18,15 @@ logger = logging.getLogger(__name__)
 class STTService:
     """音声認識サービス（Google Cloud Speech-to-Text使用）."""
 
-    def __init__(self) -> None:
+    def __init__(self, credentials: Credentials | None = None) -> None:
         """
         初期化.
 
-        環境変数 GOOGLE_APPLICATION_CREDENTIALS に認証情報のパスを設定するか、
-        Google Cloud SDKでログイン済みである必要があります。
+        Args:
+            credentials: GCP認証情報。Noneの場合はADCが自動検出される。
         """
         try:
-            self._client = speech.SpeechClient()
+            self._client = speech.SpeechClient(credentials=credentials)
         except Exception as e:
             raise STTError(f"Failed to initialize Speech-to-Text client: {e}") from e
 

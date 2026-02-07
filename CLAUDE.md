@@ -52,6 +52,21 @@ uv sync
 uv sync --group dev
 ```
 
+### GCP認証（ADC）
+
+全GCPサービス（STT、Vertex AI、Firebase等）の認証はADC（Application Default Credentials）で統一されています。
+
+```bash
+# ローカル開発・Docker開発の両方で事前に実行が必要
+gcloud auth application-default login
+```
+
+| 環境 | 認証方式 |
+|------|---------|
+| ローカル直接実行 | `gcloud auth application-default login` のキャッシュ |
+| Docker | ホストのADCキャッシュファイルを自動マウント |
+| Cloud Run | アタッチされたサービスアカウントから自動取得 |
+
 ### ローカルサーバー起動
 
 ```bash
@@ -240,6 +255,7 @@ GitHub Actions で以下を自動実行（`main` ブランチへの push/PR時�
 ## 環境変数・シークレット
 
 - `.env` ファイルでローカル設定（Git 管理外）
+- GCP認証はADCで一括管理（JSONキーファイル不要）
 - 本番は Google Cloud Secret Manager 使用
 - **絶対にコミットしないもの**: APIキー、認証情報、`.env` ファイル
 
@@ -249,6 +265,7 @@ GitHub Actions で以下を自動実行（`main` ブランチへの push/PR時�
 GCP_PROJECT_ID=your-project-id
 FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
 FIRESTORE_PROJECT_ID=dev-project
+GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/adc.json  # ADCキャッシュ（自動マウント）
 ```
 
 ## ローカルサービス

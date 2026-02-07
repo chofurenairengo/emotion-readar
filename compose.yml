@@ -14,14 +14,12 @@ services:
       - FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
       - FIRESTORE_PROJECT_ID=${FIRESTORE_PROJECT_ID:-dev-project}
       - DEV_AUTH_BYPASS=${DEV_AUTH_BYPASS:-true}
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
-      - VERTEX_CREDENTIALS_PATH=/app/vertex-credentials.json
+      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/keys/adc.json
     depends_on:
       - firestore-emulator
     volumes:
       - ./server/app:/app/app:rw
-      - ./gcpallapis-credentials.key.json:/app/credentials.json:ro
-      - ./vertex.key.json:/app/vertex-credentials.json:ro
+      - ${HOME}/.config/gcloud/application_default_credentials.json:/tmp/keys/adc.json:ro
     working_dir: /app
     command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 

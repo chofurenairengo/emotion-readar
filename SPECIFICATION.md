@@ -397,7 +397,7 @@ server/
 | `RATE_LIMIT_DEFAULT`             | int | `100`             | デフォルトレート制限（req/min）    |
 | `RATE_LIMIT_WINDOW_SECONDS`      | int | `60`              | レート制限ウィンドウ（秒）         |
 | `FIRESTORE_EMULATOR_HOST`        | str | -                 | ローカル開発時のエミュレータホスト |
-| `GOOGLE_APPLICATION_CREDENTIALS` | str | -                 | サービスアカウントキーパス         |
+| `GOOGLE_APPLICATION_CREDENTIALS` | str | -                 | ADCキーパス（通常は自動検出、設定不要） |
 
 ### 6.3 例外階層
 
@@ -1396,9 +1396,9 @@ FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
 FIRESTORE_PROJECT_ID=dev-project
 ENV_STATE=dev
 
-# GCP認証
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-# または: gcloud auth application-default login
+# GCP認証（ADC）
+# ローカル: gcloud auth application-default login
+# Cloud Run: サービスアカウントから自動取得（設定不要）
 ```
 
 ### 16.4 Android開発

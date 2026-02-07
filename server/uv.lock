@@ -39,6 +39,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "firebase-admin" },
+    { name = "google-auth" },
     { name = "google-cloud-secret-manager" },
     { name = "google-cloud-speech" },
     { name = "langchain-core" },
@@ -63,6 +64,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.128.0" },
     { name = "firebase-admin", specifier = ">=6.6.0" },
+    { name = "google-auth", specifier = ">=2.0.0" },
     { name = "google-cloud-secret-manager", specifier = ">=2.21.0" },
     { name = "google-cloud-speech", specifier = ">=2.29.0" },
     { name = "langchain-core", specifier = ">=1.2.6" },
