@@ -40,7 +40,7 @@ def _error_payload(message: str, detail: Any | None = None) -> dict[str, Any]:
 async def realtime(
     websocket: WebSocket,
     session_id: str = Query(...),
-    token: str = Query(""),
+    token: str | None = Query(None),
     connection_manager: ConnectionManager = Depends(get_connection_manager),
 ) -> None:
     # 先に accept() を実行
@@ -48,9 +48,13 @@ async def realtime(
 
     settings = get_settings()
 
-    # トークン検証
+    # 認証トークン検証（本番は必須、DEV_AUTH_BYPASS時のみ省略可）
+    if not settings.DEV_AUTH_BYPASS and not token:
+        await websocket.close(code=4001, reason="Missing authentication token")
+        return
+
     try:
-        user_info = verify_websocket_token(token)
+        user_info = verify_websocket_token(token or "")
     except ValueError as exc:
         await websocket.close(code=4001, reason=str(exc))
         return
