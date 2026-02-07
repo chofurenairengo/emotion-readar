@@ -175,7 +175,7 @@ async def _handle_analysis_request(
 
         # セッション内の全接続にレスポンスを配信
         await connection_manager.send_to_session(
-            ws_session_id, result.model_dump(mode="json")
+            session_id, result.model_dump(mode="json")
         )
 
     except NotImplementedError as e:

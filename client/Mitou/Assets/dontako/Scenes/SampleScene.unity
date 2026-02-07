@@ -265,7 +265,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 27619e85b542d4f40a3672180908dae2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _serverHost: ws://172.21.249.46:8000
+  # NOTE: 開発時の接続先は Unity Inspector で各自設定すること
+  _serverHost: ws://localhost:8000
   _pingIntervalSeconds: 30
   _pongTimeoutSeconds: 10
   _maxRetryCount: 5
