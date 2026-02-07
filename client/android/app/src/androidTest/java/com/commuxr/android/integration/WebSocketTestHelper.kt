@@ -5,7 +5,10 @@ import com.commuxr.android.data.websocket.WebSocketClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeout
+import okhttp3.OkHttpClient
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
@@ -27,6 +30,7 @@ class WebSocketTestHelper {
     private val receivedMessages = LinkedBlockingQueue<String>()
     private var serverWebSocket: WebSocket? = null
     private val connectionLatch = CountDownLatch(1)
+    private var clientScope: CoroutineScope? = null
 
     /**
      * MockWebServerを起動し、WebSocket URLを返す
@@ -49,9 +53,12 @@ class WebSocketTestHelper {
             }
         }
 
-        mockWebServer.enqueue(
-            MockResponse().withWebSocketUpgrade(webSocketListener)
-        )
+        // 再接続に対応するためWebSocketアップグレードレスポンスを複数エンキュー
+        repeat(3) {
+            mockWebServer.enqueue(
+                MockResponse().withWebSocketUpgrade(webSocketListener)
+            )
+        }
 
         mockWebServer.start()
         val port = mockWebServer.port
@@ -66,7 +73,12 @@ class WebSocketTestHelper {
      */
     fun createWebSocketClient(baseUrl: String): WebSocketClient {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-        return WebSocketClient(baseUrl = baseUrl, scope = scope)
+        clientScope = scope
+        val httpClient = OkHttpClient.Builder()
+            .connectTimeout(5, TimeUnit.SECONDS)
+            .readTimeout(5, TimeUnit.SECONDS)
+            .build()
+        return WebSocketClient(baseUrl = baseUrl, scope = scope, httpClient = httpClient)
     }
 
     /**
@@ -83,17 +95,16 @@ class WebSocketTestHelper {
     ) {
         client.connect(sessionId)
 
+        // connectionStateがConnectedになるまで待つ（first{}は条件を満たしたら即リターン）
         withTimeout(timeoutMs) {
-            // connectionStateがConnectedになるまで待つ
-            client.connectionState.collect { state ->
-                if (state is ConnectionState.Connected) {
-                    return@collect
-                }
+            client.connectionState.first { state ->
+                state is ConnectionState.Connected
             }
         }
 
         // MockServer側でもWebSocket接続完了を待つ
-        connectionLatch.await(timeoutMs, TimeUnit.MILLISECONDS)
+        val connected = connectionLatch.await(timeoutMs, TimeUnit.MILLISECONDS)
+        require(connected) { "MockWebServer failed to receive WebSocket connection within ${timeoutMs}ms" }
     }
 
     /**
@@ -104,6 +115,23 @@ class WebSocketTestHelper {
      */
     fun awaitMessage(timeoutMs: Long = 5_000): String? {
         return receivedMessages.poll(timeoutMs, TimeUnit.MILLISECONDS)
+    }
+
+    /**
+     * 受信メッセージからANALYSIS_REQUESTを探す（PINGなどをスキップ）
+     *
+     * @param maxAttempts 最大リトライ回数
+     * @param timeoutMs 1メッセージあたりのタイムアウト
+     * @return ANALYSIS_REQUESTのJSON文字列、見つからない場合はnull
+     */
+    fun awaitAnalysisRequest(maxAttempts: Int = 10, timeoutMs: Long = 3_000): String? {
+        repeat(maxAttempts) {
+            val msg = awaitMessage(timeoutMs) ?: return null
+            if (msg.contains("ANALYSIS_REQUEST")) {
+                return msg
+            }
+        }
+        return null
     }
 
     /**
@@ -119,5 +147,7 @@ class WebSocketTestHelper {
     fun stop() {
         serverWebSocket?.close(1000, "Test complete")
         mockWebServer.shutdown()
+        clientScope?.cancel()
+        clientScope = null
     }
 }

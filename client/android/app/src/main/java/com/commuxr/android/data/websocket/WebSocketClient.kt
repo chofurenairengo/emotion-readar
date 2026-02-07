@@ -26,7 +26,8 @@ import java.util.concurrent.TimeUnit
  */
 class WebSocketClient(
     private val baseUrl: String = getWsBaseUrl(),
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+    private val httpClient: OkHttpClient? = null
 ) : Closeable {
 
     private var webSocket: WebSocket? = null
@@ -49,7 +50,7 @@ class WebSocketClient(
     }
 
     private val okHttpClient: OkHttpClient by lazy {
-        ApiClient.okHttpClient.newBuilder()
+        (httpClient ?: ApiClient.okHttpClient).newBuilder()
             .pingInterval(PING_INTERVAL_MS, TimeUnit.MILLISECONDS)
             .build()
     }

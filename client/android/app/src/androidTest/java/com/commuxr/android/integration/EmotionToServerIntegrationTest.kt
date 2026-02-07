@@ -2,7 +2,9 @@ package com.commuxr.android.integration
 
 import android.graphics.BitmapFactory
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
+import com.commuxr.android.data.websocket.WebSocketClient
 import com.commuxr.android.feature.vision.EmotionScoreCalculator
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.core.BaseOptions
@@ -29,10 +31,14 @@ import org.junit.runner.RunWith
  *
  * 前提: app/src/androidTest/assets/test_face_happy.jpg にテスト用顔画像を配置すること
  */
+@LargeTest
 @RunWith(AndroidJUnit4::class)
 class EmotionToServerIntegrationTest {
 
     private lateinit var wsHelper: WebSocketTestHelper
+    private var faceLandmarker: FaceLandmarker? = null
+    private var client: WebSocketClient? = null
+
     private val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
@@ -53,6 +59,8 @@ class EmotionToServerIntegrationTest {
 
     @After
     fun tearDown() {
+        client?.close()
+        faceLandmarker?.close()
         wsHelper.stop()
     }
 
@@ -77,11 +85,11 @@ class EmotionToServerIntegrationTest {
             .setOutputFaceBlendshapes(true)
             .build()
 
-        val faceLandmarker = FaceLandmarker.createFromOptions(context, options)
+        faceLandmarker = FaceLandmarker.createFromOptions(context, options)
 
         // 3. 画像から顔検出 → blendshapes取得
         val mpImage = BitmapImageBuilder(bitmap).build()
-        val result = faceLandmarker.detect(mpImage)
+        val result = faceLandmarker!!.detect(mpImage)
 
         val blendshapes = result.faceBlendshapes().orElse(null)
         assertNotNull("blendshapesが検出されなかった（顔画像を確認してください）", blendshapes)
@@ -96,18 +104,17 @@ class EmotionToServerIntegrationTest {
 
         // 5. MockWebServerを起動してWebSocket接続
         val baseUrl = wsHelper.start()
-        val client = wsHelper.createWebSocketClient(baseUrl)
+        client = wsHelper.createWebSocketClient(baseUrl)
 
         runBlocking {
-            wsHelper.connectAndWait(client)
+            wsHelper.connectAndWait(client!!)
         }
 
         // 6. ANALYSIS_REQUESTを送信
-        client.sendAnalysisRequest(emotionScores = emotionMap)
+        client!!.sendAnalysisRequest(emotionScores = emotionMap)
 
         // 7. MockServerで受信したJSONを検証
-        // PINGメッセージをスキップしてANALYSIS_REQUESTを見つける
-        val json = findAnalysisRequest()
+        val json = wsHelper.awaitAnalysisRequest()
         assertNotNull("ANALYSIS_REQUESTがMockServerに届かなかった", json)
 
         @Suppress("UNCHECKED_CAST")
@@ -133,10 +140,6 @@ class EmotionToServerIntegrationTest {
             val value = scores[key]!!
             assertTrue("$key の値が範囲外: $value", value in 0.0..1.0)
         }
-
-        // クリーンアップ
-        faceLandmarker.close()
-        client.close()
     }
 
     @Test
@@ -161,18 +164,5 @@ class EmotionToServerIntegrationTest {
         for ((key, value) in emotionMap) {
             assertTrue("$key の値が範囲外: $value", value in 0f..1f)
         }
-    }
-
-    /**
-     * 受信メッセージからANALYSIS_REQUESTを探す（PINGなどをスキップ）
-     */
-    private fun findAnalysisRequest(): String? {
-        repeat(10) {
-            val msg = wsHelper.awaitMessage(3_000) ?: return null
-            if (msg.contains("ANALYSIS_REQUEST")) {
-                return msg
-            }
-        }
-        return null
     }
 }

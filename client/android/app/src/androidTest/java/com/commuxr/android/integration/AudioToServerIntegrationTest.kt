@@ -2,7 +2,9 @@ package com.commuxr.android.integration
 
 import android.util.Base64
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.LargeTest
 import com.commuxr.android.core.model.AudioFormat
+import com.commuxr.android.data.websocket.WebSocketClient
 import com.commuxr.android.feature.audio.AudioEncoder
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -26,10 +28,13 @@ import kotlin.math.sin
  * WebSocket経由でANALYSIS_REQUESTとしてMockServerに送信する。
  * MockServerで受信したJSONの構造とBase64データの整合性を検証する。
  */
+@LargeTest
 @RunWith(AndroidJUnit4::class)
 class AudioToServerIntegrationTest {
 
     private lateinit var wsHelper: WebSocketTestHelper
+    private var client: WebSocketClient? = null
+
     private val moshi: Moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
         .build()
@@ -38,6 +43,12 @@ class AudioToServerIntegrationTest {
         private const val SAMPLE_RATE = 16000
         private const val DURATION_SECONDS = 1
         private const val FREQUENCY_HZ = 440.0
+        private const val WAV_HEADER_SIZE = 44
+        private const val RIFF_CHUNK_SIZE_OFFSET = 4
+        private const val CHANNELS_OFFSET = 22
+        private const val SAMPLE_RATE_OFFSET = 24
+        private const val BITS_PER_SAMPLE_OFFSET = 34
+        private const val DATA_SIZE_OFFSET = 40
         private val EXPECTED_EMOTION_KEYS = setOf(
             "happy", "sad", "angry", "confused",
             "surprised", "neutral", "fearful", "disgusted"
@@ -51,6 +62,7 @@ class AudioToServerIntegrationTest {
 
     @After
     fun tearDown() {
+        client?.close()
         wsHelper.stop()
     }
 
@@ -66,10 +78,10 @@ class AudioToServerIntegrationTest {
 
         // 3. MockWebServerを起動してWebSocket接続
         val baseUrl = wsHelper.start()
-        val client = wsHelper.createWebSocketClient(baseUrl)
+        client = wsHelper.createWebSocketClient(baseUrl)
 
         runBlocking {
-            wsHelper.connectAndWait(client)
+            wsHelper.connectAndWait(client!!)
         }
 
         // 4. emotion_scoresと音声データを含むANALYSIS_REQUESTを送信
@@ -84,14 +96,14 @@ class AudioToServerIntegrationTest {
             "disgusted" to 0.02f
         )
 
-        client.sendAnalysisRequest(
+        client!!.sendAnalysisRequest(
             emotionScores = dummyEmotionScores,
             audioData = base64Audio,
             audioFormat = AudioFormat.WAV.value
         )
 
         // 5. MockServerで受信したJSONを検証
-        val json = findAnalysisRequest()
+        val json = wsHelper.awaitAnalysisRequest()
         assertNotNull("ANALYSIS_REQUESTがMockServerに届かなかった", json)
 
         @Suppress("UNCHECKED_CAST")
@@ -114,7 +126,7 @@ class AudioToServerIntegrationTest {
 
         // Base64デコードしてWAVヘッダーを検証
         val wavBytes = Base64.decode(audioData, Base64.NO_WRAP)
-        assertTrue("WAVデータが44バイト未満", wavBytes.size >= 44)
+        assertTrue("WAVデータが${WAV_HEADER_SIZE}バイト未満", wavBytes.size >= WAV_HEADER_SIZE)
 
         // RIFF/WAVEヘッダー検証
         val riff = String(wavBytes, 0, 4)
@@ -123,22 +135,19 @@ class AudioToServerIntegrationTest {
         assertEquals("WAVE", wave)
 
         // サンプルレート検証 (16000Hz)
-        val sampleRate = ByteBuffer.wrap(wavBytes, 24, 4)
+        val sampleRate = ByteBuffer.wrap(wavBytes, SAMPLE_RATE_OFFSET, 4)
             .order(ByteOrder.LITTLE_ENDIAN).int
         assertEquals(SAMPLE_RATE, sampleRate)
 
         // チャンネル数検証 (mono = 1)
-        val channels = ByteBuffer.wrap(wavBytes, 22, 2)
+        val channels = ByteBuffer.wrap(wavBytes, CHANNELS_OFFSET, 2)
             .order(ByteOrder.LITTLE_ENDIAN).short
         assertEquals(1, channels.toInt())
 
         // ビット深度検証 (16bit)
-        val bitsPerSample = ByteBuffer.wrap(wavBytes, 34, 2)
+        val bitsPerSample = ByteBuffer.wrap(wavBytes, BITS_PER_SAMPLE_OFFSET, 2)
             .order(ByteOrder.LITTLE_ENDIAN).short
         assertEquals(16, bitsPerSample.toInt())
-
-        // クリーンアップ
-        client.close()
     }
 
     @Test
@@ -153,16 +162,16 @@ class AudioToServerIntegrationTest {
         val wavBytes = Base64.decode(base64Audio, Base64.NO_WRAP)
 
         // WAVヘッダーの後のPCMデータが元データと一致
-        val pcmFromWav = wavBytes.copyOfRange(44, wavBytes.size)
+        val pcmFromWav = wavBytes.copyOfRange(WAV_HEADER_SIZE, wavBytes.size)
         assertArrayEquals("PCMデータがround-tripで一致しない", pcmData, pcmFromWav)
 
         // データサイズフィールドが正しい
-        val dataSize = ByteBuffer.wrap(wavBytes, 40, 4)
+        val dataSize = ByteBuffer.wrap(wavBytes, DATA_SIZE_OFFSET, 4)
             .order(ByteOrder.LITTLE_ENDIAN).int
         assertEquals("WAV dataサイズが不正", pcmData.size, dataSize)
 
         // ChunkSize (RIFF chunk) が正しい
-        val chunkSize = ByteBuffer.wrap(wavBytes, 4, 4)
+        val chunkSize = ByteBuffer.wrap(wavBytes, RIFF_CHUNK_SIZE_OFFSET, 4)
             .order(ByteOrder.LITTLE_ENDIAN).int
         assertEquals("RIFF ChunkSizeが不正", 36 + pcmData.size, chunkSize)
     }
@@ -186,19 +195,19 @@ class AudioToServerIntegrationTest {
 
         // MockWebServerを起動して接続
         val baseUrl = wsHelper.start()
-        val client = wsHelper.createWebSocketClient(baseUrl)
+        client = wsHelper.createWebSocketClient(baseUrl)
 
         runBlocking {
-            wsHelper.connectAndWait(client)
+            wsHelper.connectAndWait(client!!)
         }
 
-        client.sendAnalysisRequest(
+        client!!.sendAnalysisRequest(
             emotionScores = emotionScores,
             audioData = base64Audio,
             audioFormat = AudioFormat.WAV.value
         )
 
-        val json = findAnalysisRequest()
+        val json = wsHelper.awaitAnalysisRequest()
         assertNotNull("ANALYSIS_REQUESTがMockServerに届かなかった", json)
 
         @Suppress("UNCHECKED_CAST")
@@ -236,8 +245,6 @@ class AudioToServerIntegrationTest {
             "期待されるキーが不足: ${expectedKeys - parsed.keys}",
             parsed.keys.containsAll(expectedKeys)
         )
-
-        client.close()
     }
 
     /**
@@ -257,18 +264,5 @@ class AudioToServerIntegrationTest {
         }
 
         return buffer.array()
-    }
-
-    /**
-     * 受信メッセージからANALYSIS_REQUESTを探す（PINGなどをスキップ）
-     */
-    private fun findAnalysisRequest(): String? {
-        repeat(10) {
-            val msg = wsHelper.awaitMessage(3_000) ?: return null
-            if (msg.contains("ANALYSIS_REQUEST")) {
-                return msg
-            }
-        }
-        return null
     }
 }
