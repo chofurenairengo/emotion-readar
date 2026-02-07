@@ -18,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -29,9 +30,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 object EraBridge {
     private const val TAG = "EraBridge"
+    private const val PLUGIN_BUILD_SIGNATURE = "unity-plugin-2026-02-07-facelandmarker-fix-01"
     private const val DEFAULT_UNITY_OBJECT = "EraBridgeReceiver"
     private const val DEFAULT_UNITY_METHOD = "OnBridgeMessage"
     private const val MIN_SEND_INTERVAL_MS = 400L
+    private const val CAMERA_MODE_INTERNAL = "internal"
+    private const val CAMERA_MODE_EXTERNAL = "external"
 
     private val running = AtomicBoolean(false)
     private val lock = Any()
@@ -55,6 +59,16 @@ object EraBridge {
 
     @JvmStatic
     fun start(sessionId: String, wsHost: String) {
+        start(sessionId, wsHost, CAMERA_MODE_INTERNAL)
+    }
+
+    /**
+     * cameraMode:
+     * - "internal": 端末内蔵CameraXを利用
+     * - "external": 内蔵カメラを使わず、submitExternalEmotionScores()からの入力のみ利用
+     */
+    @JvmStatic
+    fun start(sessionId: String, wsHost: String, cameraMode: String) {
         synchronized(lock) {
             if (running.get()) {
                 Log.w(TAG, "Already running")
@@ -67,62 +81,60 @@ object EraBridge {
                 return
             }
 
-            if (!hasCameraPermission(activity)) {
-                Log.e(TAG, "CAMERA permission is missing")
-                sendBridgeMessage("ERROR", "CAMERA permission missing")
-                return
-            }
-
             val appContext = activity.applicationContext
             val normalizedHost = normalizeHost(wsHost)
+            val normalizedCameraMode = normalizeCameraMode(cameraMode)
             val bridgeScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
             scope = bridgeScope
 
             val wsClient = WebSocketClient(baseUrl = normalizedHost, scope = bridgeScope)
             webSocketClient = wsClient
 
-            val landmarker = FaceLandmarkerHelper(
-                context = appContext,
-                listener = object : FaceLandmarkerHelper.Listener {
-                    override fun onResults(emotionScores: EmotionScores, timestampMs: Long) {
-                        if (!running.get()) return
+            Log.i(TAG, "Plugin build signature: $PLUGIN_BUILD_SIGNATURE")
+            if (normalizedCameraMode == CAMERA_MODE_INTERNAL) {
+                if (!hasCameraPermission(activity)) {
+                    Log.e(TAG, "CAMERA permission is missing")
+                    sendBridgeMessage("ERROR", "CAMERA permission missing")
+                    return
+                }
 
-                        val now = System.currentTimeMillis()
-                        if (now - lastSentAtMs < MIN_SEND_INTERVAL_MS) return
-                        lastSentAtMs = now
-
-                        if (wsClient.connectionState.value is ConnectionState.Connected) {
-                            wsClient.sendAnalysisRequest(emotionScores.toMap())
+                val landmarker = FaceLandmarkerHelper(
+                    context = appContext,
+                    listener = object : FaceLandmarkerHelper.Listener {
+                        override fun onResults(emotionScores: EmotionScores, timestampMs: Long) {
+                            sendAnalysisRequestInternal(wsClient, emotionScores.toMap(), timestampMs)
                         }
-                    }
 
-                    override fun onError(error: String) {
-                        Log.e(TAG, "FaceLandmarker error: $error")
-                        sendBridgeMessage("ERROR", error)
-                    }
-                },
-            )
-            faceLandmarkerHelper = landmarker
-            landmarker.setup()
+                        override fun onError(error: String) {
+                            Log.e(TAG, "FaceLandmarker error: $error")
+                            sendBridgeMessage("ERROR", error)
+                        }
+                    },
+                )
+                faceLandmarkerHelper = landmarker
+                landmarker.setup()
 
-            val analyzer = HeadlessCameraAnalyzer(appContext)
-            cameraAnalyzer = analyzer
-            analyzer.start(
-                onFrame = { imageProxy ->
-                    try {
-                        landmarker.detectAsync(imageProxy, isFrontCamera = false)
-                    } catch (t: Throwable) {
-                        Log.e(TAG, "Frame process error", t)
-                    } finally {
-                        imageProxy.close()
-                    }
-                },
-                onStarted = { sendBridgeMessage("INFO", "Camera started") },
-                onError = { err ->
-                    Log.e(TAG, err)
-                    sendBridgeMessage("ERROR", err)
-                },
-            )
+                val analyzer = HeadlessCameraAnalyzer(appContext)
+                cameraAnalyzer = analyzer
+                analyzer.start(
+                    onFrame = { imageProxy ->
+                        try {
+                            landmarker.detectAsync(imageProxy, isFrontCamera = false)
+                        } catch (t: Throwable) {
+                            Log.e(TAG, "Frame process error", t)
+                        } finally {
+                            imageProxy.close()
+                        }
+                    },
+                    onStarted = { sendBridgeMessage("INFO", "Camera started") },
+                    onError = { err ->
+                        Log.e(TAG, err)
+                        sendBridgeMessage("ERROR", err)
+                    },
+                )
+            } else {
+                sendBridgeMessage("INFO", "External camera mode enabled (internal camera disabled)")
+            }
 
             callbackCollectorJob = bridgeScope.launch {
                 wsClient.analysisResponses.collect {
@@ -133,7 +145,42 @@ object EraBridge {
             wsClient.connect(sessionId)
             running.set(true)
             sendBridgeMessage("INFO", "EraBridge started")
-            Log.i(TAG, "Started. sessionId=$sessionId host=$normalizedHost")
+            Log.i(TAG, "Started. sessionId=$sessionId host=$normalizedHost cameraMode=$normalizedCameraMode")
+        }
+    }
+
+    /**
+     * 外部カメラ側で算出した感情スコアJSONを受け取り、ANALYSIS_REQUESTとして送信する。
+     * 例:
+     * {"happy":0.7,"sad":0.1,"angry":0.0,"confused":0.2,"surprised":0.0,"fearful":0.0,"disgusted":0.0}
+     */
+    @JvmStatic
+    fun submitExternalEmotionScores(emotionScoresJson: String) {
+        val wsClient = synchronized(lock) { webSocketClient } ?: run {
+            Log.w(TAG, "submitExternalEmotionScores ignored: bridge not started")
+            return
+        }
+
+        if (emotionScoresJson.isBlank()) {
+            Log.w(TAG, "submitExternalEmotionScores ignored: empty payload")
+            return
+        }
+
+        try {
+            val json = JSONObject(emotionScoresJson)
+            val emotionMap = linkedMapOf(
+                "happy" to json.optDouble("happy", 0.0).toFloat(),
+                "sad" to json.optDouble("sad", 0.0).toFloat(),
+                "angry" to json.optDouble("angry", 0.0).toFloat(),
+                "confused" to json.optDouble("confused", 0.0).toFloat(),
+                "surprised" to json.optDouble("surprised", 0.0).toFloat(),
+                "fearful" to json.optDouble("fearful", 0.0).toFloat(),
+                "disgusted" to json.optDouble("disgusted", 0.0).toFloat(),
+            )
+            sendAnalysisRequestInternal(wsClient, emotionMap, System.currentTimeMillis())
+        } catch (t: Throwable) {
+            Log.e(TAG, "submitExternalEmotionScores parse failed", t)
+            sendBridgeMessage("ERROR", "Invalid external emotion scores JSON")
         }
     }
 
@@ -190,6 +237,36 @@ object EraBridge {
             "ws://$raw"
         }
         return if (withScheme.endsWith('/')) withScheme else "$withScheme/"
+    }
+
+    private fun normalizeCameraMode(raw: String): String {
+        return when (raw.trim().lowercase()) {
+            CAMERA_MODE_EXTERNAL -> CAMERA_MODE_EXTERNAL
+            else -> CAMERA_MODE_INTERNAL
+        }
+    }
+
+    private fun sendAnalysisRequestInternal(
+        wsClient: WebSocketClient,
+        emotionMap: Map<String, Float>,
+        timestampMs: Long,
+    ) {
+        if (!running.get()) return
+
+        val now = System.currentTimeMillis()
+        if (now - lastSentAtMs < MIN_SEND_INTERVAL_MS) return
+        lastSentAtMs = now
+
+        if (wsClient.connectionState.value is ConnectionState.Connected) {
+            val topEmotion = emotionMap.maxByOrNull { it.value }
+            Log.d(
+                TAG,
+                "Sending ANALYSIS_REQUEST at=$timestampMs top=${topEmotion?.key}:${topEmotion?.value}",
+            )
+            wsClient.sendAnalysisRequest(emotionMap)
+        } else {
+            Log.d(TAG, "Skip ANALYSIS_REQUEST: websocket not connected")
+        }
     }
 
     private fun sendBridgeMessage(type: String, message: String) {

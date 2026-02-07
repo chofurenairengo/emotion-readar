@@ -160,6 +160,18 @@ async def _handle_analysis_request(
             audio_format = None
 
     try:
+        top_emotion = max(emotion_scores.items(), key=lambda item: item[1])
+    except Exception:
+        top_emotion = ("unknown", None)
+    logger.info(
+        "ANALYSIS_REQUEST received session_id=%s ws_session_id=%s top_emotion=%s score=%s",
+        session_id,
+        ws_session_id,
+        top_emotion[0],
+        top_emotion[1],
+    )
+
+    try:
         # ResponseGeneratorServiceを取得して処理
         response_generator = get_response_generator()
         result = await response_generator.process(

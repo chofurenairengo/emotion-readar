@@ -3,12 +3,14 @@ package com.commuxr.unityplugin.feature.camera
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.SystemClock
+import android.util.Log
 import androidx.camera.core.ImageProxy
 import com.commuxr.unityplugin.feature.vision.EmotionScoreCalculator
 import com.commuxr.unityplugin.feature.vision.EmotionScores
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.core.Delegate
+import com.google.mediapipe.tasks.vision.core.ImageProcessingOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarker
 import com.google.mediapipe.tasks.vision.facelandmarker.FaceLandmarkerResult
@@ -86,16 +88,16 @@ class FaceLandmarkerHelper(
             return
         }
 
-        var bitmap: Bitmap? = null
         try {
-            bitmap = imageProxy.toBitmap()
+            val bitmap = imageProxy.toBitmap()
             val mpImage = BitmapImageBuilder(bitmap).build()
             val timestampMs = SystemClock.uptimeMillis()
-            landmarker.detectAsync(mpImage, timestampMs)
+            val processingOptions = ImageProcessingOptions.builder()
+                .setRotationDegrees(imageProxy.imageInfo.rotationDegrees)
+                .build()
+            landmarker.detectAsync(mpImage, processingOptions, timestampMs)
         } catch (e: Exception) {
             listener.onError(e.message ?: "Detection error")
-        } finally {
-            bitmap?.recycle()
         }
     }
 
@@ -109,12 +111,29 @@ class FaceLandmarkerHelper(
     }
 
     private fun handleResult(result: FaceLandmarkerResult) {
+        if (result.faceLandmarks().isEmpty()) {
+            Log.d(TAG, "FaceLandmarker: no face landmarks detected")
+            return
+        }
+
         val blendshapes = result.faceBlendshapes().orElse(null)
-        if (blendshapes.isNullOrEmpty()) return
+        if (blendshapes.isNullOrEmpty()) {
+            Log.d(TAG, "FaceLandmarker result has no blendshapes")
+            return
+        }
 
         val categories = blendshapes.firstOrNull().orEmpty()
+        if (categories.isEmpty()) {
+            Log.d(TAG, "FaceLandmarker categories are empty")
+            return
+        }
         val emotionScores = EmotionScoreCalculator.calculate(categories)
         val timestampMs = result.timestampMs()
+        val top = categories.maxByOrNull { it.score() }
+        Log.d(
+            TAG,
+            "FaceLandmarker result timestamp=$timestampMs top=${top?.categoryName()}:${top?.score()}",
+        )
 
         listener.onResults(emotionScores, timestampMs)
     }
@@ -128,6 +147,7 @@ class FaceLandmarkerHelper(
     }
 
     companion object {
+        private const val TAG = "FaceLandmarkerHelper"
         private const val DEFAULT_MODEL_ASSET = "face_landmarker.task"
         const val NUM_FACES = 1
         const val MIN_DETECTION_CONFIDENCE = 0.5f

@@ -72,14 +72,14 @@ class HeadlessCameraAnalyzer(
         try {
             provider.bindToLifecycle(
                 ProcessLifecycleOwner.get(),
-                CameraSelector.DEFAULT_BACK_CAMERA,
+                CameraSelector.DEFAULT_FRONT_CAMERA,
                 analysis,
             )
             imageAnalysis = analysis
         } catch (_: IllegalArgumentException) {
             provider.bindToLifecycle(
                 ProcessLifecycleOwner.get(),
-                CameraSelector.DEFAULT_FRONT_CAMERA,
+                CameraSelector.DEFAULT_BACK_CAMERA,
                 analysis,
             )
             imageAnalysis = analysis

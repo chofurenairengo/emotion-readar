@@ -40,6 +40,9 @@ namespace ERA.Network
         /// <summary>現在のセッションID。</summary>
         public string SessionId { get; private set; } = string.Empty;
 
+        /// <summary>接続先WebSocketホスト。</summary>
+        public string ServerHost => _serverHost;
+
         #endregion
 
         #region Events
