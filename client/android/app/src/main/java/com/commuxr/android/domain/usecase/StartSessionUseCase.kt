@@ -24,9 +24,10 @@ class StartSessionUseCase @Inject constructor(
      * 2. WebSocket 接続を確立
      * 3. 成功/失敗を返却
      *
+     * @param token 認証トークン
      * @return 成功時はSession、失敗時はエラー
      */
-    suspend operator fun invoke(): Result<Session> {
+    suspend operator fun invoke(token: String): Result<Session> {
         return when (val result = sessionRepository.createSession()) {
             is ApiResult.Success -> {
                 val response = result.data
@@ -37,7 +38,7 @@ class StartSessionUseCase @Inject constructor(
                     endedAt = response.endedAt?.let { Instant.parse(it) }
                 )
                 // WebSocket接続を確立
-                webSocketClient.connect(session.id)
+                webSocketClient.connect(session.id, token)
                 Result.success(session)
             }
             is ApiResult.Error -> {

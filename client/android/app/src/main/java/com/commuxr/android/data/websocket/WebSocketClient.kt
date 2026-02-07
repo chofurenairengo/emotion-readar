@@ -1,6 +1,7 @@
 package com.commuxr.android.data.websocket
 
 import android.util.Log
+import com.commuxr.android.BuildConfig
 import com.commuxr.android.data.api.ApiClient
 import com.commuxr.android.data.dto.*
 import com.squareup.moshi.JsonAdapter
@@ -26,11 +27,13 @@ import java.util.concurrent.TimeUnit
  */
 class WebSocketClient(
     private val baseUrl: String = getWsBaseUrl(),
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob()),
+    private val httpClient: OkHttpClient? = null
 ) : Closeable {
 
     private var webSocket: WebSocket? = null
     private var currentSessionId: String? = null
+    private var currentToken: String? = null
     private var heartbeatJob: Job? = null
     private var reconnectJob: Job? = null
     private var lastPongReceivedAt: Long = 0
@@ -49,7 +52,7 @@ class WebSocketClient(
     }
 
     private val okHttpClient: OkHttpClient by lazy {
-        ApiClient.okHttpClient.newBuilder()
+        (httpClient ?: ApiClient.okHttpClient).newBuilder()
             .pingInterval(PING_INTERVAL_MS, TimeUnit.MILLISECONDS)
             .build()
     }
@@ -64,7 +67,9 @@ class WebSocketClient(
         private const val PING_INTERVAL_MS = 30_000L
 
         private fun getWsBaseUrl(): String {
-            return "ws://server/"
+            return BuildConfig.SERVER_URL
+                .replace("https://", "wss://")
+                .replace("http://", "ws://")
         }
     }
 
@@ -72,8 +77,9 @@ class WebSocketClient(
      * WebSocket接続を確立
      *
      * @param sessionId セッションID
+     * @param token 認証トークン
      */
-    fun connect(sessionId: String) {
+    fun connect(sessionId: String, token: String) {
         if (_connectionState.value is ConnectionState.Connected ||
             _connectionState.value is ConnectionState.Connecting) {
             Log.w(TAG, "Already connected or connecting")
@@ -81,6 +87,7 @@ class WebSocketClient(
         }
 
         currentSessionId = sessionId
+        currentToken = token
         reconnectAttempt = 0
         attemptConnect()
     }
@@ -172,9 +179,10 @@ class WebSocketClient(
 
     private fun attemptConnect() {
         val sessionId = currentSessionId ?: return
+        val token = currentToken ?: return
         _connectionState.value = ConnectionState.Connecting
 
-        val url = "${baseUrl}api/realtime?session_id=$sessionId"
+        val url = "${baseUrl}api/realtime?session_id=$sessionId&token=$token"
         Log.d(TAG, "Attempting WebSocket connection")  // セッションIDを含めない
 
         val request = Request.Builder()
