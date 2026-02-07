@@ -3,7 +3,7 @@ package com.commuxr.android.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.commuxr.android.domain.usecase.EndSessionUseCase
+import com.commuxr.android.data.websocket.WebSocketClient
 import com.commuxr.android.domain.usecase.SendAnalysisUseCase
 import com.commuxr.android.domain.usecase.StartSessionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,24 +18,24 @@ import javax.inject.Inject
  * メイン画面のViewModel
  *
  * アプリ起動時にセッションを自動開始し、セッション管理とデータ送信を担当する。
+ * セッション終了はサーバー側がWebSocket切断を検知して自動的に行う。
  */
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val startSessionUseCase: StartSessionUseCase,
-    private val endSessionUseCase: EndSessionUseCase,
-    private val sendAnalysisUseCase: SendAnalysisUseCase
+    private val sendAnalysisUseCase: SendAnalysisUseCase,
+    private val webSocketClient: WebSocketClient
 ) : ViewModel() {
 
     private val _isSessionActive = MutableStateFlow(false)
     val isSessionActive: StateFlow<Boolean> = _isSessionActive.asStateFlow()
 
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
-
     companion object {
         private const val TAG = "MainViewModel"
         private const val MAX_RETRY_ATTEMPTS = 5
         private const val BASE_RETRY_DELAY_MS = 1_000L
+        // TODO: Firebase Auth 統合後に実際のトークン取得に置き換える
+        private const val DEV_TOKEN = "dev-token"
     }
 
     init {
@@ -47,7 +47,7 @@ class MainViewModel @Inject constructor(
     private suspend fun startSessionWithRetry() {
         var attempt = 0
         while (attempt < MAX_RETRY_ATTEMPTS) {
-            startSessionUseCase()
+            startSessionUseCase(DEV_TOKEN)
                 .onSuccess {
                     _isSessionActive.value = true
                     return
@@ -61,27 +61,6 @@ class MainViewModel @Inject constructor(
             }
         }
         Log.e(TAG, "Session start failed after $MAX_RETRY_ATTEMPTS attempts")
-    }
-
-    /**
-     * セッションを終了
-     */
-    fun endSession() {
-        if (_isLoading.value) return
-
-        viewModelScope.launch {
-            _isLoading.value = true
-
-            endSessionUseCase()
-                .onSuccess {
-                    _isSessionActive.value = false
-                }
-                .onFailure {
-                    // エラーはUnity側でハンドリング
-                }
-
-            _isLoading.value = false
-        }
     }
 
     /**
@@ -107,11 +86,7 @@ class MainViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        // ViewModel破棄時にセッションが残っていれば終了
-        if (_isSessionActive.value) {
-            viewModelScope.launch {
-                endSessionUseCase()
-            }
-        }
+        // WS切断のみ。サーバーが切断を検知してセッションを終了する
+        webSocketClient.disconnect()
     }
 }

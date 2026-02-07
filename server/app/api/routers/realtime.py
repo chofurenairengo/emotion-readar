@@ -115,6 +115,7 @@ async def realtime(
                 )
     except WebSocketDisconnect:
         await connection_manager.disconnect(websocket)
+        session_service.end_session(session_id)
 
 
 async def _handle_analysis_request(
