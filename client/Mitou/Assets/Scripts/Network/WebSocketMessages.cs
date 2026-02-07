@@ -83,10 +83,10 @@ namespace ERA.Network
         public System.Collections.Generic.Dictionary<string, float> EmotionScores =
             new System.Collections.Generic.Dictionary<string, float>();
 
-        [JsonProperty("audio_data")]
-        public string AudioData;
+        [JsonProperty("audio_data", NullValueHandling = NullValueHandling.Ignore)]
+        public string AudioData = null;
 
-        [JsonProperty("audio_format")]
-        public string AudioFormat;
+        [JsonProperty("audio_format", NullValueHandling = NullValueHandling.Ignore)]
+        public string AudioFormat = null;
     }
 }

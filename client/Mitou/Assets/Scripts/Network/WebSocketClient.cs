@@ -191,6 +191,12 @@ namespace ERA.Network
                 return;
             }
 
+            if (emotionScores == null || emotionScores.Count == 0)
+            {
+                Debug.LogWarning("[WebSocketClient] emotionScores is null or empty, skip ANALYSIS_REQUEST");
+                return;
+            }
+
             var message = new AnalysisRequestMessage
             {
                 SessionId = SessionId,

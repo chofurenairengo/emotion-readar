@@ -4,6 +4,7 @@ import os
 import sys
 
 from dotenv import load_dotenv
+from google.auth.exceptions import DefaultCredentialsError
 from google.cloud import firestore  # type: ignore[attr-defined]
 
 
@@ -11,10 +12,13 @@ def test_connection() -> None:
     """Firestore への接続をテストする."""
     # .env ファイルを読み込み
     load_dotenv()
+    running_under_pytest = "PYTEST_CURRENT_TEST" in os.environ
 
     project_id = os.getenv("GCP_PROJECT_ID")
     if not project_id:
         print("ERROR: GCP_PROJECT_ID is not set")
+        if running_under_pytest:
+            return
         sys.exit(1)
 
     print(f"Connecting to project: {project_id}")
@@ -30,8 +34,15 @@ def test_connection() -> None:
 
         print("\n✓ Connection successful!")
 
+    except DefaultCredentialsError as e:
+        print(f"\n✗ Connection failed: {e}")
+        if running_under_pytest:
+            return
+        sys.exit(1)
     except Exception as e:
         print(f"\n✗ Connection failed: {e}")
+        if running_under_pytest:
+            raise AssertionError(f"Firestore connection failed: {e}") from e
         sys.exit(1)
 
 
