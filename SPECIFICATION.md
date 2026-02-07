@@ -1514,7 +1514,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                      | 更新者 |
 | ---------- | ------------------------- | ------ |
-| 2026-02-07 | #167 Canbasサイズ変更、ANALYSIS_RESPONSEの受信ログアンドロイドだけではなくunityで出力する。 | @93tajam |
+| 2026-02-08 | #167 Canbasサイズ変更、ANALYSIS_RESPONSEの受信ログアンドロイドだけではなくunityで出力する。 | @93tajam |
 | 2026-02-04 | #155 feat: #152 LLMServiceでFTモデル（LLMClientFactory）を使用 | @miyabi206 |
 | 2026-02-03 | #145 #141 feat: ヘルスチェックにモデル接続状態を追加 | @miyabi206 |
 | 2026-02-02 | #132 feat: 仕様書自動作成機能を追加 | @miyabi206 |
@@ -1526,7 +1526,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                         | 更新者 |
 | ---------- | ---------------------------- | ------ |
-| 2026-02-07 | #167 Canbasサイズ変更、ANALYSIS_RESPONSEの受信ログアンドロイドだけではなくunityで出力する。 | @93tajam |
+| 2026-02-08 | #167 Canbasサイズ変更、ANALYSIS_RESPONSEの受信ログアンドロイドだけではなくunityで出力する。 | @93tajam |
 | 2026-02-07 | #158 feat: e2eテストにあたっての必要な機能と修正 | @Daccho |
 | 2026-02-04 | #155 feat: #152 LLMServiceでFTモデル（LLMClientFactory）を使用 | @miyabi206 |
 | 2026-02-03 | #145 #141 feat: ヘルスチェックにモデル接続状態を追加 | @miyabi206 |
@@ -1555,6 +1555,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 - #141 feat: ヘルスチェックにモデル接続状態を追加
 - #140 feat: LLM_TEMPERATURE を設定から変更可能にする
 - #130 仕様書の自動更新機能
+- #127 [Unity] メイン画面統合 - Android/XR共通UI実装
 - #123 [Unity] Quest 3向けXR設定とビルド環境構築
 - #105 claudeのフローにprのmdを作るところまでカスタム指示を追加する
 - #95 copilot と claude code コマンドを修正
@@ -1600,6 +1601,8 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 <!-- AUTO:OPEN_ISSUES:START -->
 | #    | タイトル               | 担当 | 概要                                                 |
 | ---- | ---------------------- | ---- | ---------------------------------------------------- |
+| #172 | [検証]サーバーのログが見づらい | @Daccho | ### 概要 |
+| #171 | [MVP v2]フィードバック機能の追加 | - | ### 概要 |
 | #169 | feat: 外カメラ映像 → 顔推論 → submitExt | @93tajam | ## 概要 |
 | #168 | feat: Unity + unity-plugin 経路で | @93tajam | ## 概要 |
 | #164 | [chore]<summy>のコメントが邪魔 | @Daccho | ### 概要 |
@@ -1618,11 +1621,10 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 | #147 | [Unity] 通常Android端末でXR自動初期化による | @Daccho | ## 概要 |
 | #139 | feat: Vertex AIファインチューニング済みGem | @miyabi206 | ## 概要 |
 | #129 | q | @Daccho | ### 概要 |
-| #127 | [Unity] メイン画面統合 - Android/XR共通 | @Daccho | ## 概要 |
 | #106 | env.exampleの作成 | - | ### 概要 |
 | #98 | claude code skills, rules, age | @miyabi206 | 必要なskills, agentsなどに絞る |
 | #70 | refactor: Speaker, Utterance,  | @Daccho | ## 概要 |
-| #69 | projectをissueだけ表示してみやすくしたい | @Daccho | ### 概要 |
+| #69 | [chore]projectsをみやするするための調整 | @Daccho | ### 概要 |
 | #53 | [Epic] 認証・認可基盤の実装 | @miyabi206 | ## 概要 |
 | #50 | Firestoreリポジトリ単体テスト | @Daccho | ## 概要 |
 | #49 | 依存性注入の環境切り替え対応 | @Daccho | ## 概要 |
