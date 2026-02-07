@@ -496,3 +496,40 @@ appフォルダの直下にのみ__init__.pyファイルを置く。それ以外
 →どんな自分になりたいかを最初に聞いて、プロンプトに組み込む。(遅延対策で文字数制限する)
 
 ローカルLLM(SLM)を使って即時応答とAgentやらせる
+
+## 仕様追補（2026-02-07 / Unity-Android統合）
+
+本追補は既存仕様を置き換えるものではなく、Quest実機運用時の実装形態を明確化するための追加定義である。
+
+### 変更しない事項
+
+- エッジ・クラウドハイブリッド構成の方針は維持する
+- FastAPIサーバー（STT/文脈統合/LLM推論/JSON返却）の責務は維持する
+- UnityのHUD表示責務（感情表示、戦略表示、選択肢表示）は維持する
+- Androidネイティブの知覚責務（CameraX/MediaPipe/音声前処理）は維持する
+
+### 実装形態の確定
+
+- 配布単位は1アプリ（Unity APK）とする
+- Androidネイティブ処理はAARとしてUnityアプリ内へ組み込む
+- Quest上でUnityアプリとAndroid別アプリを同時運用する前提は採らない
+
+### 役割分担（固定）
+
+- Unity層: UI表示、サーバー応答の描画反映、ユーザー操作
+- Androidネイティブ層（Unity内蔵）: カメラ入力、MediaPipe推論、特徴量生成、ANALYSIS_REQUEST送信
+- サーバー層: ANALYSIS_RESPONSE生成と返却
+
+### 統合インターフェース
+
+Androidネイティブブリッジは以下の最小IFを公開する。
+
+- `start(sessionId: String, wsHost: String)`
+- `stop()`
+
+補足:
+
+- `start` はセッション開始、WebSocket接続、センシング開始を行う
+- `stop` はセンシング停止、WebSocket切断、リソース解放を行う
+- `sessionId` はUnityとネイティブで同一値を使用する
+- `wsHost` は `ws://<PCまたは本番ホスト>:8000` 形式を使用し、Quest実機で `localhost` は使用しない
