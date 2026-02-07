@@ -1,11 +1,13 @@
 package com.commuxr.android.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.commuxr.android.domain.usecase.EndSessionUseCase
 import com.commuxr.android.domain.usecase.SendAnalysisUseCase
 import com.commuxr.android.domain.usecase.StartSessionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,9 +15,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * メイン画面のViewModel（簡略化版）
+ * メイン画面のViewModel
  *
- * UIはUnity側で管理するため、セッション管理とデータ送信のみを担当する。
+ * アプリ起動時にセッションを自動開始し、セッション管理とデータ送信を担当する。
  */
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -30,25 +32,35 @@ class MainViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    /**
-     * セッションを開始
-     */
-    fun startSession() {
-        if (_isLoading.value) return
+    companion object {
+        private const val TAG = "MainViewModel"
+        private const val MAX_RETRY_ATTEMPTS = 5
+        private const val BASE_RETRY_DELAY_MS = 1_000L
+    }
 
+    init {
         viewModelScope.launch {
-            _isLoading.value = true
+            startSessionWithRetry()
+        }
+    }
 
+    private suspend fun startSessionWithRetry() {
+        var attempt = 0
+        while (attempt < MAX_RETRY_ATTEMPTS) {
             startSessionUseCase()
                 .onSuccess {
                     _isSessionActive.value = true
-                }
-                .onFailure {
-                    // エラーはUnity側でハンドリング
+                    return
                 }
 
-            _isLoading.value = false
+            attempt++
+            if (attempt < MAX_RETRY_ATTEMPTS) {
+                val delayMs = BASE_RETRY_DELAY_MS * (1 shl (attempt - 1).coerceAtMost(5))
+                Log.w(TAG, "Session start failed, retrying in ${delayMs}ms (attempt $attempt/$MAX_RETRY_ATTEMPTS)")
+                delay(delayMs)
+            }
         }
+        Log.e(TAG, "Session start failed after $MAX_RETRY_ATTEMPTS attempts")
     }
 
     /**
