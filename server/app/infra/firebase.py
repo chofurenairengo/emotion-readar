@@ -35,9 +35,8 @@ def initialize_firebase() -> firebase_admin.App:
     認証情報の優先順位:
         1. Secret Manager（USE_SECRET_MANAGER=true の場合）
         2. FIREBASE_SERVICE_ACCOUNT 環境変数（JSON文字列）
-        3. GOOGLE_APPLICATION_CREDENTIALS 環境変数（キーファイルパス）
-        4. ADC（Application Default Credentials）
-        5. 認証情報なし（エミュレータ利用時）
+        3. ADC（Application Default Credentials）
+        4. 認証情報なし（エミュレータ利用時）
     """
     global _app
 
@@ -93,9 +92,8 @@ def _build_credentials(emulator_host: str) -> credentials.Base | None:
 
     認証情報の優先順位:
         1. Secret Manager / FIREBASE_SERVICE_ACCOUNT（JSON文字列）
-        2. GOOGLE_APPLICATION_CREDENTIALS（キーファイルパス）
-        3. ADC（Application Default Credentials）
-        4. 認証情報なし（エミュレータ利用時）
+        2. ADC（Application Default Credentials）
+        3. 認証情報なし（エミュレータ利用時）
     """
     # Secret Manager または環境変数から取得
     sa_json = get_secret("FIREBASE_SERVICE_ACCOUNT", default="")
@@ -113,11 +111,6 @@ def _build_credentials(emulator_host: str) -> credentials.Base | None:
                 "(from Secret Manager or environment variable)"
             ) from exc
         return credentials.Certificate(sa_dict)
-
-    creds_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "")
-    if creds_path and os.path.exists(creds_path):
-        logger.info("サービスアカウントキーファイルを使用: %s", creds_path)
-        return credentials.Certificate(creds_path)
 
     if emulator_host:
         logger.info("エミュレータモード: 認証情報なしで初期化")
