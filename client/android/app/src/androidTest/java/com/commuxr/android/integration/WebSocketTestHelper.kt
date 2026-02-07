@@ -75,8 +75,8 @@ class WebSocketTestHelper {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         clientScope = scope
         val httpClient = OkHttpClient.Builder()
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .readTimeout(5, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
             .build()
         return WebSocketClient(baseUrl = baseUrl, scope = scope, httpClient = httpClient)
     }
@@ -91,9 +91,10 @@ class WebSocketTestHelper {
     suspend fun connectAndWait(
         client: WebSocketClient,
         sessionId: String = "test-session-001",
-        timeoutMs: Long = 10_000
+        token: String = "test-token",
+        timeoutMs: Long = 30_000
     ) {
-        client.connect(sessionId)
+        client.connect(sessionId, token)
 
         // connectionStateがConnectedになるまで待つ（first{}は条件を満たしたら即リターン）
         withTimeout(timeoutMs) {

@@ -32,6 +32,7 @@ class WebSocketClient(
 
     private var webSocket: WebSocket? = null
     private var currentSessionId: String? = null
+    private var currentToken: String? = null
     private var heartbeatJob: Job? = null
     private var reconnectJob: Job? = null
     private var lastPongReceivedAt: Long = 0
@@ -73,8 +74,9 @@ class WebSocketClient(
      * WebSocket接続を確立
      *
      * @param sessionId セッションID
+     * @param token 認証トークン
      */
-    fun connect(sessionId: String) {
+    fun connect(sessionId: String, token: String) {
         if (_connectionState.value is ConnectionState.Connected ||
             _connectionState.value is ConnectionState.Connecting) {
             Log.w(TAG, "Already connected or connecting")
@@ -82,6 +84,7 @@ class WebSocketClient(
         }
 
         currentSessionId = sessionId
+        currentToken = token
         reconnectAttempt = 0
         attemptConnect()
     }
@@ -173,9 +176,10 @@ class WebSocketClient(
 
     private fun attemptConnect() {
         val sessionId = currentSessionId ?: return
+        val token = currentToken ?: return
         _connectionState.value = ConnectionState.Connecting
 
-        val url = "${baseUrl}api/realtime?session_id=$sessionId"
+        val url = "${baseUrl}api/realtime?session_id=$sessionId&token=$token"
         Log.d(TAG, "Attempting WebSocket connection")  // セッションIDを含めない
 
         val request = Request.Builder()
