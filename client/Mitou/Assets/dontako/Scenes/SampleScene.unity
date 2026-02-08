@@ -287,6 +287,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _webSocketClient: {fileID: 205559958}
   _testSessionId: test-session-001
+  _useNativeBridge: 1
+  _autoRequestCameraPermission: 1
+  _nativeWsHost: ws://172.21.249.46:8000
+  _bridgeClassName: com.commuxr.unityplugin.bridge.EraBridge
 --- !u!1 &206066242
 GameObject:
   m_ObjectHideFlags: 0

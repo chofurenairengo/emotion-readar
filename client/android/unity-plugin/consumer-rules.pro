@@ -1,0 +1,1 @@
+-keep class com.commuxr.unityplugin.bridge.EraBridge { *; }

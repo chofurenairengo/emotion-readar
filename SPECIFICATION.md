@@ -1514,6 +1514,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                      | 更新者 |
 | ---------- | ------------------------- | ------ |
+| 2026-02-08 | #170 feat(unity-plugin): add external-camera bridge path and ANALYSIS_REQUEST logging for Unity integration | @93tajam |
 | 2026-02-08 | #167 Canbasサイズ変更、ANALYSIS_RESPONSEの受信ログアンドロイドだけではなくunityで出力する。 | @93tajam |
 | 2026-02-04 | #155 feat: #152 LLMServiceでFTモデル（LLMClientFactory）を使用 | @miyabi206 |
 | 2026-02-03 | #145 #141 feat: ヘルスチェックにモデル接続状態を追加 | @miyabi206 |
@@ -1526,6 +1527,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                         | 更新者 |
 | ---------- | ---------------------------- | ------ |
+| 2026-02-08 | #170 feat(unity-plugin): add external-camera bridge path and ANALYSIS_REQUEST logging for Unity integration | @93tajam |
 | 2026-02-08 | #167 Canbasサイズ変更、ANALYSIS_RESPONSEの受信ログアンドロイドだけではなくunityで出力する。 | @93tajam |
 | 2026-02-07 | #158 feat: e2eテストにあたっての必要な機能と修正 | @Daccho |
 | 2026-02-04 | #155 feat: #152 LLMServiceでFTモデル（LLMClientFactory）を使用 | @miyabi206 |
@@ -1601,6 +1603,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 <!-- AUTO:OPEN_ISSUES:START -->
 | #    | タイトル               | 担当 | 概要                                                 |
 | ---- | ---------------------- | ---- | ---------------------------------------------------- |
+| #173 | [業務]pr見づらい | @Daccho | ### 概要 |
 | #172 | [検証]サーバーのログが見づらい | @Daccho | ### 概要 |
 | #171 | [MVP v2]フィードバック機能の追加 | - | ### 概要 |
 | #169 | feat: 外カメラ映像 → 顔推論 → submitExt | @93tajam | ## 概要 |
