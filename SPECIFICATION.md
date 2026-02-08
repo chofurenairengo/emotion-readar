@@ -397,7 +397,7 @@ server/
 | `RATE_LIMIT_DEFAULT`             | int | `100`             | デフォルトレート制限（req/min）    |
 | `RATE_LIMIT_WINDOW_SECONDS`      | int | `60`              | レート制限ウィンドウ（秒）         |
 | `FIRESTORE_EMULATOR_HOST`        | str | -                 | ローカル開発時のエミュレータホスト |
-| `GOOGLE_APPLICATION_CREDENTIALS` | str | -                 | サービスアカウントキーパス         |
+| `GOOGLE_APPLICATION_CREDENTIALS` | str | -                 | ADCキーパス（通常は自動検出、設定不要） |
 
 ### 6.3 例外階層
 
@@ -1396,9 +1396,9 @@ FIRESTORE_EMULATOR_HOST=firestore-emulator:8080
 FIRESTORE_PROJECT_ID=dev-project
 ENV_STATE=dev
 
-# GCP認証
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
-# または: gcloud auth application-default login
+# GCP認証（ADC）
+# ローカル: gcloud auth application-default login
+# Cloud Run: サービスアカウントから自動取得（設定不要）
 ```
 
 ### 16.4 Android開発
@@ -1514,6 +1514,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                      | 更新者 |
 | ---------- | ------------------------- | ------ |
+| 2026-02-08 | #176 Feature/162 | @Daccho |
 | 2026-02-08 | #167 Canbasサイズ変更、ANALYSIS_RESPONSEの受信ログアンドロイドだけではなくunityで出力する。 | @93tajam |
 | 2026-02-04 | #155 feat: #152 LLMServiceでFTモデル（LLMClientFactory）を使用 | @miyabi206 |
 | 2026-02-03 | #145 #141 feat: ヘルスチェックにモデル接続状態を追加 | @miyabi206 |
@@ -1526,6 +1527,7 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 
 | 日付       | 内容                         | 更新者 |
 | ---------- | ---------------------------- | ------ |
+| 2026-02-08 | #176 Feature/162 | @Daccho |
 | 2026-02-08 | #167 Canbasサイズ変更、ANALYSIS_RESPONSEの受信ログアンドロイドだけではなくunityで出力する。 | @93tajam |
 | 2026-02-07 | #158 feat: e2eテストにあたっての必要な機能と修正 | @Daccho |
 | 2026-02-04 | #155 feat: #152 LLMServiceでFTモデル（LLMClientFactory）を使用 | @miyabi206 |
@@ -1601,8 +1603,9 @@ Tavilyを用いたWeb検索による会話中の不明単語・最新ニュー�
 <!-- AUTO:OPEN_ISSUES:START -->
 | #    | タイトル               | 担当 | 概要                                                 |
 | ---- | ---------------------- | ---- | ---------------------------------------------------- |
+| #173 | [業務]pr見づらい | @Daccho | ### 概要 |
 | #172 | [検証]サーバーのログが見づらい | @Daccho | ### 概要 |
-| #171 | [MVP v2]フィードバック機能の追加 | - | ### 概要 |
+| #171 | [MVP v2]フィードバック機能の追加 | @miyabi206 | ### 概要 |
 | #169 | feat: 外カメラ映像 → 顔推論 → submitExt | @93tajam | ## 概要 |
 | #168 | feat: Unity + unity-plugin 経路で | @93tajam | ## 概要 |
 | #164 | [chore]<summy>のコメントが邪魔 | @Daccho | ### 概要 |

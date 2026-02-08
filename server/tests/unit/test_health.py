@@ -61,7 +61,7 @@ async def test_check_model_reachable_cache_expiry() -> None:
 
     call_counter = {"count": 0}
 
-    async def mock_ainvoke(*args, **kwargs):
+    async def mock_ainvoke(*args: object, **kwargs: object) -> AsyncMock:
         call_counter["count"] += 1
         mock_response = AsyncMock()
         mock_response.content = "pong"

@@ -1,3 +1,4 @@
+from app.infra.gcp_auth import get_credentials
 from app.infra.repositories.in_memory_session_repo import InMemorySessionRepository
 from app.services.connection_manager import ConnectionManager
 from app.services.conversation_service import ConversationService
@@ -29,7 +30,7 @@ def get_connection_manager() -> ConnectionManager:
 def get_stt_service() -> STTService:
     global _stt_service
     if _stt_service is None:
-        _stt_service = STTService()
+        _stt_service = STTService(credentials=get_credentials())
     stt_service = _stt_service
     return stt_service
 
@@ -53,7 +54,7 @@ def get_emotion_interpreter() -> EmotionInterpreterService:
 def get_llm_service() -> LLMService:
     global _llm_service
     if _llm_service is None:
-        _llm_service = LLMService()
+        _llm_service = LLMService(credentials=get_credentials())
     llm_service = _llm_service
     return llm_service
 

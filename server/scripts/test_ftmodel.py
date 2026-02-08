@@ -10,26 +10,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import os
 import sys
 from pathlib import Path
 
 # appモジュールをインポートするためにパスを追加
 server_dir = Path(__file__).parent.parent
 sys.path.insert(0, str(server_dir))
-
-# .envからGOOGLE_APPLICATION_CREDENTIALSを読み込む
-env_file = server_dir.parent / ".env"
-if env_file.exists():
-    with open(env_file, encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                key, _, value = line.partition("=")
-                key = key.strip()
-                value = value.strip()
-                if key == "GOOGLE_APPLICATION_CREDENTIALS" and value:
-                    os.environ[key] = value
 
 from langchain_core.messages import HumanMessage  # noqa: E402
 

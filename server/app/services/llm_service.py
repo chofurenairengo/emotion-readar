@@ -7,13 +7,14 @@ import json
 import logging
 from typing import Any
 
+from google.auth.credentials import Credentials
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from app.core.exceptions import LLMError, LLMRateLimitError, LLMResponseParseError
-from app.infra.external.gemini_client import LLMClientFactory
 from app.dto.conversation import Utterance
 from app.dto.emotion import EmotionInterpretation
 from app.dto.llm import LLMResponseResult, ResponseSuggestion
+from app.infra.external.gemini_client import LLMClientFactory
 
 logger = logging.getLogger(__name__)
 
@@ -64,12 +65,13 @@ class LLMService:
     - "gemini": Vertex AI Gemini (FTモデル対応)
     """
 
-    def __init__(self) -> None:
+    def __init__(self, credentials: Credentials | None = None) -> None:
         """初期化.
 
-        設定は config.py から LLMClientFactory 経由で取得する。
+        Args:
+            credentials: GCP認証情報。Noneの場合はADCが自動検出される。
         """
-        self._model = LLMClientFactory.create_client()
+        self._model = LLMClientFactory.create_client(credentials=credentials)
 
     async def generate_responses(
         self,

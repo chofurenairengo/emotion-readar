@@ -8,14 +8,13 @@ class Settings(BaseSettings):
     .envファイルの値を自動で読み込みます
     """
 
-    # GCP設定 (サービスアカウント認証: jsonkey -> アクセストークン取得)
+    # GCP設定（認証はADCで一括管理）
     GCP_PROJECT_ID: str  # GCPプロジェクトID
     GCP_LOCATION: str = "asia-northeast1"  # Vertex AIのリージョン
 
     # モデル設定
     FT_MODEL_ID: str = ""  # Geminiモデル名（LLM_PROVIDER=gemini時に必須）
     LLM_TEMPERATURE: float = 0.7  # LLMの温度パラメータ（0.0〜1.0, デフォルト: 0.7）
-    VERTEX_CREDENTIALS_PATH: str = ""  # Vertex AI用サービスアカウントキーのパス
 
     # LLMプロバイダー設定
     LLM_PROVIDER: str = ""  # "gemini" or "groq"
@@ -44,9 +43,7 @@ class Settings(BaseSettings):
             if not self.GROQ_MODEL.strip():
                 missing.append("GROQ_MODEL")
             if missing:
-                raise ValueError(
-                    f"LLM_PROVIDER='groq' requires: {', '.join(missing)}"
-                )
+                raise ValueError(f"LLM_PROVIDER='groq' requires: {', '.join(missing)}")
         return self
 
     # 任意項目
